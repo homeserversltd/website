@@ -1,0 +1,6 @@
+[submodule "premium/testTab"]
+	path = premium/testTab
+	url = https://github.com/homeserversltd/testTab.git
+[submodule "premium/conflictTab"]
+	path = premium/conflictTab
+	url = https://github.com/homeserversltd/conflictTab.git

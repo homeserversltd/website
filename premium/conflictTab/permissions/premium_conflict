@@ -1,5 +1,0 @@
-# Sudoers configuration for Conflict Premium Tab
-# Minimal permissions for testing
-
-# Allow www-data to check conflict tab status
-www-data ALL=(ALL) NOPASSWD: /bin/systemctl status conflict-service 

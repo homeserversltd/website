@@ -1,0 +1,48 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "files": [
+    {
+      "source": "frontend/index.tsx",
+      "target": "/var/www/homeserver/src/tablets/test/index.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main React entry point for the tablet"
+    },
+    {
+      "source": "frontend/types.ts",
+      "target": "/var/www/homeserver/src/tablets/test/types.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "TypeScript types for the tablet"
+    },
+    {
+      "source": "frontend/PortalCard.css",
+      "target": "/var/www/homeserver/src/tablets/test/PortalCard.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Tablet-specific CSS"
+    },
+    {
+      "source": "frontend/components/TestCard.tsx",
+      "target": "/var/www/homeserver/src/tablets/test/components/TestCard.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main card component for displaying a service/item"
+    },
+    {
+      "source": "frontend/hooks/useTestControls.ts",
+      "target": "/var/www/homeserver/src/tablets/test/hooks/useTestControls.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "Custom hook for item actions (start/stop/restart/etc)"
+    },
+    {
+      "source": "frontend/images/default.png",
+      "target": "/var/www/homeserver/src/tablets/test/images/default.png",
+      "type": "copy",
+      "identifier": null,
+      "description": "Default icon for the tablet"
+    }
+  ]
+}

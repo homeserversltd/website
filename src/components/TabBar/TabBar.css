@@ -1,0 +1,393 @@
+.tab-bar {
+  display: flex;
+  background-color: var(--background);
+  padding: 0 20px;
+  width: 100%;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  min-height: 48px; /* minimum height but allows growth */
+}
+
+/* Hide tab bar in regular mode when hidden or single tab */
+.tab-bar.hidden {
+  display: none !important;
+}
+
+nav[data-hidden="true"] .tab-bar {
+  display: none !important;
+}
+
+/* Force show in admin mode unless explicitly hidden */
+nav[data-admin-mode="true"] .tab-bar:not(.hidden) {
+  display: flex !important;
+}
+
+/* Regular mode visibility */
+nav[data-admin-mode="false"] .tab-bar {
+  display: flex;
+}
+
+/* Admin mode styles and transitions */
+nav[data-admin-mode] {
+  transition: all 0.2s ease-in-out;
+  will-change: opacity, transform;
+}
+
+nav[data-admin-mode="true"] .tab-bar {
+  display: flex !important;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  will-change: opacity, transform;
+}
+
+/* Fix: Ensure tabs are completely hidden in regular mode, not just visually hidden */
+nav[data-admin-mode="false"] .tab-bar.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+nav[data-admin-mode="false"] .tab-bar:not(.hidden) {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* Admin mode tab transitions */
+nav[data-admin-mode="true"] .tab {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  transition-delay: 0.1s;
+}
+
+/* Regular mode tab visibility - show tabs normally when not hidden */
+nav[data-admin-mode="false"] .tab-bar:not(.hidden) .tab {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Only hide tabs in regular mode when they should be hidden */
+nav[data-admin-mode="false"] .tab-bar.hidden .tab,
+nav[data-admin-mode="false"] .tab.hidden {
+  display: none !important;
+}
+
+/* Desktop - allow tabs to wrap to prevent horizontal scrollbar */
+@media screen and (min-width: 769px) {
+  .tab-bar {
+    flex-wrap: wrap;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    overflow-y: hidden; /* Prevent vertical scrolling due to tab animations */
+  }
+  
+  /* When tabs would overflow horizontally, stack them in columns */
+  .tab-bar.tabs-overflow {
+    flex-direction: column;
+    align-items: flex-start;
+    overflow-y: hidden; /* Changed from auto to hidden */
+    max-height: 300px;
+  }
+  
+  /* Adjust tab styling when in column mode */
+  .tab-bar.tabs-overflow .tab {
+    width: 100%;
+    margin: 2px 0;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+}
+
+/* Mobile Responsive Styles - only keep styling aspects, not layout */
+@media screen and (max-width: 768px) {
+  .tab-bar {
+    flex-direction: column;
+    align-items: stretch;
+    overflow-x: hidden;
+    overflow-y: hidden; /* Changed from auto to hidden */
+  }
+  
+  .tab {
+    grid-template-columns: auto 1fr auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+    margin: 2px 0;
+    gap: 8px;
+  }
+
+  .tab:not(:last-child) {
+    margin-bottom: 4px;
+  }
+  
+  /* Ensure consistent column widths on mobile */
+  .tab-visibility-column,
+  .tab-star-column {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Small mobile devices - only keep styling aspects */
+@media screen and (max-width: 480px) {
+  .tab {
+    min-height: 36px;
+    padding: 6px 10px;
+    grid-template-columns: auto 1fr auto;
+    gap: 4px;
+  }
+
+  .tab-name {
+    font-size: 13px;
+  }
+  
+  /* Slightly smaller icons on very small screens */
+  .tab-visibility-column,
+  .tab-star-column {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.tab {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  padding: 0 12px;
+  min-width: 120px;
+  min-height: 48px; /* minimum height but allows growth */
+  color: var(--secondary);
+  cursor: pointer;
+  border-radius: 0 0 6px 6px;
+  transition: all 0.2s ease-in-out;
+  background-color: var(--background-alt);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  border: 1px solid var(--border);
+  border-top: none;
+  margin: 0 2px;
+  box-sizing: border-box;
+  gap: 8px;
+  justify-items: right;
+}
+
+.tab:hover {
+  background-color: var(--background-alt-hover);
+  transform: translateY(1px);
+}
+
+.tab.active {
+  background-color: var(--primary);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary);
+  border-top: 2px solid var(--primary);
+  font-weight: 500;
+}
+
+/* Regular mode - hidden tabs are not rendered */
+.tab.hidden {
+  display: none !important;
+}
+/* Admin mode - show all tabs with visual indicators */
+nav[data-admin-mode="true"] .tab {
+  display: grid !important;
+  justify-items: center;
+}
+
+nav[data-admin-mode="true"] .tab.hidden {
+  opacity: 1;
+  background-color: var(--hiddenTabBackground);
+  color: var(--hiddenTabText);
+  box-shadow: none;
+}
+
+/* Hide visibility toggle column in non-admin mode */
+nav[data-admin-mode="false"] .tab-visibility-column {
+  display: none;
+}
+
+.tab-name {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  text-align: left;
+}
+
+.star-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  color: var(--text);
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  margin: 0 auto; /* Center horizontally */
+}
+
+.star-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  background-color: var(--primaryHover);
+}
+
+.star-button.far {
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.star-button.fas {
+  color: var(--star-color, #FFC107);
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.visibility-toggle {
+  color: var(--secondary); /* Default color when not visible */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin-right: 0;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+/* When visible, use primary text color */
+.visibility-toggle[data-visible="true"] {
+  color: var(--text);
+}
+
+.visibility-toggle:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.tab.active .star-button {
+  color: var(--background);
+  opacity: 0.9;
+}
+
+.tab.active .star-button.fas {
+  color: var(--star-color, #FFC107);
+  opacity: 1;
+}
+
+.star-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.star-button.loading {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.star-button.loading i {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-indicator {
+  display: inline-block;
+  color: var(--text);
+  opacity: 0.5;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.3; transform: scale(1); }
+}
+
+.tab-bar .tab.hidden {
+  display: none;
+}
+
+.tab-bar .tab.admin-visible {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto;
+  opacity: 0.7;
+}
+
+.tab-bar .tab.admin-visible[data-visibility="hidden"] {
+  border-left: 3px solid #ff6b6b;
+}
+
+/* Ensure admin mode visibility works well on mobile */
+@media screen and (max-width: 768px) {
+  nav[data-admin-mode="true"] .tab.hidden {
+    opacity: 0.7;
+    display: grid !important;
+  }
+  
+  .tab {
+    width: 100%;
+    margin: 4px 0;
+    min-height: 40px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+  }
+  
+  .tab-bar .tab.admin-visible[data-visibility="hidden"] {
+    border-left-width: 2px;
+    display: grid !important;
+  }
+  
+  /* Ensure consistent column widths on mobile */
+  .tab-visibility-column,
+  .tab-star-column {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+/* Ensure star button is always centered in its column */
+.tab-star-column {
+  width: 24px;
+  min-width: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Ensure visibility toggle is always centered in its column */
+.tab-visibility-column {
+  width: 24px;
+  min-width: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+} 

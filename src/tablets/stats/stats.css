@@ -1,0 +1,817 @@
+.stats-tablet {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px;
+}
+
+.stat-element {
+  position: relative;
+  padding: 8px;
+  border-radius: 8px;
+  background-color: var(--background);
+  transition: all 0.2s ease-out;
+  box-shadow: 0 2px 4px var(--primary), 0 2px 4px var(--border);
+}
+
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stat-content h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.placeholder-content {
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.note-text.placeholder {
+  color: var(--secondary);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.stat-info {
+  padding: 8px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.stat-chart {
+  width: 100%;
+  height: 180px;
+  margin: 0;
+}
+
+/* New header styles */
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.stat-title {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 500;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.combined-chart {
+  display: grid;
+  gap: 16px;
+}
+
+/* Restore single chart styling */
+.stat-chart {
+  width: 100%;
+  height: 180px;
+  margin: 0;
+}
+
+/* Replace the existing tooltip styles with */
+.recharts-default-tooltip {
+  background-color: var(--hiddenTabBackground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 4px !important;
+  padding: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
+}
+
+.recharts-tooltip-item {
+  color: var(--text) !important;
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+/* Update grid line rules */
+.recharts-cartesian-grid line {
+  stroke: var(--border) !important;
+  stroke-opacity: 0.8;
+}
+
+/* Update memory styles */
+.memory-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.memory-current {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.memory-current:last-child {
+  border-bottom: none;
+}
+
+.memory-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: -4px;
+}
+
+.memory-bar {
+  width: 100%;
+  height: 24px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.memory-bar-fill {
+  height: 100%;
+  background-color: var(--secondary);
+  border-radius: 12px;
+  transition: width 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+}
+
+.memory-bar-fill-swap {
+  background-color: var(--accent);
+}
+
+.memory-text {
+  color: var(--background);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.memory-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text);
+  padding: 0 4px;
+}
+
+/* Add these styles to the existing CSS file */
+.process-usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.process-bar {
+  width: 100%;
+  height: 24px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.process-bar-fill {
+  height: 100%;
+  background-color: var(--primaryHover);
+  border-radius: 12px;
+  transition: width 0.3s ease-out;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Container for text that sits above the fill bar */
+.process-text-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  z-index: 1;
+}
+
+.load-averages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.load-average-header {
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.load-average-values {
+  display: flex;
+  justify-content: space-around;
+  gap: 2rem;
+  padding: 0.5rem;
+}
+
+.load-average-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.load-label {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.load-value {
+  color: var(--text);
+  margin-left: .5rem;
+} 
+.process-name {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.process-usage {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.stats-tablet {
+  padding: 8px;
+  gap: 16px;
+}
+
+.stat-element {
+  padding: 8px;
+}
+
+.stat-title {
+  font-size: 0.9rem;
+}
+
+.stat-chart {
+  height: 150px;
+}
+
+.network-interfaces {
+  background: var(--tabContentBackground);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.network-interfaces-header {
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--tabBorder);
+  margin-bottom: 0.5rem;
+}
+
+.network-interfaces-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.network-interfaces-table th{
+  background-color: var(--hiddenTabBackground);
+}
+
+.network-interfaces-table th,
+.network-interfaces-table td {
+  border: 1px solid var(--border); /* Add borders to individual cells */
+}
+
+.network-interfaces-table th {
+  text-align: left;
+  padding: 0.5rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.network-interfaces-table td {
+  padding: 0.5rem;
+}
+
+.interface-name {
+  font-weight: 500;
+}
+
+.interface-label {
+  color: var(--hiddenTabText);
+  font-size: 0.9em;
+}
+
+.data-cell {
+  font-family: var(--monoFont);
+} 
+/* Styles for Kea Leases Table */
+.kea-leases-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.kea-leases-table th,
+.kea-leases-table td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: left;
+  /* Add min-widths to preserve key columns */
+  min-width: 120px; /* Default min-width for all cells */
+}
+
+/* Specific column sizing */
+.kea-leases-table th:nth-child(4), /* MAC column */
+.kea-leases-table td:nth-child(4) {
+  min-width: 50px; /* Smaller min-width for MAC */
+  width: 1%; /* Allow column to shrink */
+}
+
+.kea-leases-table th {
+  background-color: var(--hiddenTabBackground);
+  color: var(--text);
+}
+
+/* Optional: Adjust error-message styling if needed */
+.error-message {
+  color: var(--error);
+}
+
+/* Update device-note-cell rules */
+.device-note-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+  min-height: 32px; /* Ensure minimum height */
+  padding: 4px 0; /* Add vertical padding */
+}
+
+.note-text {
+  flex: 1;
+  color: var(--text);
+  font-size: 0.9rem;
+  min-height: 24px; /* Minimum height even when empty */
+  display: flex;
+  align-items: center;
+}
+
+.kea-leases-table td {
+  vertical-align: top;
+  padding: 8px;
+}
+
+/* Add to existing CSS */
+.edit-note-button {
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: var(--text);
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.edit-note-button:hover {
+  opacity: 1;
+}
+
+.edit-note-modal {
+  padding: 16px;
+}
+
+.note-textarea {
+  width: 100%;
+  min-width: 300px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--text);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.note-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Ensure tooltips are always on top */
+.tooltip {
+  z-index: 1000 !important;
+}
+
+.process-usage-list {
+  position: relative;
+  z-index: 1;
+}
+
+.process-bar {
+  position: relative;
+  z-index: 1;
+}
+
+/* Add visibility-based override */
+.stat-element[data-visible="false"] .recharts-cartesian-grid line {
+  stroke: var(--background) !important;
+  stroke-opacity: 0.2;
+}
+
+/* Add hidden state coloring */
+.stat-element[data-visible="false"] .stat-title {
+  color: var(--secondary);
+  opacity: 0.7;
+}
+
+/* Existing hidden title rule */
+.stat-element[data-visible="false"] .stat-title,
+.stat-element[data-visible="false"] .stat-info {
+  color: var(--secondary);
+  opacity: 0.7;
+}
+/* Container styling based on visibility */
+.stat-element[data-visible="true"] {
+  background-color: var(--background);
+}
+
+.stat-element[data-visible="false"] {
+  background-color: var(--hiddenTabBackground);
+}
+
+/* Update memory bar styles */
+.stat-element[data-visible="false"] .memory-bar {
+  background-color: var(--background) !important;
+}
+
+.stat-element[data-visible="false"] .memory-bar-fill {
+  opacity: 0.3;
+}
+
+/* Update process usage bar styles */
+.stat-element[data-visible="false"] .process-bar {
+  background-color: var(--background) !important;
+}
+
+.stat-element[data-visible="false"] .process-bar-fill {
+  opacity: 0.3;
+}
+
+.stat-element[data-visible="false"] .process-text-container {
+  color: var(--secondary);
+}
+
+/* Update Kea table border rules */
+.kea-leases-table th,
+.kea-leases-table td {
+  border: 1px solid var(--border);
+}
+
+.stat-element[data-visible="false"] .kea-leases-table th,
+.stat-element[data-visible="false"] .kea-leases-table td {
+  border-color: var(--background);
+  opacity: 0.3;
+}
+
+/* Phone-specific adjustments */
+@media (max-width: 768px) {
+  .kea-leases-table th,
+  .kea-leases-table td {
+    min-width: 90px; /* Reduced default min-width */
+    padding: 6px;
+  }
+  .memory-details {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Make MAC column even more compact */
+  .kea-leases-table th:nth-child(4),
+  .kea-leases-table td:nth-child(4) {
+    min-width: 0;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Preserve minimum sizes for other columns */
+  .kea-leases-table th:nth-child(1),
+  .kea-leases-table td:nth-child(1) { /* Device Note */
+    min-width: 100px;
+  }
+  
+  .kea-leases-table th:nth-child(2), /* Hostname */
+  .kea-leases-table td:nth-child(2) {
+    min-width: 80px;
+  }
+  
+  .kea-leases-table th:nth-child(3), /* IP */
+  .kea-leases-table td:nth-child(3) {
+    min-width: 90px;
+  }
+}
+
+/* Add this at the end of the existing CSS */
+@media (max-width: 480px) {
+  .kea-leases-table table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+
+  .kea-leases-table thead {
+    display: none;
+  }
+
+  .kea-leases-table tr {
+    display: block;
+    margin-bottom: 8px;
+    background: var(--background);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .kea-leases-table td {
+    display: flex;
+    align-items: center;
+    min-width: unset !important;
+    width: 100%;
+    padding: 8px 12px;
+    border: none !important;
+    font-size: 0.8rem;
+  }
+
+  .kea-leases-table td::before {
+    text-align: left;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 4px;
+  }
+
+  .device-note-cell::before {
+    margin-bottom: 6px;
+  }
+
+  /* Add specific rule for note cell alignment */
+  .device-note-cell {
+    align-items: flex-start;
+  }
+
+  .edit-note-button {
+    align-self: flex-end;
+    margin-top: -24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Stack hostname and IP with separator */
+  .kea-leases-table td:nth-child(2),
+  .kea-leases-table td:nth-child(3) {
+    display: block;
+    width: 100%;
+    padding: 4px 12px;
+  }
+
+  .kea-leases-table td:nth-child(2)::after {
+    content: none;
+  }
+
+  /* MAC address adjustments */
+  .kea-leases-table td:nth-child(4) {
+    font-family: monospace;
+    font-size: 0.7rem;
+    white-space: normal; /* Allow wrapping */
+    overflow: visible; /* Disable truncation */
+    text-overflow: clip; /* Remove ellipsis */
+    padding-right: 12px; /* Restore padding */
+  }
+  .stat-element[data-visible="false"] .kea-leases-table tr {
+    box-shadow: 0 2px 4px rgba(var(--background-rgb), 0.1);
+  }
+
+  /* Adjust legend styling for smaller screens */
+  .custom-legend {
+    flex-direction: column;
+    align-items: center;
+    padding: 4px !important; /* Reduced padding */
+  }
+  .custom-legend span {
+    font-size: 0.85rem !important; /* Smaller font size */
+  }
+  .custom-legend svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  /* Adjust device controls for proper alignment */
+  .device-control {
+    position: relative;
+    padding-right: 100px; /* Reserve space for the checkboxes */
+  }
+  .device-checkboxes {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 8px;
+  }
+
+  .custom-legend {
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 4px !important;
+  }
+  
+  .custom-legend > div {
+    flex: 1 1 45%; /* Allow two items per row */
+    min-width: 140px; /* Minimum width for legibility */
+  }
+}
+
+/* For very small screens */
+@media (max-width: 360px) {
+  .custom-legend > div {
+    flex: 1 1 100%; /* Stack vertically */
+  }
+}
+
+/* Add to existing CSS file */
+.device-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: var(--hiddenTabBackground);
+  border-radius: 4px;
+}
+
+.device-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--background);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.device-name {
+  font-weight: 500;
+  margin-right: 8px;
+  color: var(--text);
+}
+
+.device-control label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.device-control input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Media query for mobile */
+@media (max-width: 768px) {
+  .device-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .device-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Add these styles to the existing CSS file */
+.disk-usage-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.disk-usage-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Remove border from last item */
+.disk-usage-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.disk-usage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+  margin-bottom: 4px;
+}
+
+.disk-device {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.disk-mountpoint {
+  font-style: italic;
+  color: var(--hiddenTabText);
+  font-size: 0.85rem;
+}
+
+.disk-usage-bar {
+  width: 100%;
+  height: 24px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.disk-usage-fill {
+  height: 100%;
+  background-color: var(--secondary);
+  border-radius: 12px;
+  transition: width 0.3s ease-out;
+  min-width: 40px;
+}
+
+.disk-usage-details {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+  padding: 4px 8px;
+}
+/* Add visibility styles for disk usage */
+.stat-element[data-visible="false"] .disk-usage-bar {
+  background-color: var(--background) !important;
+}
+
+.stat-element[data-visible="false"] .disk-usage-fill {
+  opacity: 0.3;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .disk-usage-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .disk-usage-details {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .disk-device {
+    font-size: 0.85rem;
+  }
+}
+
+

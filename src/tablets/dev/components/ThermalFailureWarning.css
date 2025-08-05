@@ -1,0 +1,198 @@
+.thermal-failure-warning {
+  background: var(--background);
+  border: 2px solid var(--statusDown);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+  animation: thermal-warning-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes thermal-warning-pulse {
+  from {
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+  }
+  to {
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.25);
+  }
+}
+
+.thermal-failure-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--statusDown);
+}
+
+.thermal-failure-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--statusDown);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  animation: thermal-icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes thermal-icon-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.thermal-failure-title-section {
+  flex: 1;
+}
+
+.thermal-failure-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--statusDown);
+  margin: 0 0 0.25rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.thermal-failure-subtitle {
+  font-size: 1rem;
+  color: var(--text);
+  margin: 0;
+  opacity: 0.9;
+}
+
+.thermal-failure-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.thermal-failure-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.thermal-failure-btn.clear {
+  background: var(--statusDown);
+  color: white;
+}
+
+.thermal-failure-btn.clear:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.thermal-failure-btn.copy {
+  background: var(--background-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.thermal-failure-btn.copy:hover {
+  background: var(--border);
+}
+
+.thermal-failure-content {
+  background: var(--background-alt);
+  border: 1px solid var(--statusDown);
+  border-radius: 8px;
+  padding: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.thermal-failure-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.thermal-failure-content::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 4px;
+}
+
+.thermal-failure-content::-webkit-scrollbar-thumb {
+  background: var(--statusDown);
+  border-radius: 4px;
+}
+
+.thermal-failure-content::-webkit-scrollbar-thumb:hover {
+  background: #c82333;
+}
+
+.thermal-failure-summary {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid var(--statusDown);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.thermal-failure-summary i {
+  color: var(--statusDown);
+  margin-top: 0.1rem;
+  font-size: 1rem;
+}
+
+.thermal-failure-summary-text {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.thermal-failure-summary-text strong {
+  color: var(--statusDown);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .thermal-failure-warning {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .thermal-failure-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .thermal-failure-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.3rem;
+  }
+  
+  .thermal-failure-title {
+    font-size: 1.2rem;
+  }
+  
+  .thermal-failure-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .thermal-failure-content {
+    font-size: 0.8rem;
+    max-height: 200px;
+  }
+} 

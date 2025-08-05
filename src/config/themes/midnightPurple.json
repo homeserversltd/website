@@ -1,0 +1,18 @@
+{
+  "background": "#1A1A2E",
+  "text": "#E0E0E0",
+  "primary": "#6C4AB6",
+  "primaryHover": "#533E8B",
+  "secondary": "#8D72E1",
+  "accent": "#FF6B6B",
+  "error": "#FF5252",
+  "success": "#4CAF50",
+  "warning": "#FF9800",
+  "border": "#2E2E5D",
+  "statusUp": "#4CAF50",
+  "statusDown": "#FF6B6B",
+  "statusPartial": "#FFC107",
+  "statusUnknown": "#757575",
+  "hiddenTabBackground": "#2A2A4D",
+  "hiddenTabText": "#8D72E1"
+} 

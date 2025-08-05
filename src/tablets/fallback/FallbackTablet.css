@@ -1,0 +1,243 @@
+/**
+ * FallbackTablet.css
+ * Styles for the fallback tablet UI
+ */
+
+.fallback-tablet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  background-color: var(--background);
+  color: var(--text);
+}
+
+.fallback-tablet .fallback-logo {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.fallback-tablet h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+  color: var(--primary);
+}
+
+.fallback-tablet h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+  color: var(--warning);
+}
+
+.fallback-tablet p {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.fallback-tablet small {
+  font-size: 0.8rem;
+  margin-top: 2rem;
+  color: color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+.fallback-tablet .status-container,
+.fallback-tablet .error-container {
+  margin-top: var(--header-height);
+  max-width: 600px;
+  background-color: color-mix(in srgb, var(--background) 80%, var(--primary) 20%);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fallback-tablet.websocket-disconnected .status-container {
+  border: 2px solid var(--border);
+}
+
+.fallback-tablet .error-details {
+  width: 100%;
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--background);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.fallback-tablet .error-details summary {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.fallback-tablet .error-details pre {
+  white-space: pre-wrap;
+  font-size: 0.8rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  overflow-x: auto;
+  color: var(--error);
+}
+
+.fallback-tablet .action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Use primary-button and secondary-button styles from indicators.css */
+.fallback-tablet .primary-button,
+.fallback-tablet .secondary-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: var(--primary);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.fallback-tablet .primary-button:hover,
+.fallback-tablet .secondary-button:hover {
+  background-color: var(--primaryHover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.fallback-tablet .primary-button:active,
+.fallback-tablet .secondary-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.fallback-tablet .primary-button:disabled,
+.fallback-tablet .secondary-button:disabled {
+  background-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.fallback-tablet .secondary-button {
+  background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.fallback-tablet .secondary-button:hover {
+  background-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.fallback-tablet .reload-button svg {
+  margin-right: 0.5rem;
+}
+
+.fallback-tablet .fallback-reason {
+  padding: 0.5rem 1rem;
+  background-color: color-mix(in srgb, var(--warning) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  color: var(--warning);
+  text-transform: capitalize;
+}
+
+/* Success message styling */
+.fallback-tablet .success-message {
+  padding: 0.75rem 1rem;
+  background-color: color-mix(in srgb, var(--success) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  border-radius: 4px;
+  margin: 1rem 0;
+  font-weight: medium;
+  color: var(--success);
+}
+
+/* Error message styling */
+.fallback-tablet .error-message {
+  padding: 0.75rem 1rem;
+  background-color: color-mix(in srgb, var(--error) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+  border-radius: 4px;
+  margin: 1rem 0;
+  font-weight: medium;
+  color: var(--error);
+}
+
+/* Simplified view styling for when fallback is the only visible tab */
+.fallback-tablet.simplified-view .status-container {
+  background-color: color-mix(in srgb, var(--background) 90%, var(--primary) 10%);
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.fallback-tablet.simplified-view .fallback-logo {
+  width: 150px;
+  height: 150px;
+  margin-bottom: 2rem;
+}
+
+/* Add fallback active class that can be used to style the body */
+body.fallback-active .app {
+  background-color: var(--background);
+}
+
+/* Override TabBar in fallback mode */
+body.fallback-active .tab-bar {
+  display: none;
+}
+
+/* Animation for loading states */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.fallback-tablet .tablet-loading {
+  animation: pulse 1.5s infinite;
+}
+
+/* Version info styling */
+.fallback-tablet .version-info {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--text) 60%, transparent);
+  opacity: 0.8;
+  font-family: monospace;
+}
+
+.fallback-tablet .version-info small {
+  margin-top: 0;
+  font-size: inherit;
+}
+
+/* Position version info differently in different views */
+.fallback-tablet.simplified-view .version-info {
+  margin-top: 1rem;
+} 

@@ -1,0 +1,69 @@
+/* Common Button Styles */
+.primary-button,
+.secondary-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.primary-button {
+  background-color: var(--primary);
+}
+
+.secondary-button {
+  background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+/* Group button hover states */
+.primary-button:hover,
+.secondary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.primary-button:hover {
+  background-color: var(--primaryHover);
+}
+
+.secondary-button:hover {
+  background-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+/* Group button active states */
+.primary-button:active,
+.secondary-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Group button disabled states */
+.primary-button:disabled,
+.secondary-button:disabled {
+  background-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+/* Group button icon styles */
+.primary-button svg,
+.secondary-button svg {
+  margin-right: 0.5rem;
+} 

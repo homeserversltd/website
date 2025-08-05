@@ -1,0 +1,78 @@
+Business Source License 1.1
+
+Copyright (c) 2025 HOMESERVER LLC, All Rights Reserved.
+
+"Business Source License" is a trademark of MariaDB Corporation Ab.
+
+| Licensor:             | HOMESERVER LLC                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------- |
+| Licensed Work:        | React and Flask based web interface for HOMESERVER enterprise services (this repository only)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Additional Use Grant: | None - No production use permitted                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Change Date:          | Three years from the date of each specific version release (see version-specific terms below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Change License:       | GPL v3.0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+## Scope and Terms
+
+**IMPORTANT: This license applies ONLY to this specific repository and its contents. It does not apply to other HOMESERVER repositories, the broader HOMESERVER platform, or any other HOMESERVER LLC intellectual property.**
+
+The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, and make non-production use of the Licensed Work. The Licensor may make an Additional Use Grant, above, permitting limited production use.
+
+Effective on the Change Date, or the third anniversary of the first publicly available distribution of a specific version of the Licensed Work under this License, whichever comes first, the Licensor hereby grants you rights under the terms of the Change License, and the rights granted in the paragraph above terminate.
+
+**Version-Specific Licensing:**
+Each version of the Licensed Work is licensed separately. The BSL terms apply to each version for exactly 3 years from that version's release date. Version release dates are determined by the `releaseDate` field in the version configuration file (`homeserver.json`). Each version is identified by its `version` value in the version configuration (e.g., "0.9.0").
+
+If your use of the Licensed Work does not comply with the requirements currently in effect as described in this License, you must purchase a commercial license from the Licensor, its affiliated entities, or authorized resellers, or you must refrain from using the Licensed Work.
+
+All copies of the original and modified Licensed Work, and derivative works of the Licensed Work, are subject to this License. This License applies separately for each version of the Licensed Work and the Change Date may vary for each version of the Licensed Work released by Licensor.
+
+You must conspicuously display this License on each original or modified copy of the Licensed Work. If you receive the Licensed Work in original or modified form from a third party, the terms and conditions set forth in this License apply to your use of that work.
+
+Any use of the Licensed Work in violation of this License will automatically terminate your rights under this License for the current and all other versions of the Licensed Work.
+
+This License does not grant you any right in any trademark or logo of Licensor or its affiliates (provided that you may use a trademark or logo of Licensor as expressly required by this License).
+
+## Production Use Restrictions
+
+For purposes of the foregoing, "production use" means using the Software for any commercial purpose, including but not limited to:
+- Offering the Software as a service
+- Charging for hosting or support services related to the Software
+- Creating competing products or services based on the Software
+- Using the Software in a production environment
+- Commercial SaaS offerings
+- Enterprise deployments without proper licensing
+
+## Automatic License Conversion
+
+After the 3-year grace period from each version's release date, that specific version automatically converts to GPL (GNU General Public License v3.0). Each version is licensed independently based on its release date as specified in the version configuration.
+
+**Example:**
+- Version "0.9.0" (released 07-26-2025) → GPL on 07-26-2028
+- Version "1.0.0" (released 2026-03-20) → GPL on 2029-03-20
+- Version "1.1.0" (released 2027-07-10) → GPL on 2030-07-10
+
+## Third-Party Components
+
+Third-party open source components retain their original licenses. Dependencies maintain their respective terms.
+
+## Contributor Agreement
+
+All contributors must sign a Contributor License Agreement (CLA) that grants HOMESERVER LLC certain rights to their contributions while maintaining their copyright.
+
+## License Summary
+
+- **BSL 1.1**: This repository only (frontend web interface)
+- **Scope**: Limited to this specific repository and its contents
+- **Third-party**: Original licenses
+- **BSL converts to GPL** after 3 years
+- **Free for non-production use**
+- **Prohibits commercial SaaS offerings**
+- **Does NOT apply** to other HOMESERVER repositories or platform components
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSED WORK IS PROVIDED ON AN "AS IS" BASIS. LICENSOR HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS OR IMPLIED, INCLUDING (WITHOUT LIMITATION) WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND TITLE.
+
+For binding interpretive guidance on using HOMESERVER products under the Business Source License, please contact licensing@homeservers.ltd
+
+For information about alternative licensing arrangements for the Licensed Work, please contact licensing@homeservers.ltd
+
+Updated August 2025

@@ -1,0 +1,13 @@
+
+/* Add/update tooltip styles */
+.tooltip {
+    background-color: var(--hiddenTabBackground);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 0.85rem;
+    color: var(--text);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 300px;
+    z-index: 1000;
+  }

@@ -1,0 +1,21 @@
+{
+  "name": "conflict",
+  "version": "1.0.0",
+  "files": {
+    "config": "homeserver.patch.json",
+    "backend": {
+      "index": "backend/index.json",
+      "requirements": "backend/requirements.txt", 
+      "blueprint": "backend/routes.py",
+      "init": "backend/__init__.py"
+    },
+    "frontend": {
+      "index": "frontend/index.json",
+      "package": "frontend/package.patch.json",
+      "entry": "frontend/index.tsx"
+    },
+    "permissions": {
+      "sudoers": "permissions/premium_conflict"
+    }
+  }
+} 

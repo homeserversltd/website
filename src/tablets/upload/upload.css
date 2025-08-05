@@ -1,0 +1,1016 @@
+.blacklist-manager {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 400px;
+  max-width: 600px;
+  background: var(--background);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  @media (max-width: 480px) {
+    min-width: unset;
+    width: 90vw;
+    padding: 12px;
+    gap: 12px;
+  }
+}
+
+.blacklist-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: auto;
+  overflow-y: visible;
+  padding-right: 8px;
+  @media (max-width: 480px) {
+    height: auto;
+    padding-right: 4px;
+  }
+}
+
+.blacklist-entry {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--hiddenTabBackground);
+  border-radius: 8px;
+  gap: 12px;
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+}
+
+.entry-path {
+  flex: 1;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  @media (max-width: 480px) {
+    font-size: 0.9em;
+  }
+}
+
+.remove-entry {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  @media (max-width: 480px) {
+    padding: 2px 4px;
+    font-size: 1em;
+  }
+}
+
+.remove-entry:hover {
+  color: var(--statusDown);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.blacklist-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
+}
+
+.add-entry {
+  display: flex;
+  gap: 8px;
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+}
+
+.entry-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--text);
+  font-family: monospace;
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    font-size: 0.9em;
+  }
+}
+
+.entry-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.add-button {
+  padding: 8px 12px;
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 0.9em;
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    font-size: 0.9em;
+    width: 100%;
+  }
+}
+
+.add-button:hover {
+  background: var(--primaryHover);
+}
+
+.submit-button {
+  padding: 8px 12px;
+  width: 100%;
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background 0.2s ease;
+  font-size: 0.9em;
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    font-size: 0.9em;
+    width: 100%;
+  }
+}
+
+.submit-button:hover {
+  background: var(--primaryHover);
+}
+
+.upload-progress {
+  background: var(--hiddenTabBackground);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upload-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.status-icon {
+  font-size: 1.2em;
+}
+
+.filename {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.remove-button {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.remove-button:hover {
+  color: var(--statusDown);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 20px;
+  background: var(--hiddenTabBackground);
+  color: var(--text);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 10px;
+  background: var(--hiddenTabBackground);
+  color: var(--text);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+}
+
+.progress-text {
+  color: var(--text);
+  font-size: 0.8em;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.upload-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+  color: var(--secondary);
+}
+
+.speed {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.error-message {
+  color: var(--statusDown);
+  font-size: 0.9em;
+  padding: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid var(--statusDown);
+}
+
+.upload-progress.pending .progress-bar,
+.upload-progress.uploading .progress-bar {
+  background-image: linear-gradient(45deg, 
+    rgba(255,255,255,.15) 25%, 
+    transparent 25%, 
+    transparent 50%, 
+    rgba(255,255,255,.15) 50%, 
+    rgba(255,255,255,.15) 75%, 
+    transparent 75%, 
+    transparent);
+  background-size: 1rem 1rem;
+  animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+  from {
+    background-position: 1rem 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.history-item {
+  padding: 8px;
+  margin: 4px 0;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: monospace;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  width: 100%;
+  box-sizing: border-box;
+  
+  @media (max-width: 480px) {
+    padding: 6px;
+    font-size: 0.8em;
+    border-left-width: 2px;
+    white-space: normal;
+    word-break: break-word;
+    padding-right: 8px;
+  }
+  
+
+}
+
+.history-item.success {
+  background: color-mix(in srgb, var(--status-up) 20%, transparent);
+  border-left: 3px solid var(--status-up);
+  color: var(--status-up);
+}
+
+.history-item.error {
+  background: color-mix(in srgb, var(--status-down) 20%, transparent);
+  border-left: 3px solid var(--status-down);
+  color: var(--status-down);
+}
+
+.blacklist-button {
+  background: var(--primary);
+  color: var(--text);
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: var(--font-size-sm);
+}
+
+.blacklist-button:hover {
+  background: var(--primaryHover);
+}
+
+.admin-upload-controls button {
+  background: var(--primary);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: var(--font-size-sm);
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.admin-upload-controls button:hover {
+  background: var(--primaryHover);
+}
+
+.file-upload-section button {
+  background: var(--primary);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: var(--font-size-sm);
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.file-upload-section button:hover {
+  background: var(--primaryHover);
+}
+
+.directory-browser button {
+  background: var(--primary);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--transition-fast), transform 0.2s ease;
+  font-size: var(--font-size-sm);
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.directory-browser button:active {
+  transform: scale(0.95);
+}
+
+.directory-browser button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--disabled) !important;
+}
+
+.file-upload-section button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--disabled);
+}
+
+.file-upload-section button[disabled]:hover,
+.directory-browser button[disabled]:hover {
+  background: var(--disabled) !important;
+  transform: none !important;
+}
+
+.file-upload-section input[type="file"] {
+  background: var(--primary);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: var(--font-size-sm);
+  margin-right: 8px;
+  margin-bottom: 8px;
+  appearance: button;
+}
+
+.file-upload-section input[type="file"]:hover {
+  background: var(--primaryHover);
+}
+
+.directory-browser {
+  background: var(--background);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: visible;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 4px var(--primary), 0 2px 4px var(--border);
+  flex: 1;
+  min-height: min-content;
+  scrollbar-width: inherit;
+  
+}
+
+.directory-header {
+  padding: 12px;
+  background: var(--hiddenTabBackground);
+  border-bottom: 1px solid var(--border);
+  border-radius: 12px 12px 0 0;
+  flex-shrink: 0;
+}
+
+.directory-breadcrumb {
+  font-family: monospace;
+  font-size: 0.9rem;
+  padding: 8px;
+  background: var(--background);
+  border-radius: 4px;
+  margin-top: 8px;
+  overflow-x: visible;
+  white-space: normal;
+}
+
+.breadcrumb-segment {
+  color: var(--text);
+}
+
+.breadcrumb-separator {
+  color: var(--text-secondary);
+  margin: 0 4px;
+}
+
+.directory-contents {
+  flex: 1;
+  overflow: visible;
+  padding: 0;
+  position: relative;
+  height: auto;
+  min-height: min-content;
+  scrollbar-width: inherit;
+}
+
+.directory-entry {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 2px solid transparent;
+  position: relative;
+  background: transparent;
+  padding: 0 12px;
+}
+
+.directory-entry::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.directory-entry:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.directory-entry.selected {
+  background: color-mix(in srgb, var(--primary) 50%, transparent);
+  border-left-color: var(--primary);
+  animation: none;
+}
+
+.entry-icon {
+  color: var(--primary);
+  font-size: 1.1em;
+}
+
+.entry-name {
+  color: var(--text);
+  font-size: 0.95em;
+}
+
+.entry-selected {
+  color: var(--primary);
+  font-size: 1.1em;
+}
+
+.refresh-button {
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: var(--primary);
+}
+
+.directory-error,
+.directory-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--secondary);
+}
+
+/* Special styling for NAS unavailable warning */
+.directory-error:has-text("⚠️ NAS Storage Unavailable"),
+.directory-error[data-nas-unavailable="true"] {
+  background: rgba(255, 193, 7, 0.1);
+  border: 2px solid var(--warning, #ffc107);
+  border-radius: 8px;
+  color: var(--warning, #ffc107);
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+/* Fallback for browsers that don't support :has() */
+.directory-error.nas-unavailable {
+  background: rgba(255, 193, 7, 0.1);
+  border: 2px solid var(--warning, #ffc107);
+  border-radius: 8px;
+  color: var(--warning, #ffc107);
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.directory-error button,
+.directory-empty button {
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.directory-error button:hover,
+.directory-empty button:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: var(--primary);
+}
+
+/* Add subtle animation for entry selection */
+@keyframes macSelect {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.directory-entry:active {
+  animation: macSelect 0.2s ease;
+}
+
+.directory-browser.loading {
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.directory-error,
+.directory-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.directory-error button,
+.directory-empty button {
+  margin-top: 8px;
+  padding: 6px 12px;
+}
+
+.directory-contents::-webkit-scrollbar,
+.directory-contents::-webkit-scrollbar-track,
+.directory-contents::-webkit-scrollbar-thumb,
+.directory-contents::-webkit-scrollbar-thumb:hover {
+  display: initial;
+}
+
+.force-allow-button {
+  position: relative;
+}
+
+.force-allow-button.loading::after {
+  content: '';
+  position: absolute;
+  right: -25px;
+  border: 3px solid #ffffff66;
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.upload-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.upload-tablet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  scrollbar-width: inherit;
+}
+
+.upload-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: visible;
+}
+
+.directory-tree {
+  background: var(--hiddenTabBackground);
+  border-radius: 8px;
+  margin: 8px;
+  overflow: visible;
+  height: auto;
+  min-height: min-content;
+  max-height: none;
+}
+
+.upload-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Modal specific styles for upload history */
+.modal.mobile-modal[aria-labelledby="modal-title"] {
+  @media (max-width: 480px) {
+    /* Take up most of the viewport */
+    width: 90vw;
+    height: auto;  /* Changed from 90vh to auto to allow shrinkage */
+    max-height: 90vh;
+    
+    /* Position modal properly */
+    top: 5vh;
+    left: 5vw;
+    transform: none;
+    
+    /* Ensure proper layout */
+    display: flex;
+    flex-direction: column;
+    overflow: visible; /* Changed from hidden to visible to allow content scrolling */
+  }
+}
+/* this might fuck with me later, not sure */
+/* Style modal content for upload history */
+.modal.mobile-modal[aria-labelledby="modal-title"] .modal-content {
+  @media (max-width: 480px) {
+    /* Allow content to use its intrinsic height instead of forcing full expansion */
+    flex: 1 1 auto; /* Changed from auto to 1 1 auto to allow growth and scrolling */
+    max-height: calc(90vh - 120px); /* Add max-height to enable scrolling */
+    
+    /* Enable scrolling within content */
+    overflow-y: auto; /* Changed from hidden to auto to enable scrolling */
+    -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS */
+    
+    /* Layout for history list */
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Add media query for admin-upload-controls on small screens */
+@media (max-width: 480px) {
+  .admin-upload-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-upload-controls button {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 4px;
+  }
+}
+
+.upload-history-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  padding: 8px;
+}
+
+.clear-history-button {
+  width: 100%;
+  padding: 8px;
+  background: var(--error);
+  color: var(--text);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: var(--font-size-sm);
+  margin-top: 4px;
+}
+
+.clear-history-button:hover {
+  background: var(--status-down);
+}
+
+.upload-history-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  width: 100%;
+}
+
+.upload-history-modal-content {
+  min-height: 200px;
+  min-width: 300px;
+}
+
+/* Upload history empty state custom styles */
+.uploadHistoryModal.empty {
+  padding: 10px;
+  width: auto;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.upload-history-empty-message {
+  font-size: 1.2rem;
+  text-align: center;
+  color: #666;
+}
+
+.directory-entry.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.directory-entry.loading .entry-icon {
+  opacity: 0.5;
+}
+
+.directory-entry.loading .LoadingSpinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* this might fuck with me later, not sure */
+
+/* Instead, let's ensure all tablet content inherits the global scrollbar styling */
+.upload-tablet {
+  scrollbar-width: inherit;
+}
+
+.directory-browser {
+  scrollbar-width: inherit;
+}
+
+.directory-contents {
+  scrollbar-width: inherit;
+}
+
+/* Ensure all scrollable areas in the upload tablet inherit the global scrollbar styling */
+.upload-tablet *::-webkit-scrollbar,
+.upload-tablet *::-webkit-scrollbar-track,
+.upload-tablet *::-webkit-scrollbar-thumb {
+  /* Reset any overrides to allow inheritance */
+  display: initial !important;
+}
+
+/* Upload History Modal Overrides */
+[data-floating-ui-portal] .modal:has(.upload-history-modal-content) {
+  max-width: 95vw !important;
+  width: 95vw !important;
+  max-height: 90vh !important;
+  height: 90vh !important;
+}
+
+/* Hide scrollbar on modal-content when it's a parent of our upload history modal */
+.modal-content:has(.upload-history-modal-content) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  height: 100% !important;
+  max-height: 90vh !important;
+}
+
+.modal-content:has(.upload-history-modal-content)::-webkit-scrollbar {
+  display: none !important;
+}
+
+.upload-history-modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  min-height: 200px;
+  min-width: 300px;
+  width: 100%;
+}
+
+.upload-history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+  height: calc(90vh - 130px); /* Account for header and buttons */
+  
+  @media (max-width: 480px) {
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 12px 8px 8px;
+    width: 100%;
+    scrollbar-width: inherit;
+  }
+}
+
+/* Remove the old modal styles that might conflict */
+.modal.mobile-modal[aria-labelledby="modal-title"],
+.modal.mobile-modal[aria-labelledby="modal-title"] .modal-content {
+  @media (max-width: 480px) {
+    width: unset;
+    height: unset;
+    max-height: unset;
+    top: unset;
+    left: unset;
+    transform: unset;
+  }
+}
+
+/* Admin Upload Settings Toggle */
+.upload-admin-settings {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+}
+
+.upload-admin-settings h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--text);
+}
+
+.upload-admin-settings .setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.upload-admin-settings .setting-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.upload-admin-settings .toggle-label {
+  color: var(--secondary);
+  margin-right: 15px;
+  flex-grow: 1;
+}
+
+.upload-admin-settings .toggle-switch-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-admin-settings .toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.upload-admin-settings .toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  background-color: var(--primary);
+  border-radius: 24px;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.upload-admin-settings .toggle-slider::before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.upload-admin-settings .toggle-input:checked + .toggle-slider {
+  background-color: var(--statusUp);
+}
+
+.upload-admin-settings .toggle-input:disabled + .toggle-slider {
+  background-color: var(--hiddenTabBackground);
+  cursor: not-allowed;
+}
+
+.upload-admin-settings .toggle-input:disabled + .toggle-slider::before {
+  background-color: var(--hiddenTabText);
+}
+
+.upload-admin-settings .toggle-input:checked + .toggle-slider::before {
+  transform: translateX(22px);
+}
+
+.upload-admin-settings .setting-description {
+  font-size: 0.85rem;
+  color: var(--secondary);
+  margin-top: 5px;
+}
+
+.upload-admin-settings .error-message {
+  color: var(--statusDown);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.upload-admin-settings .setting-item.saving .toggle-label {
+  color: var(--secondary);
+}
+
+/* PIN Modal Form Styles */
+.pin-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.pin-modal-form p {
+  margin: 0;
+  color: var(--secondary);
+  line-height: 1.4;
+}
+
+.pin-input {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.pin-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}

@@ -1,0 +1,66 @@
+/* Disable Dev Button Styling */
+.disable-dev-button {
+  background: var(--secondary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 200px;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Modern hover effect with pseudo-element */
+.disable-dev-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.disable-dev-button:hover:not(:disabled) {
+  background: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.disable-dev-button:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
+.disable-dev-button:disabled {
+  background: var(--statusUnknown);
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.disable-dev-button:disabled::after {
+  display: none;
+}
+
+.disable-dev-button i {
+  font-size: 0.9rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .disable-dev-button {
+    padding: 14px 20px;
+    font-size: 0.9rem;
+    min-width: auto;
+    width: 100%;
+  }
+} 

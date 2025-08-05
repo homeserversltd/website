@@ -1,0 +1,271 @@
+.wipe-deploy-partition {
+  margin-top: 2rem;
+}
+
+.wipe-warning-container {
+  background: var(--background);
+  border: 2px solid var(--error);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.wipe-warning-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: var(--error);
+}
+
+.wipe-warning-icon {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.wipe-warning-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.wipe-description {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.wipe-security-notice {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--error);
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.wipe-security-notice strong {
+  color: var(--error);
+}
+
+.wipe-security-list {
+  margin: 0.5rem 0 0 1rem;
+  color: var(--text);
+}
+
+.wipe-button {
+  background-color: var(--error);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Modern hover effect with pseudo-element */
+.wipe-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.wipe-button:hover:not(:disabled) {
+  background-color: var(--error);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.wipe-button:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
+.wipe-button:disabled {
+  background-color: var(--statusUnknown);
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.wipe-button:disabled::after {
+  display: none;
+}
+
+.wipe-button-icon {
+  font-size: 0.9rem;
+}
+
+.wipe-button-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .wipe-deploy-partition {
+    margin-top: 1.5rem;
+  }
+  
+  .wipe-warning-container {
+    padding: 1rem;
+  }
+  
+  .wipe-warning-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .wipe-button {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+  }
+}
+
+/* Wipe Deploy Partition Card Styling */
+.wipe-deploy-card {
+  position: relative;
+  background: var(--background);
+  border: 1px solid var(--error) !important;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 3D depth effect using pseudo-element */
+.wipe-deploy-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom right,
+    rgba(239, 68, 68, 0.05) 0%,
+    rgba(239, 68, 68, 0.02) 100%
+  );
+  border-radius: inherit;
+  z-index: -1;
+  transition: all 0.3s ease;
+}
+
+.wipe-deploy-card:hover {
+  border-color: var(--error);
+  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.15);
+  transform: translateY(-2px);
+}
+
+.wipe-deploy-card:hover::before {
+  transform: translateZ(4px);
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.1);
+}
+
+.wipe-deploy-icon {
+  background: var(--error) !important;
+  color: white;
+  transition: transform 0.2s ease;
+}
+
+.wipe-deploy-card:hover .wipe-deploy-icon {
+  transform: scale(1.05);
+}
+
+.wipe-deploy-content {
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  flex: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.wipe-deploy-btn {
+  background: var(--error) !important;
+  color: white;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  justify-content: center;
+}
+
+/* Modern hover effect with pseudo-element */
+.wipe-deploy-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.wipe-deploy-btn:hover:not(:disabled) {
+  background: var(--error) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.wipe-deploy-btn:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
+.wipe-deploy-btn:disabled {
+  background: var(--statusUnknown) !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.wipe-deploy-btn:disabled::after {
+  display: none;
+}
+
+.wipe-deploy-btn i {
+  margin-right: 0.5rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .wipe-deploy-content {
+    padding: 0.75rem;
+  }
+  
+  .wipe-description {
+    font-size: 0.85rem;
+  }
+  
+  .wipe-security-list {
+    font-size: 0.75rem;
+  }
+  
+  .wipe-deploy-btn {
+    padding: 14px 20px;
+    font-size: 0.9rem;
+  }
+} 

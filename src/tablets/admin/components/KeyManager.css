@@ -1,0 +1,266 @@
+.key-manager {
+  background-color: var(--background);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px var(--primary), 0 2px 4px var(--border);
+  color: var(--text);
+}
+
+.key-manager-content {
+  display: flex;
+  gap: 30px;
+}
+
+.key-manager-left {
+  flex: 2;
+}
+
+.key-manager-right {
+  flex: 1;
+  min-width: 250px;
+}
+
+.security-status {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.status-item {
+  justify-content: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px;
+  background-color: var(--border);
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+  border-color: var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.status-item:hover {
+  transform: translateX(5px);
+}
+
+.status-icon {
+  font-size: 1.5rem;
+  margin-top: 2px;
+}
+.status-icon.secure {
+  color: var(--success);
+}
+
+
+
+.key-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  position: sticky;
+  top: 20px;
+}
+
+.action-button {
+  width: 100%;
+  padding: 15px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.create-button {
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.create-button:hover {
+  background-color: var(--primaryHover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.update-button {
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.update-button:hover {
+  background-color: var(--primaryHover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.admin-password-button {
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.admin-password-button:hover {
+  background-color: var(--primaryHover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+  .key-manager-content {
+    flex-direction: column;
+  }
+  
+  .key-manager-right {
+    min-width: 100%;
+  }
+  
+  .key-actions {
+    position: static;
+    margin-top: 20px;
+  }
+}
+
+/* Modal form styles (for the extracted components) */
+.modal-form {
+  margin-top: 6px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  position: relative;
+  width: 100%;
+  /* Important to capture all clicks within the form */
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group input {
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--text);
+  pointer-events: auto;
+  z-index: 20;
+}
+
+
+.form-group select {
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--text);
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.form-group .error-text {
+  font-size: 0.9rem;
+  color: var(--error);
+  margin-top: 5px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-color: rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.radio-option:hover {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.radio-option.selected {
+  border-color: var(--accent);
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.radio-label {
+  display: flex;
+  margin-left: 10px;
+  pointer-events: none;
+}
+
+.radio-label-title {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.radio-label-description {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+
+
+
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
+  /* Ensure buttons receive clicks */
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.modal-button {
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-button-primary {
+  background-color: var(--accent);
+  color: var(--background);
+  border: none;
+}
+
+.modal-button-primary:hover {
+  filter: brightness(1.1);
+}
+
+.modal-button-primary:disabled {
+  background-color: var(--border);
+  color: var(--secondary);
+  cursor: not-allowed;
+  filter: none;
+}
+
+.modal-button-secondary {
+  background-color: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.modal-button-secondary:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+
+
+ 

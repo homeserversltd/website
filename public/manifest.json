@@ -1,0 +1,8 @@
+{
+  "short_name": "HomeServer",
+  "name": "HomeServer Admin Interface",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+} 

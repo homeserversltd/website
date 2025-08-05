@@ -1,0 +1,702 @@
+.disk-manager {
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--primary), 0 2px 4px var(--border);
+  background-color: var(--background);
+}
+
+.disk-manager h3 {
+  color: var(--text);
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.disk-manager h4 {
+  color: var(--text);
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  margin-top: -.5rem;
+}
+
+.disk-manager-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.disk-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.disk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.disk-item {
+  background-color: var(--primary);
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.disk-item:hover {
+  background-color: var(--primaryHover);
+}
+
+.disk-item.selected {
+  border-color: var(--accent);
+  background-color: var(--primaryHover);
+}
+
+.disk-item.mounted {
+  background-color: var(--primaryHover);
+}
+
+.disk-item.non-standard-mount {
+  background-color: var(--error);
+  border-left: 4px solid var(--warning);
+}
+
+.disk-item.non-standard-mount:hover {
+  background-color: var(--error);
+}
+
+.disk-item.unavailable {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disk-item.available {
+  border-color: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.disk-item.locked-pair {
+  border-color: var(--warning);
+}
+
+.disk-item.nas-compatible {
+  border-left: 4px solid var(--success);
+}
+
+.disk-icon {
+  font-size: 1.5rem;
+  margin-right: 15px;
+  color: var(--text);
+}
+
+.disk-info {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.disk-name {
+  color: var(--text);
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.nas-badge {
+  background-color: var(--success);
+  color: var(--background);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.encrypt-icon {
+  color: var(--warning);
+  margin-left: 8px;
+}
+
+.disk-details {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+
+.disk-space-usage {
+  font-size: 0.85rem;
+  color: var(--secondary);
+  margin-top: 5px;
+  padding: 3px 6px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 3px;
+  border-left: 3px solid var(--info);
+}
+
+.disk-space-usage strong {
+  color: var(--text);
+}
+
+.disk-space-usage.low-space {
+  border-left-color: var(--warning);
+  background-color: var(--error);
+}
+
+.low-space-warning {
+  color: var(--warning);
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.disk-serial {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  margin-bottom: 5px;
+  font-family: monospace;
+}
+
+.disk-mount-info {
+  font-size: 0.85rem;
+  color: var(--secondary);
+  margin-top: 5px;
+}
+
+.disk-mount-info.prominent {
+  font-size: 0.95rem;
+  color: var(--text);
+  margin: 8px 0;
+  padding: 4px 8px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 4px;
+  border-left: 3px solid var(--success);
+}
+
+.disk-mount-info.prominent strong {
+  color: var(--text);
+}
+
+.partition-info, .mapper-info {
+  font-size: 0.85rem;
+  color: var(--primaryHover);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.destination-label {
+  font-weight: bold;
+  color: var(--text);
+}
+
+.non-standard-label {
+  color: var(--error);
+  font-weight: bold;
+  background-color: var(--error);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--error);
+  cursor: help;
+}
+
+.non-standard-label .warning-icon {
+  margin-right: 4px;
+  font-size: 0.8em;
+}
+
+.device-label {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.lock-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: var(--warning);
+}
+
+.disk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.action-button {
+  padding: 10px 15px;
+  border-radius: 5px;
+  color: var(--text);
+  background-color: var(--primary);
+  border: 1px solid var(--border);
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.action-button:hover {
+  background-color: var(--primaryHover);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.action-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--primary);
+  color: var(--secondary);
+  border-color: var(--border);
+}
+
+.action-button.loading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.no-devices-message {
+  text-align: center;
+  padding: 30px;
+  background-color: var(--primary);
+  border-radius: 8px;
+}
+
+.warning-icon {
+  font-size: 2rem;
+  color: var(--error);
+  margin-bottom: 15px;
+}
+
+.hint {
+  font-size: 0.9rem;
+  color: var(--secondary);
+  margin-top: 10px;
+}
+
+.disk-manager.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 1.2rem;
+  color: var(--secondary);
+}
+
+/* No devices message */
+.no-devices-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  background-color: var(--primary);
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.no-devices-message .warning-icon {
+  font-size: 2.5rem;
+  color: var(--warning);
+  margin-bottom: 1rem;
+}
+
+.no-devices-message p {
+  margin: 0.5rem 0;
+  color: var(--text);
+}
+
+.no-devices-message .hint {
+  font-size: 0.85rem;
+  color: var(--hiddenTabText);
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .disk-manager-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .disk-actions {
+    flex-wrap: wrap;
+  }
+  
+  .action-button {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+.disk-item.non-standard-mount {
+  border-left: 4px solid var(--warning);
+}
+
+.disk-item.non-standard-mount.selected {
+  border-left: 4px solid var(--accent);
+}
+
+.partition-info {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: var(--hiddenTabText);
+  font-style: italic;
+}
+
+/* Add these new styles to highlight available and unavailable options */
+
+/* Highlight available devices/destinations with a subtle green glow */
+.disk-item.available {
+  box-shadow: 0 0 8px var(--success);
+  border: 1px solid var(--success);
+  transition: all 0.3s ease;
+}
+
+.disk-item.available:hover {
+  box-shadow: 0 0 12px var(--success);
+  border: 1px solid var(--success);
+}
+
+/* Dim unavailable devices/destinations */
+.disk-item.unavailable {
+  opacity: 0.65;
+  filter: grayscale(40%);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* Highlight the relationship between a mounted drive and its destination */
+.disk-item.selected.mounted,
+.disk-item.selected.locked {
+  box-shadow: 0 0 10px var(--accent);
+  border: 2px solid var(--accent);
+  transition: all 0.3s ease;
+}
+
+/* Style for locked pairs to show the relationship between device and destination */
+.disk-item.locked-pair {
+  box-shadow: 0 0 10px var(--accent);
+  border: 2px solid var(--accent);
+  transition: all 0.3s ease;
+}
+
+.disk-item.locked-pair .lock-icon {
+  color: var(--accent);
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Unlocked encrypted device styling */
+.disk-item.unlocked-encrypted {
+  border-left: 3px solid var(--success);
+}
+
+/* Encryption status indicators */
+.encryption-status {
+  font-size: 0.8rem;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.encryption-status.locked {
+  background-color: var(--error);
+  color: var(--background);
+}
+
+.encryption-status.unlocked {
+  background-color: var(--success);
+  color: var(--background);
+}
+
+/* Unlocked icon styling */
+.encrypt-icon.unlocked {
+  color: var(--success);
+}
+
+/* Mapper info styling */
+.mapper-info {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  margin-top: 2px;
+}
+
+/* Partition info styling */
+.partition-info {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  margin-top: 2px;
+}
+
+/* Filesystem label styling */
+.filesystem-label {
+  font-size: 0.8rem;
+  color: var(--text);
+  margin-left: 4px;
+}
+
+.non-standard-badge {
+  display: inline-block;
+  background-color: var(--error);
+  color: var(--background);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.non-standard-badge svg {
+  margin-right: 3px;
+  font-size: 0.7em;
+}
+
+/* Special styling for unlocked but not mounted devices */
+.disk-item.unlocked-ready {
+  border: 2px solid var(--success);
+  position: relative;
+  background-color: var(--background);
+  border-left: 5px solid var(--success);
+}
+
+.disk-item.unlocked-ready::after {
+  content: "Ready to Mount";
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: var(--success);
+  color: var(--background);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 2;
+}
+
+/* Make selected unlocked-ready devices more obvious */
+.disk-item.selected.unlocked-ready {
+  border: 3px solid var(--success);
+  background-color: var(--primary);
+  box-shadow: 0 0 12px var(--success);
+}
+
+.disk-item.selected.unlocked-ready::after {
+  content: "Ready to Mount";
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: var(--success);
+  color: var(--background);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  z-index: 2;
+}
+
+/* Make destination available for unlocked-ready devices more obvious */
+.disk-item.selected.available {
+  background-color: var(--primary);
+  border: 3px solid var(--success);
+  box-shadow: 0 0 12px var(--success);
+}
+
+/* Enhance the mount button when it's enabled for an unlocked device */
+.action-button.mount:not(.disabled) {
+  background-color: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+  color: var(--background);
+}
+
+.action-button.mount:not(.disabled):hover {
+  background-color: var(--success);
+  box-shadow: 0 0 12px var(--success);
+  transform: scale(1.1);
+  color: var(--background);
+}
+
+/* Add pulsing animation for the mount button when an unlocked device is selected */
+@keyframes pulse-success {
+  0% {
+    box-shadow: 0 0 0 0 var(--success);
+  }
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.action-button.mount:not(.disabled) {
+  animation: pulse-success 1.5s infinite;
+}
+
+/* Destinations that are already in use should be visually unavailable */
+.disk-item.mounted:not(.selected) {
+  background-color: var(--primary);
+  border-left: 4px solid var(--accent);
+  opacity: 0.7;
+}
+
+/* More clearly distinguish available from unavailable destinations */
+.disk-item.unavailable {
+  opacity: 0.65;
+  filter: grayscale(40%);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* Clearly mark available destinations */
+.disk-column:last-child .disk-item.available:not(.mounted):not(.disabled) {
+  box-shadow: 0 0 10px var(--success);
+  border: 2px solid var(--success);
+  animation: pulse-available 2s infinite;
+  position: relative;
+}
+
+/* Show In Use for destinations with a device already mounted */
+.disk-column:last-child .disk-item.mounted:not(.selected)::after {
+  content: "In Use";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: var(--accent);
+  color: var(--background);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 2;
+}
+
+/* Show Available only for unmounted destinations */
+.disk-column:last-child .disk-item.available:not(.mounted):not(.disabled)::after {
+  content: "Available";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: var(--success);
+  color: var(--background);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 2;
+}
+
+/* Pulsing animation for available destinations */
+@keyframes pulse-available {
+  0% {
+    box-shadow: 0 0 4px var(--success);
+  }
+  50% {
+    box-shadow: 0 0 12px var(--success);
+  }
+  100% {
+    box-shadow: 0 0 4px var(--success);
+  }
+}
+
+/* Service management message styling */
+.service-management-message {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  background-color: var(--primary);
+  border-radius: 6px;
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.service-management-message .service-icon {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.service-management-message p {
+  margin: 0;
+  color: var(--text);
+}
+
+/* Styling for items disabled due to an operation in progress */
+.disk-item.disabled {
+  opacity: 0.65;
+  cursor: not-allowed !important;
+  filter: grayscale(50%);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.sync-recommendation {
+  background-color: var(--warning);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.sync-recommendation-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.sync-icon {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.sync-reason {
+  color: var(--text);
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+
+.sync-usage-comparison {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 12px;
+  gap: 20px;
+}
+
+.usage-item {
+  background-color: var(--primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+  flex: 1;
+  max-width: 300px;
+}
+
+.usage-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--accent);
+}
+
+@media (max-width: 768px) {
+  .sync-usage-comparison {
+    flex-direction: column;
+    gap: 10px;
+  }
+} 

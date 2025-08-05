@@ -1,0 +1,1007 @@
+/* Base Styles for Status Indicators */
+.status-indicators {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Common Indicator Base */
+.indicator {
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Common Indicator Interactive States */
+.indicator:hover {
+  background-color: var(--primaryHover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.indicator:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Common Modal Base */
+.status-modal {
+  padding: 1rem;
+  color: var(--text);
+  transform: translateZ(0);
+  contain: content;
+}
+
+/* Common Modal Section Styles */
+.status-modal h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.status-modal .status-section {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-radius: 6px;
+}
+
+/* Group similar section styles */
+.status-modal .controls-section,
+.status-modal .config-section,
+.status-modal .credentials-section,
+.status-modal .service-controls,
+.status-modal .speed-test-section,
+.status-modal .power-history-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+/* Common Status Text Styles */
+.status-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* Group connected/running status styles */
+.status-text.connected,
+.status-item.running,
+.service-status-item.running,
+.admin-service-item.running {
+  justify-content: space-between;
+  color: var(--success);
+  padding: 12px;
+  background-color: color-mix(in srgb, var(--success) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+}
+
+/* Group disconnected/stopped status styles */
+.status-text.disconnected,
+.status-item.stopped,
+.service-status-item.stopped,
+.admin-service-item.stopped {
+  justify-content: space-between;
+  color: var(--error);
+  padding: 12px;
+  background-color: color-mix(in srgb, var(--error) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+}
+
+/* Group partial status styles */
+.service-status-item.partial,
+.admin-service-item.partial {
+  justify-content: space-between;
+  padding: 12px;
+  background-color: color-mix(in srgb, var(--warning) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+}
+
+/* Group degraded status styles */
+.service-status-item.degraded,
+.admin-service-item.degraded {
+  justify-content: space-between;
+  padding: 12px;
+  background-color: color-mix(in srgb, var(--statusPartial) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--statusPartial) 30%, transparent);
+}
+
+/* Group unknown status styles */
+.service-status-item.unknown,
+.admin-service-item.unknown {
+  justify-content: space-between;
+  padding: 12px;
+  background-color: color-mix(in srgb, var(--statusUnknown) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--statusUnknown) 30%, transparent);
+}
+
+/* Common Form Element Styles */
+.status-modal input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--text);
+  transform: translateZ(0);
+  min-height: 36px;
+  box-sizing: border-box;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.status-modal input.invalid {
+  border-color: var(--error);
+}
+
+
+/* Common Service Status List */
+.service-status-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.service-status-list li {
+  margin: 0;
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.service-name {
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+}
+
+.service-status-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Common Status Item Styles */
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  transition: all 0.2s ease;
+}
+
+.status-value {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Group status indicator info styles */
+.service-status-info,
+.admin-service-info {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Group enabled status styles */
+.service-status-info .enabled,
+.admin-service-info .enabled,
+.service-enabled-status.enabled {
+  color: var(--success);
+  font-weight: 500;
+}
+
+/* Group disabled status styles */
+.service-status-info .disabled,
+.admin-service-info .disabled,
+.service-enabled-status.disabled {
+  color: var(--error);
+  font-weight: 500;
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Specific Modal Variants that inherit common styles */
+
+/* Internet Status Modal */
+.internet-status-modal {
+  max-width: 400px;
+  padding: 0 0.5rem;
+}
+
+.speed-test-section{
+  padding: 0.5rem;
+}
+
+.internet-status-modal .speed-results {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+  border-radius: 4px;
+}
+
+.internet-status-modal .speed-results p {
+  margin: 0.25rem 0;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+/* Power Status Modal */
+.power-meter-modal {
+  min-width: 300px;
+}
+
+.power-usage-display {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.power-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.power-value-number {
+  text-align: right;
+}
+
+.power-value-unit {
+  text-align: left;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+/* Power averages grid layout */
+.power-averages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  width: 100%;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.power-average-row {
+  display: contents;
+}
+
+.power-average-label {
+  text-align: right;
+  color: var(--text);
+  font-weight: 500;
+  padding-right: 0.5rem;
+}
+
+.power-average-value {
+  text-align: left;
+  font-weight: 600;
+}
+
+/* Group power graph styles */
+.power-graph-placeholder,
+.power-graph-container {
+  text-align: center;
+}
+
+.power-graph-placeholder {
+  padding: 1rem;
+  background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+  border-radius: 6px;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.power-graph-container {
+  margin-top: 1rem;
+}
+
+.power-indicator {
+  display: flex;
+  align-items: center;
+  min-width: 70px;
+  justify-content: flex-start;
+}
+
+.power-value-small {
+  font-size: 0.8rem;
+  font-family: monospace;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  margin-left: 4px;
+}
+
+.power-value-small-number {
+  text-align: right;
+}
+
+.power-value-small-unit {
+  text-align: left;
+}
+
+/* Tailscale Status Modal */
+.tailscale-status-modal {
+  padding: 0 0.5rem;
+  max-width: 400px;
+}
+
+.tailscale-status-modal .connection-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.tailscale-status-modal .service-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.tailscale-status-modal .current-tailnet {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.tailscale-status-modal .current-tailnet .label {
+  color: color-mix(in srgb, var(--text) 60%, transparent);
+}
+
+.tailscale-status-modal .config-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tailscale-status-modal .tooltip-text {
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--text) 60%, transparent);
+  line-height: 1.4;
+  padding-bottom: 0.75rem;
+}
+
+/* Login Required Section */
+.tailscale-status-modal .login-required-section {
+  background-color: color-mix(in srgb, var(--warning) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 20%, transparent);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tailscale-status-modal .login-message {
+  margin-bottom: 1rem;
+}
+
+.tailscale-status-modal .login-message strong {
+  color: var(--warning);
+  font-size: 1.1rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.tailscale-status-modal .login-message p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.tailscale-status-modal .login-url-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: color-mix(in srgb, var(--background) 50%, transparent);
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.tailscale-status-modal .login-url-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  padding: 0.5rem;
+  background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, transparent);
+  transition: all 0.2s ease;
+}
+
+.tailscale-status-modal .login-url-link:hover {
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.tailscale-status-modal .copy-url-button {
+  background-color: var(--primary);
+  color: var(--text);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.tailscale-status-modal .copy-url-button:hover {
+  background-color: color-mix(in srgb, var(--primary) 85%, black);
+  transform: translateY(-1px);
+}
+
+.tailscale-status-modal .login-instructions {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.tailscale-status-modal .login-instructions p {
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.tailscale-status-modal .login-instructions ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.tailscale-status-modal .login-instructions li {
+  margin-bottom: 0.3rem;
+  color: color-mix(in srgb, var(--text) 85%, transparent);
+}
+
+/* Auth Key Section */
+.tailscale-status-modal .authkey-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.tailscale-status-modal .authkey-alternative {
+  margin-bottom: 1rem;
+}
+
+.tailscale-status-modal .authkey-alternative .alternative-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--text) 80%, transparent);
+}
+
+.tailscale-status-modal .authkey-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.tailscale-status-modal .authkey-input {
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--text) 20%, transparent);
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.tailscale-status-modal .authkey-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.tailscale-status-modal .authkey-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tailscale-status-modal .authkey-input::placeholder {
+  color: color-mix(in srgb, var(--text) 50%, transparent);
+  font-style: italic;
+}
+
+.tailscale-status-modal .authkey-help {
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--text) 60%, transparent);
+  line-height: 1.4;
+}
+
+.tailscale-status-modal .authkey-help p {
+  margin: 0;
+}
+
+/* VPN Status Modal */
+.vpn-status-modal {
+  max-width: 500px;
+  padding: 0 0.5rem;
+}
+
+.modal-content .vpn-status-modal {
+  width: 100%;
+  height: 100%;
+}
+
+.vpn-status-modal .service-statuses {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Group VPN credential styles */
+.vpn-status-modal .credential-inputs,
+.vpn-status-modal .credential-fields {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.vpn-status-modal .credential-inputs {
+  margin-bottom: 1rem;
+}
+
+.vpn-status-modal .credential-group {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.vpn-status-modal .credential-fields {
+  padding-right: 0.5rem;
+}
+
+/* Group button container styles */
+.vpn-status-modal .control-buttons,
+.tailscale-status-modal .connection-buttons {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.vpn-status-modal .control-buttons {
+  grid-template-columns: 1fr;
+  margin: 0.75rem 0;
+}
+
+.vpn-status-modal .control-buttons .primary-button {
+  height: 40px;
+  width: 100%;
+}
+
+.vpn-status-modal .credential-group .primary-button {
+  min-width: 120px;
+  min-height: 86px;
+  white-space: pre-line;
+  text-align: center;
+}
+
+.vpn-status-modal .key-exists-message {
+  background-color: color-mix(in srgb, var(--warning) 10%, transparent);
+  border-left: 3px solid var(--warning);
+  padding: 12px 6px 0.5rem 6px;
+  margin: 0.5rem 0;
+  border-radius: 4px;
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+  animation-delay: 0.2s;
+  will-change: opacity, transform;
+}
+
+.vpn-status-modal .key-exists-message p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.vpn-status-modal .key-exists-message p strong {
+  font-weight: 600;
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 3px;
+}
+
+/* Group services modal styles */
+.services-status-modal,
+.modal-content .services-status-modal {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.services-status-modal {
+  overflow: hidden;
+  padding: 0 0.5rem;
+}
+
+.modal-content .services-status-modal {
+  overflow: visible;
+  padding: 0;
+}
+
+/* Override the grid layout for services list in admin mode */
+.services-status-modal-admin .service-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+  overflow: hidden;
+}
+
+/* Group service status list styles */
+.modal-content .service-status-list,
+.services-status-modal-admin .service-status-list {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Regular mode styles - these work correctly */
+.service-status-item {
+  padding: 12px 16px;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Admin mode specific overrides */
+.services-status-modal-admin .service-status-item {
+  padding: 12px 16px;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Style for the content container inside service items */
+.service-item-content {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  justify-content: space-between;
+}
+
+/* Group text overflow styles */
+.service-description,
+.service-name,
+.services-status-modal-admin .service-description,
+.services-status-modal-admin .service-name,
+.service-item-content.admin-layout .service-description,
+.service-item-content.admin-layout .service-name,
+.admin-service-description,
+.admin-service-name {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Add constraints to the service description and name to prevent overflow */
+.service-description,
+.service-name {
+  white-space: normal;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* Admin mode specific text styles */
+.services-status-modal-admin .service-description,
+.services-status-modal-admin .service-name {
+  display: inline-block;
+  max-width: fit-content;
+  white-space: nowrap;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Admin layout specific text styles */
+.service-item-content.admin-layout .service-description,
+.service-item-content.admin-layout .service-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Group nowrap elements */
+.service-item-content.admin-layout .service-enabled-status,
+.service-enabled-status,
+.admin-service-status {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Style for the separator to ensure it doesn't cause layout issues */
+.service-item-content .separator {
+  flex-shrink: 0;
+  flex-grow: 0;
+  display: inline-block;
+  width: auto;
+  margin: 0 4px;
+}
+
+/* Make the modal wider in admin mode but ensure it doesn't overflow */
+@media (min-width: 768px) {
+  .modal .services-status-modal-admin {
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .admin-service-grid {
+    grid-template-columns: 1fr 1fr 20px;
+    gap: 8px;
+  }
+}
+
+/* Service enabled/disabled status styling */
+.service-enabled-status {
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+  .primary-button,
+  .secondary-button {
+    min-width: 80px;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  
+  .tailscale-status-modal .connection-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .tailscale-status-modal .service-controls {
+    grid-template-columns: 1fr;
+  }
+  
+  .tailscale-status-modal .login-required-section {
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tailscale-status-modal .login-url-container {
+    padding: 0.5rem;
+  }
+
+  .tailscale-status-modal .login-url-link {
+    font-size: 0.8rem;
+    padding: 0.4rem;
+  }
+
+  .tailscale-status-modal .copy-url-button {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .vpn-status-modal {
+    padding: 0.5rem;
+  }
+  
+  .vpn-status-modal .credential-group {
+    grid-template-columns: 1fr;
+  }
+  
+  .vpn-status-modal .credential-group .primary-button {
+    height: 36px;
+    min-height: 36px;
+  }
+  
+  /* Group section margin styles */
+  .vpn-status-modal .status-section,
+  .vpn-status-modal .credentials-section,
+  .vpn-status-modal .service-controls,
+  .vpn-status-modal .restart-notice {
+    margin-bottom: 1rem;
+  }
+  
+  .modal-content .vpn-status-modal {
+    padding: 0;
+  }
+  
+  /* Services modal mobile adjustments */
+  .services-status-modal .service-status-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .services-status-modal .service-description {
+    margin-bottom: 4px;
+  }
+  
+  .service-item-content {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  
+  .service-status-list{
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .service-item-content span {
+    margin: 2px 0;
+    max-width: 100%;
+  }
+  
+  .admin-service-grid {
+    grid-template-columns: 1fr 1fr 0.5fr;
+    gap: 4px;
+  }
+  
+  .admin-service-description,
+  .admin-service-name {
+    white-space: normal;
+    word-break: break-word;
+  }
+  
+  .admin-service-right {
+    text-align: left;
+    justify-self: start;
+    margin-top: 4px;
+  }
+}
+
+/* Admin layout specific styles */
+.service-item-content.admin-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.service-item-content.admin-layout .service-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.service-item-content.admin-layout .service-status {
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+/* Brand new admin mode styles with unique class names */
+.admin-service-item {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Grid layout for admin service items */
+.admin-service-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 20px;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+/* Group admin service text styles */
+.admin-service-description,
+.admin-service-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.admin-service-right {
+  text-align: right;
+  justify-self: end;
+}
+
+.admin-service-status {
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Add styling for pending operation buttons
+.tailscale-status-modal .pending-operation {
+  background-color: color-mix(in srgb, var(--warning) 15%, var(--primary));
+  border: 1px solid var(--warning);
+  position: relative;
+  overflow: hidden;
+}
+
+.tailscale-status-modal .pending-operation:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    color-mix(in srgb, var(--warning) 30%, transparent),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+} */
+
+

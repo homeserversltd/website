@@ -1,0 +1,344 @@
+{
+    "tabs": {
+      "admin": {
+        "config": {
+          "displayName": "Admin",
+          "adminOnly": true,
+          "order": 0,
+          "isEnabled": true
+        },
+        "visibility": {
+          "tab": true,
+          "elements": {
+            "settings": true
+          }
+        },
+        "data": {
+        }
+      },
+
+      "portals": {
+        "config": {
+          "displayName": "Portals",
+          "adminOnly": false,
+          "order": 1,
+          "isEnabled": true
+        },
+        "visibility": {
+          "tab": true,
+          "elements": {
+            "Jellyfin": true,
+            "Transmission": true,
+            "Piwigo": true,
+            "MkDocs": true,
+            "Vaultwarden": true,
+            "Gogs": true,
+            "Navidrome": true,
+            "FileBrowser": true,
+            "Calibre Web": true,
+            "FreshRSS": true,
+            "TTYD": true
+          }
+        },
+        "data": {
+          "portals": [
+            {
+              "name": "Jellyfin",
+              "description": "Media server",
+              "services": ["jellyfin"],
+              "type": "systemd",
+              "port": 8096,
+              "localURL": "https://jellyfin.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/jellyfin/"
+            },
+            {
+              "name": "Transmission",
+              "description": "BitTorrent client",
+              "services": ["transmissionPIA"],
+              "type": "script",
+              "port": 9091,
+              "localURL": "https://transmission.home.arpa",
+              "remoteURL": "N/A"
+            },
+            {
+              "name": "Piwigo",
+              "description": "Photo gallery",
+              "services": ["php8.2-fpm"],
+              "type": "systemd",
+              "port": 8080,
+              "localURL": "https://photos.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/photos/"
+            },
+            {
+              "name": "MkDocs",
+              "description": "Documentation",
+              "services": ["mkdocs"],
+              "type": "systemd",
+              "port": 8005,
+              "localURL": "https://docs.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/docs/"
+            },
+            {
+              "name": "Vaultwarden",
+              "description": "Password manager",
+              "services": ["vaultwarden"],
+              "type": "systemd",
+              "port": 8200,
+              "localURL": "https://vault.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/vault/"
+            },
+            {
+              "name": "Gogs",
+              "description": "Git service",
+              "services": ["gogs"],
+              "type": "systemd",
+              "port": 3000,
+              "localURL": "https://git.home.arpa/git/",
+              "remoteURL": "https://home.tail13aff.ts.net/git/"
+            },
+            {
+              "name": "Navidrome",
+              "description": "Music server",
+              "services": ["navidrome"],
+              "type": "systemd",
+              "port": 4533,
+              "localURL": "https://music.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/music/"
+            },
+            {
+              "name": "Ampache",
+              "description": "Music and video streaming server",
+              "services": ["php8.2-fpm"],
+              "type": "systemd",
+              "port": 7657,
+              "localURL": "https://ampache.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/ampache/"
+            },
+            {
+              "name": "FileBrowser",
+              "description": "File manager",
+              "services": ["filebrowser"],
+              "type": "systemd",
+              "port": 8081,
+              "localURL": "https://files.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/files/"
+            },
+            {
+              "name": "Calibre Web",
+              "description": "E-book manager",
+              "services": ["calibre-web"],
+              "type": "systemd",
+              "port": 8083,
+              "localURL": "https://books.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/books/"
+            },
+            {
+              "name": "Yarr",
+              "description": "RSS reader",
+              "services": ["yarr"],
+              "type": "systemd",
+              "port": 7070,
+              "localURL": "https://rss.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/rss/"
+            }
+          ]
+        }
+      },
+      "upload": {
+        "config": {
+          "displayName": "Upload",
+          "adminOnly": false,
+          "order": 2,
+          "isEnabled": true
+        },
+        "visibility": {
+          "tab": true,
+          "elements": {
+            "tree": true,
+            "buttons": true
+          }
+        },
+        "data": {
+          "blacklist": ["/mnt/nas/backup","git","media","torrents","downloads"],
+          "default-directory": "/mnt/nas",
+          "isPinRequired": true
+        }
+      },
+      "stats": {
+        "config": {
+          "displayName": "Stats",
+          "adminOnly": false,
+          "order": 3,
+          "isEnabled": true
+        },
+        "visibility": {
+          "tab": true,
+          "elements": {
+            "cpu-chart": true,
+            "network-chart": true,
+            "disk-usage": true,
+            "memory-usage": true,
+            "process-list": true,
+            "io-section": true,
+            "kea-leases": true
+          }
+        },
+        "data": {
+          "networkNotes": {
+            "e4:fa:c4:43:61:f6": "Example note for wa1801",
+            "28:57:67:39:7d:5d": "Example note for hopper2"
+          }
+        }
+      },
+      "dev": {
+        "config": {
+          "displayName": "Developer",
+          "adminOnly": false,
+          "order": 999,
+          "isEnabled": true
+        },
+        "visibility": {
+          "tab": true,
+          "elements": {
+            "placeholder": true
+          }
+        },
+        "data": {}
+      },
+      "starred": "portals"
+    },
+    "global": {
+      "root": "sda",
+      "version": {
+        "version": "0.9.0",
+        "releaseDate": "07-26-2025",
+        "generation": 1,
+        "buildId": "e6fe5ee9",
+        "lastUpdated": "07-26-2025"
+      },
+      "theme": {
+        "name": "dark"
+      },
+      "admin": {
+        "pin": "1"      
+      },
+      "cors": {
+        "allowed_origins": [
+          "https://home.arpa",
+          "https://home.tail13aff.ts.net"
+        ]
+      },
+      "mounts": {
+        "vault": {
+          "device": "sda4",
+          "mountPoint": "/vault",
+          "encrypted": true
+        },
+        "deploy": {
+          "device": "sda5",
+          "mountPoint": "/deploy",
+          "encrypted": true
+        },
+        "root": {
+          "device": "sda6",
+          "mountPoint": "/",
+          "encrypted": false
+        },
+        "boot": {
+          "device": "sda2",
+          "mountPoint": "/boot",
+          "encrypted": false
+        },
+        "boot-efi": {
+          "device": "sda1",
+          "mountPoint": "/boot/efi",
+          "encrypted": false
+        },
+        "nas": {
+          "device": "sdb",
+          "mountPoint": "/mnt/nas",
+          "encrypted": true
+        },
+        "nas-backup": {
+          "device": "sdc",
+          "mountPoint": "/mnt/nas_backup",
+          "encrypted": true
+        }
+      },
+      "ignoredMounts": ["/boot", "/boot/efi", "/vault", "udev"],
+      "permissions": {
+          "nas": {
+              "basePath": "/mnt/nas",
+              "applications": {
+                  "Jellyfin": {
+                      "user": "jellyfin",
+                      "group": "jellyfin",
+                      "permissions": "775",
+                      "paths": [
+                          "/mnt/nas/media"
+                      ],
+                      "recursive": true,
+                      "includeIncludedPermissions": true
+                  },
+                  "Transmission": {
+                      "user": "debian-transmission",
+                      "group": "debian-transmission",
+                      "permissions": "775",
+                      "paths": [
+                          "/mnt/nas/downloads",
+                          "/mnt/nas/downloads/complete",
+                          "/mnt/nas/downloads/incomplete",
+                          "/mnt/nas/downloads/objectives"
+                      ],
+                      "recursive": true,
+                      "includeIncludedPermissions": true
+                  },
+                  "CalibreWeb": {
+                      "user": "calibre",
+                      "group": "calibre",
+                      "permissions": "775",
+                      "paths": [
+                          "/mnt/nas/books"
+                      ],
+                      "recursive": true,
+                      "includeIncludedPermissions": true
+                  },
+                  "Gogs": {
+                      "user": "git",
+                      "group": "git",
+                      "permissions": "775",
+                      "paths": [
+                          "/mnt/nas/git"
+                      ],
+                      "recursive": true,
+                      "includeIncludedPermissions": true
+                  },
+                  "Navidrome": {
+                      "user": "navidrome",
+                      "group": "navidrome",
+                      "permissions": "775",
+                      "paths": [
+                          "/mnt/nas/music"
+                      ],
+                      "recursive": true,
+                      "includeIncludedPermissions": true
+                  },
+                  "Piwigo": {
+                      "user": "piwigo",
+                      "group": "piwigo",
+                      "permissions": "775",
+                      "paths": [
+                          "/mnt/nas/photos"
+                      ],
+                      "recursive": true,
+                      "includeIncludedPermissions": true
+                  }
+              },
+              "includedPermissions": {
+                  "user": ["www-data", "admin"],
+                  "group": ["www-data", "admin"]
+              }
+          }
+      }
+    }
+}

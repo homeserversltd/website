@@ -1,0 +1,147 @@
+.vault-auth-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000;
+  z-index: 9999;
+}
+
+.vault-auth-card {
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 32px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  color: #fff;
+}
+
+.vault-auth-logo {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.vault-auth-card h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.vault-auth-card h2 {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: #aaa;
+}
+
+.vault-auth-desc {
+  margin-bottom: 24px;
+  color: #ddd;
+  font-size: 16px;
+}
+
+.vault-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  position: relative;
+}
+
+.vault-auth-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background-color: #222;
+  color: #fff;
+  font-size: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.vault-auth-input:focus {
+  outline: none;
+  border-color: #4d90fe;
+  box-shadow: 0 0 0 2px rgba(77, 144, 254, 0.3);
+}
+
+.vault-auth-input::placeholder {
+  color: #666;
+}
+
+.vault-auth-button {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.vault-auth-button:hover:not(:disabled) {
+  background-color: #1565c0;
+}
+
+.vault-auth-button:disabled {
+  background-color: #333;
+  cursor: not-allowed;
+}
+
+.vault-auth-error {
+  color: #ff4d4f;
+  font-size: 14px;
+  margin-top: -10px;
+}
+
+.vault-auth-card small {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.vault-auth-card .version-info {
+  margin-top: 0.5rem;
+}
+
+.vault-auth-card .version-info small {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+  margin-top: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .vault-auth-card {
+    padding: 24px;
+  }
+  
+  .vault-auth-card h1 {
+    font-size: 24px;
+  }
+  
+  .vault-auth-card h2 {
+    font-size: 18px;
+  }
+
+  .vault-auth-logo {
+    width: 100px;
+    height: 100px;
+  }
+} 

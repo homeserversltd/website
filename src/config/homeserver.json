@@ -211,10 +211,10 @@
       "root": "sda",
       "version": {
         "version": "0.9.0",
-        "releaseDate": "07-26-2025",
+        "releaseDate": "08-05-2025",
         "generation": 1,
-        "buildId": "e6fe5ee9",
-        "lastUpdated": "07-26-2025"
+        "buildId": "695fe2a",
+        "lastUpdated": "08-05-2025"
       },
       "theme": {
         "name": "dark"

@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "files": {
     "config": "homeserver.patch.json",
+    "readme": "README.md",
+    "gitignore": ".gitignore",
     "backend": {
       "index": "backend/index.json",
       "requirements": "backend/requirements.txt", 
@@ -16,6 +18,9 @@
     },
     "permissions": {
       "sudoers": "permissions/premium_conflict"
+    },
+    "system": {
+      "dependencies": "system/dependencies.json"
     }
   }
 } 

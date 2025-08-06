@@ -57,13 +57,41 @@ interface UpdateCheckResponse {
   error?: string;
 }
 
+interface ModuleExecutionResult {
+  status: 'success' | 'warning' | 'error';
+  updated: boolean;
+  restored?: boolean;
+  message: string;
+}
+
 interface UpdateApplyResponse {
   status: string;
   message: string;
   details?: {
     mode: string;
     force: boolean;
-    updateResult: any;
+    updateResult: {
+      success: boolean;
+      summary: {
+        total_modules_detected: number;
+        schema_updated: number;
+        schema_failed: number;
+        system_successful: number;
+        system_failed: number;
+        actually_updated: number;
+        failed_but_restored: number;
+      };
+      modules: {
+        detected: string[];
+        schema_updated: string[];
+        schema_failed: string[];
+        executed: Record<string, ModuleExecutionResult>;
+        actually_updated: string[];
+        failed_executions: string[];
+        restored_executions: string[];
+      };
+      errors: string[];
+    };
     appliedAt: number;
     operationTime: string;
   };
@@ -129,6 +157,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
   const [modules, setModules] = useState<ModuleInfo[]>([]);
   const [systemInfo, setSystemInfo] = useState<any>(null);
   const [homeserverVersion, setHomeserverVersion] = useState<any>(null);
+  const [lastUpdateResult, setLastUpdateResult] = useState<UpdateApplyResponse | null>(null);
   const [updateSchedule, setUpdateSchedule] = useState<UpdateSchedule>({
     enabled: false,
     frequency: 'weekly',
@@ -425,7 +454,46 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
       if (response.status === 'success') {
         const startTimeToUse = updateStartTimeRef.current || updateStartTime;
         const finalDuration = startTimeToUse ? calculateDuration(startTimeToUse) : updateDuration || '0:00';
-        setUpdateOutput(prev => [...prev, `Update completed successfully!\nDuration: ${finalDuration}`]);
+        
+        // Store detailed update results
+        setLastUpdateResult(response);
+        
+        // Generate detailed success message with module information
+        let successMessage = `Update completed successfully!\nDuration: ${finalDuration}`;
+        
+        if (response.details?.updateResult?.modules?.actually_updated?.length > 0) {
+          const updatedModules = response.details.updateResult.modules.actually_updated;
+          successMessage += `\n\nModules Updated (${updatedModules.length}):`;
+          updatedModules.forEach(module => {
+            successMessage += `\n  ✓ ${module}`;
+          });
+        }
+        
+        if (response.details?.updateResult?.modules?.executed) {
+          const executedModules = Object.entries(response.details.updateResult.modules.executed);
+          const successfulNoUpdate = executedModules.filter(([_, result]) => 
+            result.status === 'success' && !result.updated
+          );
+          const warnings = executedModules.filter(([_, result]) => 
+            result.status === 'warning'
+          );
+          
+          if (successfulNoUpdate.length > 0) {
+            successMessage += `\n\nModules Executed (${successfulNoUpdate.length}):`;
+            successfulNoUpdate.forEach(([module, _]) => {
+              successMessage += `\n  ✓ ${module} (no update needed)`;
+            });
+          }
+          
+          if (warnings.length > 0) {
+            successMessage += `\n\nWarnings (${warnings.length}):`;
+            warnings.forEach(([module, result]) => {
+              successMessage += `\n  ⚠ ${module}: ${result.message}`;
+            });
+          }
+        }
+        
+        setUpdateOutput(prev => [...prev, successMessage]);
         toast.success('Updates applied successfully!');
         
         // Refresh all data
@@ -556,6 +624,63 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
           </div>
         </div>
       </div>
+
+      {lastUpdateResult?.details?.updateResult && (
+        <div className="last-update-summary">
+          <h4>
+            <FontAwesomeIcon icon={faCheckCircle} />
+            Last Update Results
+          </h4>
+          <div className="update-summary-stats">
+            <div className="stat-item">
+              <span className="stat-value">
+                {lastUpdateResult.details.updateResult.summary.actually_updated}
+              </span>
+              <span className="stat-label">Modules Updated</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">
+                {lastUpdateResult.details.updateResult.summary.system_successful}
+              </span>
+              <span className="stat-label">System Successful</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">
+                {lastUpdateResult.details.updateResult.summary.failed_but_restored}
+              </span>
+              <span className="stat-label">Restored</span>
+            </div>
+          </div>
+          
+          {lastUpdateResult.details.updateResult.modules.actually_updated.length > 0 && (
+            <div className="updated-modules-list">
+              <h5>Recently Updated Modules:</h5>
+              <div className="module-tags">
+                {lastUpdateResult.details.updateResult.modules.actually_updated.map(module => (
+                  <span key={module} className="module-tag updated">
+                    <FontAwesomeIcon icon={faCheckCircle} />
+                    {module}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {lastUpdateResult.details.updateResult.modules.restored_executions.length > 0 && (
+            <div className="restored-modules-list">
+              <h5>Restored Modules:</h5>
+              <div className="module-tags">
+                {lastUpdateResult.details.updateResult.modules.restored_executions.map(module => (
+                  <span key={module} className="module-tag warning">
+                    <FontAwesomeIcon icon={faExclamationTriangle} />
+                    {module}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 

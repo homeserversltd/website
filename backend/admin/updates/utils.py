@@ -147,24 +147,169 @@ def _parse_check_output(output: str) -> Dict[str, Any]:
         return {"raw_output": output, "parse_error": str(e)}
 
 def _parse_update_output(output: str) -> Dict[str, Any]:
-    """Parse the output from update application operation."""
+    """Parse the output from update application operation with enhanced module detail extraction."""
     try:
         result = {
             "success": False,
-            "modules_updated": [],
+            "summary": {
+                "total_modules_detected": 0,
+                "schema_updated": 0,
+                "schema_failed": 0,
+                "system_successful": 0,
+                "system_failed": 0,
+                "actually_updated": 0,
+                "failed_but_restored": 0
+            },
+            "modules": {
+                "detected": [],
+                "schema_updated": [],
+                "schema_failed": [],
+                "executed": {},
+                "actually_updated": [],
+                "failed_executions": [],
+                "restored_executions": []
+            },
             "errors": [],
             "raw_output": output
         }
         
         # Look for success indicators
-        if "✓ Update system completed successfully" in output:
+        if "✓ Update system completed successfully" in output or "Update orchestration completed:" in output:
             result["success"] = True
         
-        # Extract module update information
-        module_pattern = r"Module '([^']+)' updated successfully"
-        result["modules_updated"] = re.findall(module_pattern, output)
+        lines = output.split('\n')
         
-        # Extract error information
+        # Parse summary statistics from orchestration completion
+        for line in lines:
+            if "Schema updates detected:" in line:
+                match = re.search(r"Schema updates detected:\s*(\d+)", line)
+                if match:
+                    result["summary"]["total_modules_detected"] = int(match.group(1))
+            elif "Successfully schema updated:" in line:
+                match = re.search(r"Successfully schema updated:\s*(\d+)", line)
+                if match:
+                    result["summary"]["schema_updated"] = int(match.group(1))
+            elif "Failed schema updates:" in line:
+                match = re.search(r"Failed schema updates:\s*(\d+)", line)
+                if match:
+                    result["summary"]["schema_failed"] = int(match.group(1))
+            elif "System successful:" in line:
+                match = re.search(r"System successful:\s*(\d+)", line)
+                if match:
+                    result["summary"]["system_successful"] = int(match.group(1))
+            elif "System failed:" in line:
+                match = re.search(r"System failed:\s*(\d+)", line)
+                if match:
+                    result["summary"]["system_failed"] = int(match.group(1))
+            elif "Actually updated:" in line:
+                match = re.search(r"Actually updated:\s*(\d+)", line)
+                if match:
+                    result["summary"]["actually_updated"] = int(match.group(1))
+            elif "Failed but restored:" in line:
+                match = re.search(r"Failed but restored:\s*(\d+)", line)
+                if match:
+                    result["summary"]["failed_but_restored"] = int(match.group(1))
+        
+        # Extract module names from various status lines
+        for line in lines:
+            if "Found" in line and "modules to update:" in line:
+                # Extract detected modules: "Found 3 modules to update: website, venvs, adblock"
+                match = re.search(r"modules to update:\s*(.+)", line)
+                if match:
+                    modules_str = match.group(1).strip()
+                    result["modules"]["detected"] = [m.strip() for m in modules_str.split(',') if m.strip()]
+            
+            elif "Failed schema updates:" in line:
+                # Extract failed schema modules
+                match = re.search(r"Failed schema updates:\s*(.+)", line)
+                if match:
+                    modules_str = match.group(1).strip()
+                    result["modules"]["schema_failed"] = [m.strip() for m in modules_str.split(',') if m.strip()]
+            
+            elif "Successfully updated:" in line:
+                # Extract actually updated modules
+                match = re.search(r"Successfully updated:\s*(.+)", line)
+                if match:
+                    modules_str = match.group(1).strip()
+                    result["modules"]["actually_updated"] = [m.strip() for m in modules_str.split(',') if m.strip()]
+            
+            elif "Failed executions:" in line:
+                # Extract failed execution modules
+                match = re.search(r"Failed executions:\s*(.+)", line)
+                if match:
+                    modules_str = match.group(1).strip()
+                    result["modules"]["failed_executions"] = [m.strip() for m in modules_str.split(',') if m.strip()]
+            
+            elif "Successfully restored:" in line:
+                # Extract restored modules
+                match = re.search(r"Successfully restored:\s*(.+)", line)
+                if match:
+                    modules_str = match.group(1).strip()
+                    result["modules"]["restored_executions"] = [m.strip() for m in modules_str.split(',') if m.strip()]
+        
+        # Parse individual module execution results
+        for line in lines:
+            if "✓ Module '" in line and "executed successfully" in line:
+                if "and updated" in line:
+                    match = re.search(r"✓ Module '([^']+)' executed successfully and updated", line)
+                    if match:
+                        module_name = match.group(1)
+                        result["modules"]["executed"][module_name] = {
+                            "status": "success",
+                            "updated": True,
+                            "message": "Executed successfully and updated"
+                        }
+                elif "no update needed" in line:
+                    match = re.search(r"✓ Module '([^']+)' executed successfully \(no update needed\)", line)
+                    if match:
+                        module_name = match.group(1)
+                        result["modules"]["executed"][module_name] = {
+                            "status": "success", 
+                            "updated": False,
+                            "message": "Executed successfully (no update needed)"
+                        }
+                else:
+                    match = re.search(r"✓ Module '([^']+)' executed successfully", line)
+                    if match:
+                        module_name = match.group(1)
+                        result["modules"]["executed"][module_name] = {
+                            "status": "success",
+                            "updated": False,
+                            "message": "Executed successfully"
+                        }
+            
+            elif "⚠ Module '" in line and "update failed but system restored successfully" in line:
+                match = re.search(r"⚠ Module '([^']+)' update failed but system restored successfully", line)
+                if match:
+                    module_name = match.group(1)
+                    result["modules"]["executed"][module_name] = {
+                        "status": "warning",
+                        "updated": False,
+                        "restored": True,
+                        "message": "Update failed but system restored successfully"
+                    }
+            
+            elif "✗ Module '" in line and "execution failed" in line:
+                match = re.search(r"✗ Module '([^']+)' execution failed", line)
+                if match:
+                    module_name = match.group(1)
+                    result["modules"]["executed"][module_name] = {
+                        "status": "error",
+                        "updated": False,
+                        "restored": False,
+                        "message": "Execution failed"
+                    }
+        
+        # Derive schema updated modules (detected - failed)
+        if result["modules"]["detected"] and result["modules"]["schema_failed"]:
+            result["modules"]["schema_updated"] = [
+                m for m in result["modules"]["detected"] 
+                if m not in result["modules"]["schema_failed"]
+            ]
+        elif result["modules"]["detected"]:
+            result["modules"]["schema_updated"] = result["modules"]["detected"].copy()
+        
+        # Extract general error information
         error_pattern = r"✗ (.+)"
         result["errors"] = re.findall(error_pattern, output)
         

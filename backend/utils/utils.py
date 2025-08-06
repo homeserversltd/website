@@ -830,7 +830,7 @@ def get_config() -> Dict:
         else:
             # If factoryFallback fails, try reading files directly
             main_config = '/var/www/homeserver/src/config/homeserver.json'
-            factory_config = '/var/www/homeserver/src/config/homeserver.factory'
+            factory_config = '/etc/homeserver.factory'
             
             # Try main config first
             try:

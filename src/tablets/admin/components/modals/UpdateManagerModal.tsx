@@ -899,10 +899,6 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
   // Render update progress section
   const renderUpdating = () => (
     <div className="update-progress">
-      <h4>
-        <FontAwesomeIcon icon={faDownload} />
-        System Update in Progress
-      </h4>
       {isApplying && (
         <div className="progress-info">
           <div className="update-warning">

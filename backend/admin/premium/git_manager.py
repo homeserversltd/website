@@ -209,14 +209,14 @@ def _validate_manifest_completeness(temp_dir: str, manifest: Dict[str, Any], tab
                 undeclared_files.append(file_path)
         
         if undeclared_files:
-            # Limit the number of files shown in error message
-            file_list = ', '.join(undeclared_files[:5])
-            if len(undeclared_files) > 5:
-                file_list += f'... and {len(undeclared_files) - 5} more'
-            
+            # Return detailed information about undeclared files
             return {
                 "success": False, 
-                "error": f"Security violation: Undeclared files found in package: {file_list}"
+                "error": "Security violation: Undeclared files found in package",
+                "undeclared_files": undeclared_files,
+                "total_undeclared": len(undeclared_files),
+                "declared_files": list(declared_files),
+                "all_files": all_files
             }
         
         # Check for missing declared files
@@ -228,7 +228,8 @@ def _validate_manifest_completeness(temp_dir: str, manifest: Dict[str, Any], tab
         if missing_files:
             return {
                 "success": False,
-                "error": f"Declared files missing from package: {', '.join(missing_files)}"
+                "error": f"Declared files missing from package: {', '.join(missing_files)}",
+                "missing_files": missing_files
             }
         
         return {"success": True}

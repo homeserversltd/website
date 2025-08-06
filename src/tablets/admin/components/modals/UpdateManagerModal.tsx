@@ -459,7 +459,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
         setLastUpdateResult(response);
         
         // Generate detailed success message with module information
-        let successMessage = `Update completed successfully!\nDuration: ${finalDuration}`;
+        let successMessage = `✅ Update completed successfully!\nDuration: ${finalDuration}`;
         
         if (response.details?.updateResult?.modules?.actually_updated?.length > 0) {
           const updatedModules = response.details.updateResult.modules.actually_updated;
@@ -493,7 +493,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
           }
         }
         
-        setUpdateOutput(prev => [...prev, successMessage]);
+        setUpdateOutput(prev => [...prev, '', '='.repeat(50), successMessage, '='.repeat(50)]);
         toast.success('Updates applied successfully!');
         
         // Refresh all data
@@ -506,7 +506,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
         logger.error('Update failed:', response.error);
         const startTimeToUse = updateStartTimeRef.current || updateStartTime;
         const finalDuration = startTimeToUse ? calculateDuration(startTimeToUse) : updateDuration || '0:00';
-        setUpdateOutput(prev => [...prev, `Error: ${response.error || 'Update failed'}\nDuration: ${finalDuration}`]);
+        setUpdateOutput(prev => [...prev, '', '='.repeat(50), `❌ Update failed!\nError: ${response.error || 'Update failed'}\nDuration: ${finalDuration}`, '='.repeat(50)]);
         toast.error(response.error || 'Failed to apply updates');
       }
     } catch (error) {
@@ -515,7 +515,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const startTimeToUse = updateStartTimeRef.current || updateStartTime;
       const finalDuration = startTimeToUse ? calculateDuration(startTimeToUse) : updateDuration || '0:00';
-      setUpdateOutput(prev => [...prev, `Error: ${errorMessage}\nDuration: ${finalDuration}`]);
+      setUpdateOutput(prev => [...prev, '', '='.repeat(50), `❌ Update failed!\nError: ${errorMessage}\nDuration: ${finalDuration}`, '='.repeat(50)]);
       toast.error('Failed to apply updates');
     } finally {
       setIsApplying(false);

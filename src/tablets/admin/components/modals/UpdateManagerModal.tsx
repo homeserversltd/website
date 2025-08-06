@@ -461,7 +461,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
         // Generate detailed success message with module information
         let successMessage = `✅ Update completed successfully!\nDuration: ${finalDuration}`;
         
-        if (response.details?.updateResult?.modules?.actually_updated?.length > 0) {
+        if (response.details?.updateResult?.modules?.actually_updated && response.details.updateResult.modules.actually_updated.length > 0) {
           const updatedModules = response.details.updateResult.modules.actually_updated;
           successMessage += `\n\nModules Updated (${updatedModules.length}):`;
           updatedModules.forEach(module => {

@@ -174,16 +174,37 @@ def _validate_manifest_completeness(temp_dir: str, manifest: Dict[str, Any], tab
     This is a security measure to ensure no undeclared files are included.
     """
     try:
-        # Get all files in the package (excluding .git directory)
+        # Get all files in the package (excluding git metadata and known non-declared meta files)
         all_files = []
+
+        def _should_ignore(rel_path: str) -> bool:
+            """Return True if file should be ignored for declaration checks."""
+            # Normalize path
+            rel_path = rel_path.strip().lstrip('./')
+            base = os.path.basename(rel_path)
+            parts = rel_path.split(os.sep)
+            # Ignore git-related files and dirs
+            if base in {'.gitignore', '.gitattributes', '.gitmodules'}:
+                return True
+            if any(p in {'.git', '.github'} for p in parts):
+                return True
+            # The root manifest must not be required to declare itself
+            if rel_path == 'index.json':
+                return True
+            # Harmless OS metadata
+            if base in {'.DS_Store', 'Thumbs.db'}:
+                return True
+            return False
         for root, dirs, files in os.walk(temp_dir):
-            # Skip .git directory
-            if '.git' in dirs:
-                dirs.remove('.git')
+            # Skip .git and .github directories entirely
+            for ignored_dir in ['.git', '.github']:
+                if ignored_dir in dirs:
+                    dirs.remove(ignored_dir)
             
             for file in files:
                 file_path = os.path.relpath(os.path.join(root, file), temp_dir)
-                all_files.append(file_path)
+                if not _should_ignore(file_path):
+                    all_files.append(file_path)
         
         # Extract all declared files from manifest
         declared_files = set()

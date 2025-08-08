@@ -819,48 +819,90 @@ def get_config() -> Dict:
     First tries factoryFallback.sh, then falls back to direct file reads if that fails.
     """
     try:
+        current_app.logger.info("[CONFIG] Starting config loading process")
+        
         # Try factoryFallback.sh first
+        current_app.logger.info("[CONFIG] Attempting to use factoryFallback.sh")
         result = subprocess.run(['/usr/local/sbin/factoryFallback.sh'], 
                               capture_output=True, 
                               text=True)
         
+        current_app.logger.info(f"[CONFIG] factoryFallback.sh return code: {result.returncode}")
+        current_app.logger.info(f"[CONFIG] factoryFallback.sh stdout: {result.stdout.strip()}")
+        if result.stderr:
+            current_app.logger.info(f"[CONFIG] factoryFallback.sh stderr: {result.stderr.strip()}")
+        
         if result.returncode == 0:
             config_path = result.stdout.strip()
+            current_app.logger.info(f"[CONFIG] Using config path from factoryFallback.sh: {config_path}")
             current_app.config['HOMESERVER_CONFIG'] = config_path
         else:
+            current_app.logger.warning("[CONFIG] factoryFallback.sh failed, falling back to direct file reads")
+            
             # If factoryFallback fails, try reading files directly
             main_config = '/var/www/homeserver/src/config/homeserver.json'
             factory_config = '/etc/homeserver.factory'
+            
+            current_app.logger.info(f"[CONFIG] Checking main config: {main_config}")
             
             # Try main config first
             try:
                 with open(main_config) as f:
                     json.load(f)  # Validate JSON
                 config_path = main_config
-            except (FileNotFoundError, json.JSONDecodeError):
+                current_app.logger.info(f"[CONFIG] Main config is valid, using: {config_path}")
+            except FileNotFoundError:
+                current_app.logger.error(f"[CONFIG] Main config file not found: {main_config}")
                 # Try factory config as last resort
                 try:
+                    current_app.logger.info(f"[CONFIG] Trying factory config: {factory_config}")
                     with open(factory_config) as f:
                         json.load(f)  # Validate JSON
                     config_path = factory_config
-                except (FileNotFoundError, json.JSONDecodeError):
-                    current_app.logger.error('Both main and factory configs are invalid or missing')
+                    current_app.logger.info(f"[CONFIG] Factory config is valid, using: {config_path}")
+                except FileNotFoundError:
+                    current_app.logger.error(f"[CONFIG] Factory config file not found: {factory_config}")
+                    current_app.logger.error('[CONFIG] Both main and factory configs are missing')
+                    return {}
+                except json.JSONDecodeError as e:
+                    current_app.logger.error(f"[CONFIG] Factory config has invalid JSON: {str(e)}")
+                    current_app.logger.error('[CONFIG] Both main and factory configs are invalid')
+                    return {}
+            except json.JSONDecodeError as e:
+                current_app.logger.error(f"[CONFIG] Main config has invalid JSON: {str(e)}")
+                # Try factory config as last resort
+                try:
+                    current_app.logger.info(f"[CONFIG] Trying factory config: {factory_config}")
+                    with open(factory_config) as f:
+                        json.load(f)  # Validate JSON
+                    config_path = factory_config
+                    current_app.logger.info(f"[CONFIG] Factory config is valid, using: {config_path}")
+                except FileNotFoundError:
+                    current_app.logger.error(f"[CONFIG] Factory config file not found: {factory_config}")
+                    current_app.logger.error('[CONFIG] Both main and factory configs are invalid or missing')
+                    return {}
+                except json.JSONDecodeError as e:
+                    current_app.logger.error(f"[CONFIG] Factory config has invalid JSON: {str(e)}")
+                    current_app.logger.error('[CONFIG] Both main and factory configs are invalid')
                     return {}
                     
             current_app.config['HOMESERVER_CONFIG'] = config_path
             
         # Read from the determined valid path
+        current_app.logger.info(f"[CONFIG] Reading config from: {config_path}")
         with open(config_path) as f:
-            return json.load(f)
+            config_data = json.load(f)
+            current_app.logger.info(f"[CONFIG] Successfully loaded config with keys: {list(config_data.keys())}")
+            return config_data
             
-    except FileNotFoundError:
-        current_app.logger.error('Config file not found')
+    except FileNotFoundError as e:
+        current_app.logger.error(f'[CONFIG] Config file not found: {str(e)}')
         return {}
-    except json.JSONDecodeError:
-        current_app.logger.error('Invalid JSON in config file')
+    except json.JSONDecodeError as e:
+        current_app.logger.error(f'[CONFIG] Invalid JSON in config file: {str(e)}')
         return {}
     except Exception as e:
-        current_app.logger.error(f'Error reading config: {str(e)}')
+        current_app.logger.error(f'[CONFIG] Error reading config: {str(e)}')
         return {}
 
 # --- Config Write Protection ---

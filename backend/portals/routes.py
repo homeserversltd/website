@@ -214,27 +214,71 @@ def delete_portal(portal_name):
 def get_factory_portals():
     """Get factory portal names for comparison."""
     try:
+        current_app.logger.info("[FACTORY] Starting factory portals request")
+        
+        # Get the factory config path
         factory_config_path = current_app.config.get('FACTORY_CONFIG', 
                                                     current_app.config['HOMESERVER_CONFIG'].replace('.json', '.factory'))
+        current_app.logger.info(f"[FACTORY] Using factory config path: {factory_config_path}")
+        
+        # Check if file exists
+        import os
+        if not os.path.exists(factory_config_path):
+            current_app.logger.error(f"[FACTORY] Factory config file does not exist: {factory_config_path}")
+            return jsonify({
+                'success': True,
+                'factoryPortals': []
+            }), 200
+        
+        current_app.logger.info(f"[FACTORY] Factory config file exists, attempting to read")
+        
+        # Read and parse the factory config
         with open(factory_config_path) as f:
             factory_config = json.load(f)
             
-        factory_portals = factory_config.get('tabs', {}).get('portals', {}).get('data', {}).get('portals', [])
-        factory_portal_names = [portal.get('name') for portal in factory_portals if portal.get('name')]
+        current_app.logger.info(f"[FACTORY] Successfully loaded factory config, keys: {list(factory_config.keys())}")
+        
+        # Navigate to portals section
+        tabs = factory_config.get('tabs', {})
+        current_app.logger.info(f"[FACTORY] Tabs section keys: {list(tabs.keys())}")
+        
+        portals_tab = tabs.get('portals', {})
+        current_app.logger.info(f"[FACTORY] Portals tab keys: {list(portals_tab.keys())}")
+        
+        portals_data = portals_tab.get('data', {})
+        current_app.logger.info(f"[FACTORY] Portals data keys: {list(portals_data.keys())}")
+        
+        factory_portals = portals_data.get('portals', [])
+        current_app.logger.info(f"[FACTORY] Found {len(factory_portals)} factory portals")
+        
+        # Extract portal names
+        factory_portal_names = []
+        for i, portal in enumerate(factory_portals):
+            portal_name = portal.get('name')
+            if portal_name:
+                factory_portal_names.append(portal_name)
+                current_app.logger.info(f"[FACTORY] Portal {i+1}: {portal_name}")
+            else:
+                current_app.logger.warning(f"[FACTORY] Portal {i+1} has no name: {portal}")
+        
+        current_app.logger.info(f"[FACTORY] Returning {len(factory_portal_names)} factory portal names: {factory_portal_names}")
         
         return jsonify({
             'success': True,
             'factoryPortals': factory_portal_names
         }), 200
         
-    except FileNotFoundError:
-        # If factory config doesn't exist, return empty list
+    except FileNotFoundError as e:
+        current_app.logger.error(f"[FACTORY] Factory config file not found: {str(e)}")
         return jsonify({
             'success': True,
             'factoryPortals': []
         }), 200
+    except json.JSONDecodeError as e:
+        current_app.logger.error(f"[FACTORY] Invalid JSON in factory config: {str(e)}")
+        return jsonify({'error': 'Invalid factory config JSON'}), 500
     except Exception as e:
-        current_app.logger.error(f'Error getting factory portals: {str(e)}')
+        current_app.logger.error(f'[FACTORY] Error getting factory portals: {str(e)}')
         return jsonify({'error': 'Internal server error'}), 500
 
 @bp.route('/api/service/control', methods=['POST'])

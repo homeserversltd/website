@@ -336,6 +336,22 @@ class ValidationManager:
         """
         self.logger.info(f"Validating complete file manifest for {tab_path}")
         
+        # Helper: determine if a path is git-related and should be ignored for manifest strictness
+        def _is_git_related(path: str) -> bool:
+            try:
+                p = os.path.abspath(path)
+                parts = p.split(os.sep)
+                # Ignore .git directory and its contents, and common git dotfiles
+                git_dotfiles = {'.gitignore', '.gitattributes', '.gitmodules'}
+                if any(part == '.git' or part.startswith('.git') for part in parts):
+                    return True
+                basename = os.path.basename(p)
+                if basename in git_dotfiles:
+                    return True
+                return False
+            except Exception:
+                return False
+        
         # Get all actual files in the directory
         actual_files = []
         pycache_files = []
@@ -343,7 +359,8 @@ class ValidationManager:
         try:
             for root, dirs, files in os.walk(tab_path):
                 # Skip hidden directories (starting with .)
-                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                # Allow .git specifically to exist but do not traverse into it
+                dirs[:] = [d for d in dirs if not d.startswith('.') or d == '.git']
                 
                 for file in files:
                     # Skip hidden files
@@ -384,6 +401,10 @@ class ValidationManager:
         tab_path_abs = os.path.abspath(tab_path)
         manifest_files_abs = set(os.path.abspath(f) for f in manifest_files)
         actual_files_abs = set(os.path.abspath(f) for f in actual_files)
+        
+        # Remove git-related entries from both sets to allow leniency for git metadata
+        manifest_files_abs = {f for f in manifest_files_abs if not _is_git_related(f)}
+        actual_files_abs = {f for f in actual_files_abs if not _is_git_related(f)}
         
         # Find extra files not in manifest
         extra_files = actual_files_abs - manifest_files_abs

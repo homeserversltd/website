@@ -38,6 +38,20 @@ def validate_and_clone():
             return jsonify(result), 200
         else:
             write_to_log('premium', f'Failed to clone repository: {result["error"]}', 'error')
+            # If validation provided details, log them explicitly for operator visibility
+            try:
+                if 'undeclared_files' in result:
+                    count = len(result.get('undeclared_files', []))
+                    write_to_log('premium', f"Undeclared files reported by validator: {count}", 'error')
+                    # Log top offenders to avoid log spam; full list already logged in validator
+                    for fp in sorted(result.get('undeclared_files', [])[:25]):
+                        write_to_log('premium', f"(sample) Undeclared file: {fp}", 'error')
+                if 'missing_files' in result:
+                    write_to_log('premium', f"Declared-but-missing files: {len(result.get('missing_files', []))}", 'error')
+                    for fp in sorted(result.get('missing_files', [])[:25]):
+                        write_to_log('premium', f"(sample) Missing declared file: {fp}", 'error')
+            except Exception:
+                pass
             return jsonify(result), 400
             
     except Exception as e:

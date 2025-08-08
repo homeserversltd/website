@@ -209,6 +209,18 @@ def _validate_manifest_completeness(temp_dir: str, manifest: Dict[str, Any], tab
                 undeclared_files.append(file_path)
         
         if undeclared_files:
+            # Log each undeclared file explicitly for forensic clarity
+            try:
+                write_to_log('premium', f"Undeclared file validation failure. Total undeclared: {len(undeclared_files)}", 'error')
+                # Log a deterministic order for easier diffing in logs
+                for file_path in sorted(undeclared_files):
+                    write_to_log('premium', f"Undeclared file: {file_path}", 'error')
+                # Also log a brief declared/actual summary
+                write_to_log('premium', f"Declared files count: {len(declared_files)}; Actual files scanned: {len(all_files)}", 'info')
+            except Exception:
+                # Logging must never break validation flow
+                pass
+
             # Return detailed information about undeclared files
             return {
                 "success": False, 

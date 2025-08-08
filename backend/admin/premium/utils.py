@@ -7,6 +7,13 @@ import subprocess
 from datetime import datetime
 from typing import Dict, Any, List
 from ...utils.utils import write_to_log
+import logging
+
+# Optional JSON logger (premium installer log)
+try:
+    from premium.utils.logger import create_category_logger  # type: ignore
+except Exception:  # pragma: no cover
+    create_category_logger = None  # type: ignore
 import json
 import tempfile
 
@@ -93,6 +100,28 @@ def delete_premium_tab_folder(tab_name: str, get_tab_status_list_func) -> Dict[s
     except Exception as e:
         write_to_log('premium', f'Exception deleting tab {tab_name}: {str(e)}', 'error')
         return {"success": False, "error": f"Internal server error: {str(e)}"}
+
+
+def premium_json_log(category: str, message: str, level: str = 'info') -> None:
+    """Write a message to the premium JSON log (premium_installer.log).
+    Falls back silently if JSON logger is unavailable.
+    """
+    try:
+        if create_category_logger is None:
+            return
+        logger = create_category_logger(category, logging.getLogger('homeserver'))
+        lvl = (level or 'info').lower()
+        if lvl == 'error':
+            logger.error(message)
+        elif lvl == 'warning' or lvl == 'warn':
+            logger.warning(message)
+        elif lvl == 'debug':
+            logger.debug(message)
+        else:
+            logger.info(message)
+    except Exception:
+        # Never break flow due to logging
+        pass
 
 
 def get_installer_logs() -> Dict[str, Any]:

@@ -99,10 +99,32 @@ def execute_update_manager(mode: str, target: Optional[str] = None, component: O
             else:
                 result_data = {"raw_output": stdout, "execution_time": f"{execution_time:.2f} seconds"}
         else:
+            # If the orchestrator completed and printed a summary, parse it and surface details
+            # so the WebGUI can display results even on partial failures.
+            summary_marker = "Update orchestration completed"
+            if mode in ["full", "legacy"] and stdout and summary_marker in stdout:
+                logger.warning("[UPDATEMAN-UTILS] Non-zero exit but summary detected; treating as completed with failures")
+                parsed = _parse_update_output(stdout)
+                # Mark that failures occurred so callers can reflect partial status
+                parsed["had_errors"] = True
+                parsed["exit_status_nonzero"] = True
+                result_data = parsed
+                result_data["execution_time"] = f"{execution_time:.2f} seconds"
+                return True, "Operation completed with failures", result_data
             logger.error(f"[UPDATEMAN-UTILS] Command failed: {stderr}")
             return False, stderr or "Update manager execution failed", {}
         
         result_data["execution_time"] = f"{execution_time:.2f} seconds"
+        # Derive a soft error flag for callers (useful for UI badges)
+        try:
+            if mode in ["full", "legacy"]:
+                # When parser provides summary/errors, infer any failures
+                summary = result_data.get("summary", {})
+                system_failed = int(summary.get("system_failed", 0))
+                parse_errors = result_data.get("errors", [])
+                result_data["had_errors"] = system_failed > 0 or bool(parse_errors)
+        except Exception:
+            pass
         return True, "Operation completed successfully", result_data
         
     except Exception as e:

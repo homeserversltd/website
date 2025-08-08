@@ -11,6 +11,7 @@ try:
 except Exception:  # pragma: no cover - logger import is best-effort
     create_category_logger = None  # type: ignore
 from ...utils.utils import execute_command, write_to_log
+from .utils import premium_json_log
 
 
 # Path to the installer script and premium directory
@@ -188,6 +189,7 @@ def get_tab_status_list() -> Dict[str, Any]:
     """
     try:
         write_to_log('premium', 'Getting tab status list', 'info')
+        premium_json_log('validate', 'Fetching premium tab status list', 'info')
         
         # 1. Get all tabs using installer.py list --all
         success, stdout, stderr = execute_command([
@@ -218,15 +220,9 @@ def get_tab_status_list() -> Dict[str, Any]:
             # Fallback safe split
             cross_conflict_output = [line for line in combined.split('\n') if line.strip()]
             # Also write to the premium JSON logs so operators can view under Installation Logs
-            try:
-                if create_category_logger is not None:
-                    category_logger = create_category_logger('validate', logging.getLogger('homeserver'))
-                    category_logger.info('Cross-tab validation report')
-                    for line in cross_conflict_output[:300]:  # cap to prevent log flooding
-                        category_logger.info(line)
-            except Exception:
-                # Logging must not break status retrieval
-                pass
+            premium_json_log('validate', 'Cross-tab validation report', 'info')
+            for line in cross_conflict_output[:300]:
+                premium_json_log('validate', line, 'info')
         
         # 3. For each uninstalled tab, check individual conflicts with core system
         for tab in tabs:
@@ -244,14 +240,10 @@ def get_tab_status_list() -> Dict[str, Any]:
                         merged = check_stderr
                     tab["conflictOutput"] = [line for line in merged.split('\n') if line.strip()]
                     # Persist per-tab validation details to the JSON logs as well
-                    try:
-                        if create_category_logger is not None and tab.get('conflictOutput'):
-                            category_logger = create_category_logger('validate', logging.getLogger('homeserver'))
-                            category_logger.info(f"Validation details for tab '{tab['name']}'")
-                            for line in tab['conflictOutput'][:300]:
-                                category_logger.info(line)
-                    except Exception:
-                        pass
+                    if tab.get('conflictOutput'):
+                        premium_json_log('validate', f"Validation details for tab '{tab['name']}'", 'info')
+                        for line in tab['conflictOutput'][:300]:
+                            premium_json_log('validate', line, 'info')
             else:
                 # Installed tabs don't have conflicts (they're already resolved)
                 tab["conflictsWithCore"] = False

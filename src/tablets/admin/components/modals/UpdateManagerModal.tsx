@@ -19,7 +19,8 @@ import {
   faCalendarWeek,
   faCalendar,
   faEye,
-  faSave
+  faSave,
+  faFileAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { API_ENDPOINTS } from '../../../../api/endpoints';
 import { useApi } from '../../../../hooks/useApi';
@@ -148,7 +149,7 @@ interface ScheduleResponse {
   error?: string;
 }
 
-type ViewMode = 'overview' | 'modules' | 'schedule' | 'updating';
+type ViewMode = 'overview' | 'modules' | 'schedule' | 'logs' | 'updating';
 
 export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose }) => {
   // State management
@@ -158,6 +159,8 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
   const [systemInfo, setSystemInfo] = useState<any>(null);
   const [homeserverVersion, setHomeserverVersion] = useState<any>(null);
   const [lastUpdateResult, setLastUpdateResult] = useState<UpdateApplyResponse | null>(null);
+  const [logfileContent, setLogfileContent] = useState<string>('');
+  const [isLoadingLog, setIsLoadingLog] = useState<boolean>(false);
   const [updateSchedule, setUpdateSchedule] = useState<UpdateSchedule>({
     enabled: false,
     frequency: 'weekly',
@@ -264,7 +267,27 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     loadModules();
     handleCheckUpdates();
     loadSchedule();
+    // Preload logs lightly
+    fetchLogfile();
   }, []);
+  // Fetch raw update logfile
+  const fetchLogfile = useCallback(async (lines: number = 500) => {
+    const endpoint = `${API_ENDPOINTS.admin.updates.logfile}?lines=${lines}`;
+    setIsLoadingLog(true);
+    try {
+      logApiActivity('Load Update Logfile - Request', endpoint, 'GET');
+      const response = await api.get<{ status: string; message: string; details?: { content: string } }>(endpoint);
+      logApiActivity('Load Update Logfile - Response', endpoint, 'GET', undefined, response);
+      if (response.status === 'success' && response.details) {
+        setLogfileContent(response.details.content || '');
+      }
+    } catch (error) {
+      logApiActivity('Load Update Logfile - Error', endpoint, 'GET', undefined, undefined, error);
+    } finally {
+      setIsLoadingLog(false);
+    }
+  }, [api, logApiActivity]);
+
 
   // Load system information
   const loadSystemInfo = useCallback(async () => {
@@ -574,6 +597,8 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     // If switching to overview, refresh data to ensure we have latest info
     if (newMode === 'overview') {
       await refreshOverviewData();
+    } else if (newMode === 'logs') {
+      await fetchLogfile();
     }
   }, [isApplying, refreshOverviewData]);
 
@@ -935,6 +960,30 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     </div>
   );
 
+  // Render logs section
+  const renderLogs = () => (
+    <div className="update-logs">
+      <div className="logs-header">
+        <h4>
+          <FontAwesomeIcon icon={faFileAlt} />
+          Update Logs
+        </h4>
+        <button
+          type="button"
+          className="refresh-button"
+          onClick={() => fetchLogfile()}
+          disabled={isLoadingLog}
+        >
+          <FontAwesomeIcon icon={isLoadingLog ? faSpinner : faSync} spin={isLoadingLog} />
+          Refresh
+        </button>
+      </div>
+      <pre className="logfile-output" style={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
+        {logfileContent || 'No log output available.'}
+      </pre>
+    </div>
+  );
+
   return (
     <form className="modal-form update-manager-modal" onSubmit={(e) => e.preventDefault()}>
       <div className="update-manager-header">
@@ -963,6 +1012,14 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
           >
             Schedule
           </button>
+          <button
+            type="button"
+            className={`tab-button ${viewMode === 'logs' ? 'active' : ''}`}
+            onClick={() => handleViewModeChange('logs')}
+            disabled={isApplying}
+          >
+            Logs
+          </button>
         </div>
       </div>
 
@@ -970,6 +1027,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
         {viewMode === 'overview' && renderOverview()}
         {viewMode === 'modules' && renderModules()}
         {viewMode === 'schedule' && renderSchedule()}
+        {viewMode === 'logs' && renderLogs()}
         {viewMode === 'updating' && renderUpdating()}
       </div>
 

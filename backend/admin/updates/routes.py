@@ -12,6 +12,8 @@ import logging
 
 # Path to homeserver config
 HOMESERVER_CONFIG_PATH = '/var/www/homeserver/src/config/homeserver.json'
+# Path to update manager logfile
+UPDATE_LOG_PATH = '/var/log/homeserver/update.log'
 
 # Get logger
 logger = logging.getLogger('homeserver')
@@ -379,6 +381,57 @@ def get_update_logs():
     except Exception as e:
         logger.error(f"[UPDATEMAN] Error retrieving logs: {str(e)}")
         return error_response(f"Failed to retrieve logs: {str(e)}")
+
+@bp.route('/api/admin/updates/logfile', methods=['GET'])
+@admin_required
+def get_update_logfile():
+    """
+    Return the raw contents of the update manager logfile for display in the UI.
+    Optional query param `lines` to limit to last N lines (default 500, max 5000).
+    """
+    try:
+        logger.info("[UPDATEMAN] Retrieving raw update logfile contents")
+        start_time = time.time()
+
+        if not os.path.exists(UPDATE_LOG_PATH):
+            logger.warning(f"[UPDATEMAN] Update logfile not found at {UPDATE_LOG_PATH}")
+            return error_response("Update logfile not found")
+
+        # Parse optional tail size
+        try:
+            lines = int(request.args.get('lines', 500))
+            lines = max(1, min(lines, 5000))
+        except Exception:
+            lines = 500
+
+        # Use sudo to ensure permission to read logfile
+        success, stdout, stderr = execute_command(["sudo", "/usr/bin/cat", UPDATE_LOG_PATH])
+        if not success:
+            logger.error(f"[UPDATEMAN] Failed to read logfile: {stderr}")
+            return error_response(f"Failed to read logfile: {stderr}")
+
+        # Tail last N lines in Python
+        content_lines = stdout.splitlines()
+        tailed = '\n'.join(content_lines[-lines:])
+
+        operation_time = time.time() - start_time
+        logger.info(f"[UPDATEMAN] Logfile retrieval completed in {operation_time:.2f} seconds")
+
+        return success_response(
+            message="Update logfile retrieved successfully",
+            details={
+                "path": UPDATE_LOG_PATH,
+                "lines": lines,
+                "totalLines": len(content_lines),
+                "content": tailed,
+                "retrievalTime": int(time.time()),
+                "operationTime": f"{operation_time:.2f} seconds"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"[UPDATEMAN] Error retrieving logfile: {str(e)}")
+        return error_response(f"Failed to retrieve logfile: {str(e)}")
 
 @bp.route('/api/admin/updates/system-info', methods=['GET'])
 @admin_required

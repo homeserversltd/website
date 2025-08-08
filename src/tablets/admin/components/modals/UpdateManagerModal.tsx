@@ -964,10 +964,6 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
   const renderLogs = () => (
     <div className="update-logs">
       <div className="logs-header">
-        <h4>
-          <FontAwesomeIcon icon={faFileAlt} />
-          Update Logs
-        </h4>
         <button
           type="button"
           className="refresh-button"
@@ -978,7 +974,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
           Refresh
         </button>
       </div>
-      <pre className="logfile-output" style={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
+      <pre className="logfile-output" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
         {logfileContent || 'No log output available.'}
       </pre>
     </div>

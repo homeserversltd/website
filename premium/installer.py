@@ -106,6 +106,11 @@ class PremiumInstaller:
         # If no json_level specified, use DEBUG if --debug flag is set, otherwise INFO
         if json_level is None:
             json_level = "DEBUG" if self.debug else "INFO"
+        # Ensure appending during repeated validate calls (do not clear category)
+        try:
+            os.environ['PREMIUM_JSON_APPEND'] = '1' if category == 'validate' else os.environ.get('PREMIUM_JSON_APPEND', '0')
+        except Exception:
+            pass
         return create_category_logger(category, self.logger, LOG_FILE, json_level)
     
     def _initialize_managers(self, tab_name: str, logger=None) -> InstallationState:
@@ -643,26 +648,14 @@ class PremiumInstaller:
         # Run comprehensive validation
         is_valid, results = checker.validate_all_premium_tabs(premium_dir)
         
-        if generate_report:
-            # Generate and print detailed report
-            report = checker.generate_comprehensive_report(results)
-            print(report)
-        else:
-            # Print summary
-            summary = results["summary"]
-            category_logger.info(f"Validation Summary:")
-            category_logger.info(f"  Overall Status: {summary['overall_status']}")
-            category_logger.info(f"  Total Tabs: {summary['total_tabs']}")
-            category_logger.info(f"  Version Errors: {summary['tabs_with_version_errors']}")
-            category_logger.info(f"  Dependency Conflicts: {summary['tabs_with_dependency_conflicts']}")
-            category_logger.info(f"  Cross-Tab Conflicts: {summary['cross_tab_conflicts']}")
-            
-            if not is_valid:
-                category_logger.error("Cross-tab validation failed - conflicts detected")
-                if summary['cross_tab_conflicts'] > 0:
-                    category_logger.error("Use --report flag for detailed conflict information")
+        # Always log a comprehensive one-shot report into the validate category
+        report = checker.generate_comprehensive_report(results)
+        for line in report.splitlines():
+            # Keep original levels by simple heuristics
+            if line.startswith('❌') or 'FAILED' in line or 'errors' in line.lower():
+                category_logger.error(line)
             else:
-                category_logger.info("All premium tabs are compatible - no conflicts detected")
+                category_logger.info(line)
         
         return is_valid
     

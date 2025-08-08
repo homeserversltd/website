@@ -11,7 +11,7 @@ try:
 except Exception:  # pragma: no cover - logger import is best-effort
     create_category_logger = None  # type: ignore
 from ...utils.utils import execute_command, write_to_log
-from .utils import premium_json_log
+# Do not write validate details from admin interface; the premium installer handles logging
 
 
 # Path to the installer script and premium directory
@@ -189,7 +189,6 @@ def get_tab_status_list() -> Dict[str, Any]:
     """
     try:
         write_to_log('premium', 'Getting tab status list', 'info')
-        premium_json_log('validate', 'Fetching premium tab status list', 'info')
         
         # 1. Get all tabs using installer.py list --all
         success, stdout, stderr = execute_command([
@@ -211,18 +210,6 @@ def get_tab_status_list() -> Dict[str, Any]:
         ])
         
         has_cross_tab_conflicts = not validate_success
-        cross_conflict_output: List[str] = []
-        if has_cross_tab_conflicts:
-            # Preserve useful diagnostics for the UI
-            combined = (validate_stdout or '')
-            if not combined and validate_stderr:
-                combined = validate_stderr
-            # Fallback safe split
-            cross_conflict_output = [line for line in combined.split('\n') if line.strip()]
-            # Also write to the premium JSON logs so operators can view under Installation Logs
-            premium_json_log('validate', 'Cross-tab validation report', 'info')
-            for line in cross_conflict_output[:300]:
-                premium_json_log('validate', line, 'info')
         
         # 3. For each uninstalled tab, check individual conflicts with core system
         for tab in tabs:
@@ -234,16 +221,6 @@ def get_tab_status_list() -> Dict[str, Any]:
                 
                 tab["conflictsWithCore"] = not check_success
                 tab["hasConflicts"] = tab["conflictsWithCore"]
-                if tab["hasConflicts"]:
-                    merged = (check_stdout or '')
-                    if not merged and check_stderr:
-                        merged = check_stderr
-                    tab["conflictOutput"] = [line for line in merged.split('\n') if line.strip()]
-                    # Persist per-tab validation details to the JSON logs as well
-                    if tab.get('conflictOutput'):
-                        premium_json_log('validate', f"Validation details for tab '{tab['name']}'", 'info')
-                        for line in tab['conflictOutput'][:300]:
-                            premium_json_log('validate', line, 'info')
             else:
                 # Installed tabs don't have conflicts (they're already resolved)
                 tab["conflictsWithCore"] = False
@@ -259,9 +236,7 @@ def get_tab_status_list() -> Dict[str, Any]:
             "availableTabs": available_count,
             "hasAnyConflicts": has_cross_tab_conflicts,
             "canInstallAll": not has_cross_tab_conflicts and available_count > 0,
-            "canUninstallAll": installed_count > 0,
-            # Attach a condensed cross-tab conflict report for UI visibility
-            "crossConflictOutput": cross_conflict_output[:200]  # cap to reasonable size
+            "canUninstallAll": installed_count > 0
         }
         
         return {

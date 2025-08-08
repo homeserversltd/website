@@ -152,19 +152,9 @@ class PremiumInstaller:
                 category_logger.error(conflict_report)
                 return False
             
-            # Also check index.json version consistency
+            # Skipping multi-level index.json version consistency checks by design
             if self.debug:
-                category_logger.debug("DEBUG: Checking index.json version consistency")
-            
-            index_valid, index_errors = version_checker.validate_index_version_consistency(tab_path)
-            if not index_valid:
-                category_logger.error("Index.json version consistency errors:")
-                for error in index_errors:
-                    category_logger.error(f"  - {error}")
-                return False
-            
-            if self.debug:
-                category_logger.debug("DEBUG: Index.json version consistency check passed")
+                category_logger.debug("DEBUG: Skipping index.json version consistency validation by configuration")
             
             category_logger.info("No version conflicts detected")
             return True

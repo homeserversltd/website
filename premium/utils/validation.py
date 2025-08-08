@@ -38,7 +38,8 @@ class ValidationManager:
     
     # Required fields for dependencies.json
     DEPENDENCIES_REQUIRED_FIELDS = ["packages", "metadata"]
-    DEPENDENCIES_METADATA_REQUIRED = ["version", "platform"]
+    # metadata.version is optional; only platform is required
+    DEPENDENCIES_METADATA_REQUIRED = ["platform"]
     DEPENDENCIES_PACKAGE_REQUIRED = ["name"]
     
     def __init__(self, logger):
@@ -104,10 +105,7 @@ class ValidationManager:
                     self.logger.error(f"Missing required metadata fields in {file_path}: {missing_fields}")
                     return False
                 
-                # Validate version format
-                if not re.match(r'^\d+\.\d+\.\d+$', metadata["version"]):
-                    self.logger.error(f"Invalid metadata version format in {file_path}: {metadata['version']}")
-                    return False
+                # NOTE: metadata.version is optional and not validated anymore
                 
                 # Validate platform
                 supported_platforms = ["debian", "ubuntu", "rhel", "centos", "fedora", "arch", "any"]

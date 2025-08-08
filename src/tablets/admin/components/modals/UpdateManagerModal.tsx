@@ -272,7 +272,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     fetchLogfile();
   }, []);
   // Fetch raw update logfile
-  const fetchLogfile = useCallback(async (lines: number = 500) => {
+  const fetchLogfile = useCallback(async (lines = 500) => {
     const endpoint = `${API_ENDPOINTS.admin.updates.logfile}?lines=${lines}`;
     setIsLoadingLog(true);
     try {

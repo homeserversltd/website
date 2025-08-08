@@ -511,35 +511,76 @@ class ServiceManager:
 
 
 class BuildManager:
-    """Manages frontend build operations."""
+    """Manages frontend build operations.
+
+    Adds a dedicated build log at /var/log/homeserver/premium_installation.log
+    to capture all builder-related output (npm install/build, clean, etc.).
+    """
     
-    def __init__(self, logger, build_dir: str = "/var/www/homeserver"):
+    def __init__(self, logger, build_dir: str = "/var/www/homeserver",
+                 build_log_path: str = "/var/log/homeserver/premium_installation.log"):
         self.logger = logger
         self.build_dir = build_dir
+        self.build_log_path = build_log_path
+        # Ensure log directory exists and touch the log file before any writes
+        try:
+            os.makedirs(os.path.dirname(self.build_log_path), exist_ok=True)
+            with open(self.build_log_path, 'a'):
+                pass
+        except Exception as e:
+            # Do not fail the installer if log file can't be created; just warn
+            self.logger.warning(f"Unable to initialize build log '{self.build_log_path}': {str(e)}")
+    
+    def _append_to_build_log(self, content: str) -> None:
+        """Append text to the dedicated build log, prefixing with a timestamp."""
+        try:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            with open(self.build_log_path, 'a', encoding='utf-8') as f:
+                f.write(f"[{timestamp}] {content}\n")
+        except Exception as e:
+            # Non-fatal; emit to main logger
+            self.logger.warning(f"Failed writing to build log '{self.build_log_path}': {str(e)}")
     
     def _run_command(self, cmd: List[str], check: bool = True, capture_output: bool = True, cwd: str = None) -> subprocess.CompletedProcess:
-        """Run a command with logging."""
+        """Run a command with logging and append all output to the build log."""
         cmd_str = ' '.join(cmd)
+        run_dir = cwd if cwd else os.getcwd()
         if cwd:
             self.logger.debug(f"Running command in {cwd}: {cmd_str}")
         else:
             self.logger.debug(f"Running command: {cmd_str}")
+        # Emit command line to build log first
+        self._append_to_build_log(f"$ (cwd={run_dir}) {cmd_str}")
         try:
             result = subprocess.run(cmd, check=check, capture_output=capture_output, text=True, cwd=cwd)
             if result.stdout:
                 self.logger.debug(f"Command output: {result.stdout.strip()}")
+            # Append captured output to build log
+            stdout_txt = (result.stdout or '').rstrip()
+            stderr_txt = (result.stderr or '').rstrip()
+            if stdout_txt:
+                self._append_to_build_log(stdout_txt)
+            if stderr_txt:
+                self._append_to_build_log(f"[stderr] {stderr_txt}")
             return result
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Command failed: {cmd_str}")
             self.logger.error(f"Error: {e.stderr if e.stderr else str(e)}")
+            # Append failure details to build log as well
+            if getattr(e, 'stdout', None):
+                self._append_to_build_log((e.stdout or '').rstrip())
+            if getattr(e, 'stderr', None):
+                self._append_to_build_log(f"[stderr] {(e.stderr or '').rstrip()}")
             raise
     
     def rebuild_frontend(self) -> bool:
         """Rebuild the frontend."""
         try:
             self.logger.info("Building frontend")
+            self._append_to_build_log("=== Frontend build start ===")
             result = self._run_command(["npm", "run", "build"], cwd=self.build_dir)
             self.logger.info("Frontend build completed")
+            self._append_to_build_log("=== Frontend build completed successfully ===")
             return True
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Frontend build failed with exit code {e.returncode}")
@@ -547,20 +588,25 @@ class BuildManager:
                 self.logger.error(f"Build stdout: {e.stdout}")
             if e.stderr:
                 self.logger.error(f"Build stderr: {e.stderr}")
+            self._append_to_build_log(f"=== Frontend build failed (exit={e.returncode}) ===")
             return False
         except Exception as e:
             self.logger.error(f"Frontend build failed: {str(e)}")
+            self._append_to_build_log(f"=== Frontend build failed: {str(e)} ===")
             return False
     
     def install_npm_dependencies(self) -> bool:
         """Install NPM dependencies."""
         try:
             self.logger.info("Installing NPM dependencies")
+            self._append_to_build_log("=== NPM install start ===")
             self._run_command(["npm", "install"], cwd=self.build_dir)
             self.logger.info("NPM dependencies installed")
+            self._append_to_build_log("=== NPM install completed successfully ===")
             return True
         except Exception as e:
             self.logger.error(f"Failed to install NPM dependencies: {str(e)}")
+            self._append_to_build_log(f"=== NPM install failed: {str(e)} ===")
             return False
     
     def clean_build(self) -> bool:
@@ -569,9 +615,12 @@ class BuildManager:
             self.logger.info("Cleaning build artifacts")
             build_path = os.path.join(self.build_dir, "build")
             if os.path.exists(build_path):
+                self._append_to_build_log(f"Removing build directory: {build_path}")
                 shutil.rmtree(build_path)
             self.logger.info("Build artifacts cleaned")
+            self._append_to_build_log("Build artifacts cleaned")
             return True
         except Exception as e:
             self.logger.error(f"Failed to clean build artifacts: {str(e)}")
+            self._append_to_build_log(f"Failed to clean build artifacts: {str(e)}")
             return False 

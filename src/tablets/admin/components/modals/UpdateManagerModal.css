@@ -681,12 +681,20 @@
   z-index: 1;
 }
 
+/* Modal container override for update manager logs */
+.modal-content:has(.update-logs) {
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
 /* Update Logs Section */
 .update-logs {
   display: flex;
   flex-direction: column;
   gap: 16px;
   height: 100%;
+  padding: 20px;
+  background-color: var(--background);
 }
 
 .logs-header {
@@ -744,6 +752,7 @@
   border-radius: 8px;
   background-color: var(--primaryHover);
   overflow: hidden;
+  height: 400px;
 }
 
 .logfile-output {

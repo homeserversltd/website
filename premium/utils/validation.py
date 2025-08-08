@@ -73,7 +73,8 @@ class ValidationManager:
                     return False
                     
             elif schema_type == "component_index":
-                required_fields = ["name", "version", "files"]
+                # Version field is NOT required for component manifests
+                required_fields = ["name", "files"]
                 if not all(field in data for field in required_fields):
                     self.logger.error(f"Missing required fields in {file_path}")
                     return False
@@ -267,29 +268,20 @@ class ValidationManager:
                 self.logger.error(f"Manifest file not found: {file_path}")
                 return False, {}
         
-        # Validate component manifests
+        # Validate component manifests (structure only, no version checks)
         components = ["backend", "frontend"]
         component_manifests = {}
-        
         for component in components:
             component_index = os.path.join(tab_path, component, "index.json")
             if os.path.exists(component_index):
                 if not self.validate_json_schema(component_index, "component_index"):
                     return False, {}
-                    
                 try:
                     with open(component_index, 'r') as f:
                         component_manifests[component] = json.load(f)
                 except Exception as e:
                     self.logger.error(f"Error reading {component} manifest: {str(e)}")
                     return False, {}
-        
-        # Validate version consistency
-        root_version = root_manifest["version"]
-        for component, manifest in component_manifests.items():
-            if manifest["version"] != root_version:
-                self.logger.error(f"Version mismatch: root={root_version}, {component}={manifest['version']}")
-                return False, {}
         
         # Validate name consistency
         root_name = root_manifest["name"]

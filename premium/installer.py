@@ -657,10 +657,8 @@ class PremiumInstaller:
             reasons.append(f"cross={summary['cross_tab_conflicts']}")
         reason_str = ("; ".join(reasons)) if reasons else ""
         line = f"Validation Summary: {status} (tabs={summary['total_tabs']})" + (f" | {reason_str}" if reason_str else "")
-        if status == 'PASS':
-            category_logger.info(line)
-        else:
-            category_logger.error(line)
+        # Always emit one terminal line; INFO for PASS, ERROR for FAIL
+        (category_logger.info if status == 'PASS' else category_logger.error)(line)
         
         return is_valid
     

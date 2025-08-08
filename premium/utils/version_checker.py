@@ -730,35 +730,8 @@ class SemanticVersionChecker:
         return report
 
     def validate_index_version_consistency(self, tab_path: str) -> Tuple[bool, List[str]]:
-        """Validate that root and component index.json versions are consistent."""
-        errors: List[str] = []
-        try:
-            root_index = Path(tab_path) / "index.json"
-            if not root_index.exists():
-                return False, [f"Missing root index.json in {tab_path}"]
-            with open(root_index, 'r') as f:
-                root_manifest = json.load(f)
-            root_version = root_manifest.get('version')
-            if not root_version:
-                errors.append("Root index.json missing 'version'")
-
-            for component in ["backend", "frontend"]:
-                comp_index = Path(tab_path) / component / "index.json"
-                if comp_index.exists():
-                    try:
-                        with open(comp_index, 'r') as cf:
-                            comp_manifest = json.load(cf)
-                        comp_version = comp_manifest.get('version')
-                        if root_version and comp_version and comp_version != root_version:
-                            errors.append(
-                                f"{component.capitalize()} index.json version '{comp_version}' doesn't match root version '{root_version}'"
-                            )
-                    except Exception as e:
-                        errors.append(f"Failed reading {component}/index.json: {e}")
-
-            return len(errors) == 0, errors
-        except Exception as e:
-            return False, [f"Version consistency validation error: {e}"]
+        """NO-OP: Component index.json version comparison is disabled."""
+        return True, []
 
     def validate_complete_manifest(self, tab_path: str) -> Tuple[bool, List[str]]:
         """Validate that premium tab contains only files declared in root index.json.

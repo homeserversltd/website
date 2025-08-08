@@ -964,6 +964,10 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
   const renderLogs = () => (
     <div className="update-logs">
       <div className="logs-header">
+      <h4>
+          <FontAwesomeIcon icon={faFileAlt} />
+          Update Logs
+        </h4>
         <button
           type="button"
           className="refresh-button"

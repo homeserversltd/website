@@ -55,6 +55,48 @@
   z-index: 1;
 }
 
+/* Make modal behave like the portals service-status modal: wide and tall with reliable scroll */
+[data-floating-ui-portal] .modal:has(.update-manager-modal) {
+  max-width: 95vw !important;
+  width: 95vw !important;
+  max-height: 90vh !important;
+  height: 90vh !important;
+}
+
+.modal-content:has(.update-manager-modal) {
+  height: 100% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+/* Logs layout: let the <pre> be the scroller similar to portals */
+.update-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.update-logs .logs-header {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.update-logs .logfile-output {
+  background: var(--background);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* Fill available space and scroll when needed */
+  flex: 1 1 auto;
+  max-height: calc(90vh - 220px);
+  overflow: auto;
+}
+
 /* Overview Section */
 .update-overview {
   display: flex;

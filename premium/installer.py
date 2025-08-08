@@ -648,14 +648,21 @@ class PremiumInstaller:
         # Run comprehensive validation
         is_valid, results = checker.validate_all_premium_tabs(premium_dir)
         
-        # Always log a comprehensive one-shot report into the validate category
-        report = checker.generate_comprehensive_report(results)
-        for line in report.splitlines():
-            # Keep original levels by simple heuristics
-            if line.startswith('❌') or 'FAILED' in line or 'errors' in line.lower():
-                category_logger.error(line)
-            else:
-                category_logger.info(line)
+        # Log a compact validation summary: PASS/FAIL and brief reasons
+        summary = results["summary"]
+        if summary['overall_status'] == 'PASS':
+            category_logger.info(f"Validation Summary: PASS (tabs={summary['total_tabs']})")
+        else:
+            category_logger.error("Validation Summary: FAIL")
+            # Emit concise reasons only
+            if summary['tabs_with_version_errors']:
+                category_logger.error(f" - Version errors in {summary['tabs_with_version_errors']} tab(s)")
+            if summary['tabs_with_manifest_errors']:
+                category_logger.error(f" - Manifest errors in {summary['tabs_with_manifest_errors']} tab(s)")
+            if summary['tabs_with_dependency_conflicts']:
+                category_logger.error(f" - Dependency conflicts in {summary['tabs_with_dependency_conflicts']} tab(s)")
+            if summary['cross_tab_conflicts']:
+                category_logger.error(f" - {summary['cross_tab_conflicts']} cross-tab conflict(s)")
         
         return is_valid
     

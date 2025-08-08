@@ -907,7 +907,7 @@ class SemanticVersionChecker:
             }
             return True, results
         
-        self.logger.info(f"Found {len(tabs)} premium tabs: {', '.join(results['tabs_found'])}")
+            self.logger.info(f"Found {len(tabs)} premium tabs: {', '.join(results['tabs_found'])}")
         
         # Load current environment packages once
         current_pip_packages = self.get_current_pip_packages()
@@ -919,7 +919,8 @@ class SemanticVersionChecker:
         # Validate each tab individually
         for tab_path in tabs:
             tab_name = Path(tab_path).name
-            self.logger.info(f"Validating premium tab: {tab_name}")
+            # Keep concise; avoid repeated noise
+            self.logger.debug(f"Validating premium tab: {tab_name}")
             
             # Check version consistency within the tab
             version_valid, version_errors = self.validate_index_version_consistency(tab_path)

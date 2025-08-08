@@ -106,11 +106,6 @@ class PremiumInstaller:
         # If no json_level specified, use DEBUG if --debug flag is set, otherwise INFO
         if json_level is None:
             json_level = "DEBUG" if self.debug else "INFO"
-        # Ensure appending during repeated validate calls (do not clear category)
-        try:
-            os.environ['PREMIUM_JSON_APPEND'] = '1' if category == 'validate' else os.environ.get('PREMIUM_JSON_APPEND', '0')
-        except Exception:
-            pass
         return create_category_logger(category, self.logger, LOG_FILE, json_level)
     
     def _initialize_managers(self, tab_name: str, logger=None) -> InstallationState:
@@ -648,21 +643,24 @@ class PremiumInstaller:
         # Run comprehensive validation
         is_valid, results = checker.validate_all_premium_tabs(premium_dir)
         
-        # Log a compact validation summary: PASS/FAIL and brief reasons
+        # Log a single-line compact summary only
         summary = results["summary"]
-        if summary['overall_status'] == 'PASS':
-            category_logger.info(f"Validation Summary: PASS (tabs={summary['total_tabs']})")
+        status = summary['overall_status']
+        reasons = []
+        if summary['tabs_with_version_errors']:
+            reasons.append(f"version={summary['tabs_with_version_errors']}")
+        if summary['tabs_with_manifest_errors']:
+            reasons.append(f"manifest={summary['tabs_with_manifest_errors']}")
+        if summary['tabs_with_dependency_conflicts']:
+            reasons.append(f"deps={summary['tabs_with_dependency_conflicts']}")
+        if summary['cross_tab_conflicts']:
+            reasons.append(f"cross={summary['cross_tab_conflicts']}")
+        reason_str = ("; ".join(reasons)) if reasons else ""
+        line = f"Validation Summary: {status} (tabs={summary['total_tabs']})" + (f" | {reason_str}" if reason_str else "")
+        if status == 'PASS':
+            category_logger.info(line)
         else:
-            category_logger.error("Validation Summary: FAIL")
-            # Emit concise reasons only
-            if summary['tabs_with_version_errors']:
-                category_logger.error(f" - Version errors in {summary['tabs_with_version_errors']} tab(s)")
-            if summary['tabs_with_manifest_errors']:
-                category_logger.error(f" - Manifest errors in {summary['tabs_with_manifest_errors']} tab(s)")
-            if summary['tabs_with_dependency_conflicts']:
-                category_logger.error(f" - Dependency conflicts in {summary['tabs_with_dependency_conflicts']} tab(s)")
-            if summary['cross_tab_conflicts']:
-                category_logger.error(f" - {summary['cross_tab_conflicts']} cross-tab conflict(s)")
+            category_logger.error(line)
         
         return is_valid
     

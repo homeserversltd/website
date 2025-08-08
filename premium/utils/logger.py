@@ -125,15 +125,8 @@ class CategoryLogger:
         self.console_logger = console_logger
         self.json_level = getattr(logging, json_level.upper(), logging.INFO)
         
-        # Clear this category's logs when starting a new operation,
-        # unless premium append mode is enabled via environment variable.
-        # Set PREMIUM_JSON_APPEND=1 to append without clearing (used for per-tab validates during status checks).
-        try:
-            append_mode = os.environ.get('PREMIUM_JSON_APPEND') == '1'
-        except Exception:
-            append_mode = False
-        if not append_mode:
-            self.json_logger.clear_category(category)
+        # Always clear this category's logs when starting a new operation
+        self.json_logger.clear_category(category)
     
     def _should_log_to_json(self, level: int) -> bool:
         """Check if this log level should be written to JSON."""

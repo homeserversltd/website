@@ -226,7 +226,7 @@ class ValidationManager:
     
     def validate_package_manifest(self, tab_path: str) -> Tuple[bool, Dict[str, Any]]:
         """Validate complete package manifest and return parsed data."""
-        self.logger.info(f"Validating package manifest for {tab_path}")
+        self.logger.debug(f"Validating package manifest for {tab_path}")
         
         # Check root index.json
         root_index_path = os.path.join(tab_path, "index.json")
@@ -302,7 +302,7 @@ class ValidationManager:
         if not self.validate_complete_file_manifest(tab_path, all_files):
             return False, {}
 
-        self.logger.info("Package manifest validation successful")
+        self.logger.debug("Package manifest validation successful")
         return True, {
             "root": root_manifest,
             "components": component_manifests
@@ -332,7 +332,7 @@ class ValidationManager:
         
         Special handling for __pycache__ files which indicate an already installed tab.
         """
-        self.logger.info(f"Validating complete file manifest for {tab_path}")
+        self.logger.debug(f"Validating complete file manifest for {tab_path}")
         
         # Helper: determine if a path is git-related and should be ignored for manifest strictness
         def _is_git_related(path: str) -> bool:
@@ -430,7 +430,7 @@ class ValidationManager:
         if not self.validate_file_security(actual_files):
             return False
         
-        self.logger.info(f"Complete file manifest validation passed: {len(actual_files)} files verified")
+        self.logger.debug(f"Complete file manifest validation passed: {len(actual_files)} files verified")
         return True
     
     def validate_file_security(self, file_paths: List[str]) -> bool:
@@ -658,10 +658,10 @@ class ValidationManager:
         appropriate for system packages that are generally backward compatible and
         receive security updates.
         """
-        self.logger.info(f"Validating system dependencies: {dependencies_file}")
+        self.logger.debug(f"Validating system dependencies: {dependencies_file}")
         
         if not os.path.exists(dependencies_file):
-            self.logger.info("No system dependencies file found")
+            self.logger.debug("No system dependencies file found")
             return True, {}  # No dependencies is valid
         
         # Validate JSON schema
@@ -672,7 +672,7 @@ class ValidationManager:
             with open(dependencies_file, 'r') as f:
                 dependencies_data = json.load(f)
             
-            self.logger.info("System dependencies validation successful")
+            self.logger.debug("System dependencies validation successful")
             return True, dependencies_data
             
         except Exception as e:

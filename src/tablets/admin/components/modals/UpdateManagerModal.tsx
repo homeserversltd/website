@@ -20,7 +20,8 @@ import {
   faCalendar,
   faEye,
   faSave,
-  faFileAlt
+  faFileAlt,
+  faCopy
 } from '@fortawesome/free-solid-svg-icons';
 import { API_ENDPOINTS } from '../../../../api/endpoints';
 import { useApi } from '../../../../hooks/useApi';
@@ -960,27 +961,52 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     </div>
   );
 
+  // Copy logs content to clipboard
+  const handleCopyLogs = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(logfileContent || 'No log output available.');
+      toast.success('Log contents copied to clipboard');
+    } catch (error) {
+      logger.error('Failed to copy logs to clipboard:', error);
+      toast.error('Failed to copy logs to clipboard');
+    }
+  }, [logfileContent, toast]);
+
   // Render logs section
   const renderLogs = () => (
     <div className="update-logs">
       <div className="logs-header">
-      <h4>
+        <h4>
           <FontAwesomeIcon icon={faFileAlt} />
           Update Logs
         </h4>
-        <button
-          type="button"
-          className="refresh-button"
-          onClick={() => fetchLogfile()}
-          disabled={isLoadingLog}
-        >
-          <FontAwesomeIcon icon={isLoadingLog ? faSpinner : faSync} spin={isLoadingLog} />
-          Refresh
-        </button>
+        <div className="logs-actions">
+          <button
+            type="button"
+            className="copy-button"
+            onClick={handleCopyLogs}
+            disabled={isLoadingLog || !logfileContent}
+            title="Copy log contents to clipboard"
+          >
+            <FontAwesomeIcon icon={faCopy} />
+            Copy Contents
+          </button>
+          <button
+            type="button"
+            className="refresh-button"
+            onClick={() => fetchLogfile()}
+            disabled={isLoadingLog}
+          >
+            <FontAwesomeIcon icon={isLoadingLog ? faSpinner : faSync} spin={isLoadingLog} />
+            Refresh
+          </button>
+        </div>
       </div>
-      <pre className="logfile-output" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
-        {logfileContent || 'No log output available.'}
-      </pre>
+      <div className="logfile-container">
+        <pre className="logfile-output">
+          {logfileContent || 'No log output available.'}
+        </pre>
+      </div>
     </div>
   );
 

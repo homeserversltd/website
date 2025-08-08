@@ -9,7 +9,10 @@ from backend.utils.utils import execute_systemctl_command, write_to_log
 from .utils import (
     get_tailscale_status,
     get_tailnet_name,
-    update_tailnet_name_v2 as update_tailnet_name
+    update_tailnet_name_v2 as update_tailnet_name,
+    generate_login_url,
+    cache_login_url,
+    clear_login_url_cache
 )
 from backend.auth.decorators import admin_required
 
@@ -23,34 +26,51 @@ def get_tailscale_status_endpoint():
 @bp.route('/api/status/tailscale/connect', methods=['POST'])
 @admin_required
 def connect_tailscale():
-    """Connect to Tailscale network."""
+    """Connect to Tailscale network or return a cached login URL without spamming."""
     try:
-        result = subprocess.run(
-            ['/usr/bin/sudo', '/usr/bin/tailscale', 'up'],
-            capture_output=True,
-            text=True
-        )
-        
-        if result.returncode != 0:
-            current_app.logger.error(f"[TAIL] Failed to connect: {result.stderr}")
+        # If already connected, report success and clear any stale cached link
+        status = get_tailscale_status()
+        if status.get('status') == 'connected':
+            clear_login_url_cache()
+            write_to_log('admin', '[TAIL] Tailscale already connected', 'info')
+            return jsonify({"success": True, "isFirstRun": False}), 200
+
+        # Not connected → try to get (or reuse) a login URL without spamming
+        login_url = generate_login_url()
+        if login_url:
+            cache_login_url(login_url)
+            write_to_log('admin', '[TAIL] Tailscale login URL ready', 'info')
             return jsonify({
-                "success": False,
-                "error": result.stderr,
-                "isFirstRun": "Authorization required" in result.stderr
-            }), 400
-            
-        if "To authenticate, visit:" in result.stdout:
-            auth_url = re.search(r'(https://login\.tailscale\.com/a/[^\s]+)', result.stdout)
-            if auth_url:
-                write_to_log('admin', '[TAIL] New Tailscale authentication URL generated', 'info')
+                "success": True,
+                "isFirstRun": True,
+                "authUrl": login_url
+            }), 200
+
+        # Passive fallback: attempt to scrape systemctl output without invoking another up
+        service_status_result = subprocess.run(
+            ['/usr/bin/sudo', '/usr/bin/systemctl', 'status', 'tailscaled.service'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if service_status_result.returncode == 0:
+            login_match = re.search(r'https://login\.tailscale\.com/a/[a-zA-Z0-9]+', service_status_result.stdout)
+            if login_match:
+                login_url = login_match.group(0)
+                cache_login_url(login_url)
+                write_to_log('admin', '[TAIL] Tailscale login URL found from service status', 'info')
                 return jsonify({
                     "success": True,
                     "isFirstRun": True,
-                    "authUrl": auth_url.group(1)
+                    "authUrl": login_url
                 }), 200
-                
-        write_to_log('admin', '[TAIL] Tailscale connected successfully', 'info')
-        return jsonify({"success": True, "isFirstRun": False}), 200
+
+        current_app.logger.error("[TAIL] Unable to obtain Tailscale login URL")
+        return jsonify({
+            "success": False,
+            "error": "Unable to obtain Tailscale login URL. Please retry.",
+            "isFirstRun": True
+        }), 500
         
     except Exception as e:
         current_app.logger.error(f"[TAIL] Error connecting Tailscale: {str(e)}")
@@ -100,6 +120,7 @@ def authenticate_with_authkey():
         # Check if authentication was successful
         if "Success." in result.stdout or "Machine authorized" in result.stdout:
             write_to_log('admin', f'[TAIL] Tailscale authenticated successfully with auth key', 'info')
+            clear_login_url_cache()
             return jsonify({
                 "success": True,
                 "message": "Successfully authenticated with auth key"
@@ -107,6 +128,7 @@ def authenticate_with_authkey():
         else:
             # Even if no explicit success message, check if no errors occurred
             write_to_log('admin', f'[TAIL] Tailscale auth key command completed', 'info')
+            clear_login_url_cache()
             return jsonify({
                 "success": True,
                 "message": "Auth key authentication completed"

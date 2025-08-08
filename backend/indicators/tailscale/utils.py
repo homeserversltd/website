@@ -7,7 +7,7 @@ import subprocess
 import os
 import time
 import tempfile
-from typing import Tuple
+from typing import Tuple, Optional
 from flask import current_app
 from backend.utils.utils import (
     execute_systemctl_command, 
@@ -74,37 +74,99 @@ def needs_initial_authentication() -> bool:
         current_app.logger.error(f"[TAIL] Error checking if initial authentication needed: {str(e)}")
         return False
 
-def generate_login_url() -> str:
-    """Proactively run 'tailscale up' to generate a login URL for first-time setup."""
+_LOGIN_CACHE_PATH = "/mnt/ramdisk/tailscale_login.json"
+_LOGIN_CACHE_TTL_SECONDS_DEFAULT = 600  # 10 minutes
+
+
+def _read_cached_login_url() -> Optional[str]:
     try:
+        if not os.path.exists(_LOGIN_CACHE_PATH):
+            return None
+        with open(_LOGIN_CACHE_PATH, 'r') as f:
+            data = json.load(f)
+        url = data.get('url')
+        created_at = data.get('createdAt', 0)
+        ttl = data.get('ttl', _LOGIN_CACHE_TTL_SECONDS_DEFAULT)
+        if not url:
+            return None
+        if time.time() - float(created_at) > float(ttl):
+            return None
+        return url
+    except Exception as e:
+        current_app.logger.warning(f"[TAIL] Failed to read cached login URL: {str(e)}")
+        return None
+
+
+def _write_cached_login_url(url: str, ttl_seconds: int = _LOGIN_CACHE_TTL_SECONDS_DEFAULT) -> None:
+    try:
+        payload = {
+            'url': url,
+            'createdAt': time.time(),
+            'ttl': int(ttl_seconds),
+        }
+        with open(_LOGIN_CACHE_PATH, 'w') as f:
+            json.dump(payload, f)
+    except Exception as e:
+        current_app.logger.warning(f"[TAIL] Failed to write cached login URL: {str(e)}")
+
+
+def _clear_cached_login_url() -> None:
+    try:
+        if os.path.exists(_LOGIN_CACHE_PATH):
+            os.remove(_LOGIN_CACHE_PATH)
+    except Exception as e:
+        current_app.logger.warning(f"[TAIL] Failed to clear cached login URL: {str(e)}")
+
+
+def cache_login_url(url: str, ttl_seconds: int = _LOGIN_CACHE_TTL_SECONDS_DEFAULT) -> None:
+    """Public helper to cache a login URL for reuse by status checks."""
+    _write_cached_login_url(url, ttl_seconds)
+
+
+def clear_login_url_cache() -> None:
+    """Public helper to clear cached login URL (e.g., after successful auth)."""
+    _clear_cached_login_url()
+
+
+def generate_login_url() -> str:
+    """Generate (or reuse) a Tailscale login URL without spamming.
+
+    Behavior:
+    - If a non-expired cached URL exists, return it.
+    - Otherwise, run the tailUp helper once to get a fresh URL, cache it, and return it.
+    """
+    try:
+        # Reuse cached URL if available and valid
+        cached = _read_cached_login_url()
+        if cached:
+            return cached
+
         current_app.logger.info("[TAIL] Attempting to generate login URL via tailUp script")
-        
+
         result = subprocess.run(
             ['/usr/bin/sudo', '/usr/local/sbin/tailUp'],
             capture_output=True,
             text=True,
             timeout=15
         )
-        
+
         current_app.logger.info(f"[TAIL] tailUp script return code: {result.returncode}")
         current_app.logger.info(f"[TAIL] tailUp script output: {result.stdout.strip()}")
-        
+
         if result.returncode == 0:
-            # Script succeeded, output should be the login URL
             login_url = result.stdout.strip()
             if login_url and login_url.startswith('https://login.tailscale.com/'):
+                _write_cached_login_url(login_url)
                 current_app.logger.info(f"[TAIL] Successfully generated login URL: {login_url}")
                 return login_url
-            else:
-                current_app.logger.warning(f"[TAIL] Script succeeded but output doesn't look like a URL: {login_url}")
+            current_app.logger.warning("[TAIL] Script succeeded but output doesn't look like a URL")
         else:
-            # Script failed, log the error output
             current_app.logger.error(f"[TAIL] tailUp script failed with output: {result.stdout}")
             if result.stderr:
                 current_app.logger.error(f"[TAIL] tailUp script stderr: {result.stderr}")
-        
+
         return ""
-        
+
     except subprocess.TimeoutExpired:
         current_app.logger.error("[TAIL] Timeout while running tailUp script")
         return ""
@@ -149,55 +211,37 @@ def get_tailscale_status() -> dict:
         # Check if the service is enabled (for admin users)
         is_enabled = is_tailscale_service_enabled()
         
-        # Check for login URL when service is enabled but not connected
+        # Check for login URL when service is enabled but not connected (do NOT auto-generate here)
         login_url = None
         if is_enabled and not connected:
             try:
                 current_app.logger.info(f"[TAIL] Service enabled but not connected, checking for login URL...")
-                
-                # First, check if we need initial authentication
-                current_app.logger.info("[TAIL] Calling needs_initial_authentication()...")
+
+                # Only detect need for auth and surface a cached URL if available.
                 needs_auth = needs_initial_authentication()
                 current_app.logger.info(f"[TAIL] needs_initial_authentication() returned: {needs_auth}")
-                
+
                 if needs_auth:
-                    current_app.logger.info("[TAIL] Detected need for initial authentication, generating login URL...")
-                    login_url = generate_login_url()
-                    if login_url:
-                        current_app.logger.info(f"[TAIL] Successfully generated login URL: {login_url}")
+                    # Reuse any cached link generated explicitly via connect endpoint
+                    cached = _read_cached_login_url()
+                    if cached:
+                        login_url = cached
                     else:
-                        current_app.logger.warning("[TAIL] Failed to generate login URL, falling back to service status check")
-                else:
-                    current_app.logger.info("[TAIL] No need for initial authentication detected")
-                
-                # If we still don't have a login URL, check systemctl status as fallback
-                if not login_url:
-                    service_status_result = subprocess.run(
-                        ['/usr/bin/sudo', '/usr/bin/systemctl', 'status', 'tailscaled.service'],
-                        capture_output=True,
-                        text=True,
-                        timeout=10
-                    )
-                    
-                    current_app.logger.info(f"[TAIL] Systemctl status return code: {service_status_result.returncode}")
-                    current_app.logger.debug(f"[TAIL] Systemctl status output: {service_status_result.stdout}")
-                    
-                    if service_status_result.returncode == 0:
-                        # Look for login URL in the status output
-                        login_match = re.search(r'https://login\.tailscale\.com/a/[a-zA-Z0-9]+', service_status_result.stdout)
-                        if login_match:
-                            login_url = login_match.group(0)
-                            current_app.logger.info(f"[TAIL] Found login URL in service status: {login_url}")
-                        else:
-                            current_app.logger.info(f"[TAIL] No login URL found in service status output")
-                            # Let's also check for the "Needs login" text pattern
-                            if "Needs login:" in service_status_result.stdout:
-                                current_app.logger.info(f"[TAIL] Found 'Needs login:' text in status")
-                    else:
-                        current_app.logger.warning(f"[TAIL] Systemctl status failed with stderr: {service_status_result.stderr}")
-                        
+                        # As a passive fallback, try to scrape from systemctl if present without running tailscale up
+                        service_status_result = subprocess.run(
+                            ['/usr/bin/sudo', '/usr/bin/systemctl', 'status', 'tailscaled.service'],
+                            capture_output=True,
+                            text=True,
+                            timeout=10
+                        )
+                        current_app.logger.info(f"[TAIL] Systemctl status return code: {service_status_result.returncode}")
+                        if service_status_result.returncode == 0:
+                            login_match = re.search(r'https://login\.tailscale\.com/a/[a-zA-Z0-9]+', service_status_result.stdout)
+                            if login_match:
+                                login_url = login_match.group(0)
+                                current_app.logger.info(f"[TAIL] Found login URL in service status: {login_url}")
             except Exception as e:
-                current_app.logger.error(f"[TAIL] Error checking service status for login URL: {str(e)}")
+                current_app.logger.error(f"[TAIL] Error checking for login URL: {str(e)}")
 
         result = {
             "status": "connected" if connected else "disconnected",
@@ -207,6 +251,10 @@ def get_tailscale_status() -> dict:
             "timestamp": time.time()
         }
         
+        # If connected, clear any stale cached login url
+        if connected:
+            _clear_cached_login_url()
+
         # Add login URL if found
         if login_url:
             result["loginUrl"] = login_url

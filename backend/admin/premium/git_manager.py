@@ -179,8 +179,8 @@ def _validate_manifest_completeness(temp_dir: str, manifest: Dict[str, Any], tab
 
         def _should_ignore(rel_path: str) -> bool:
             """Return True if file should be ignored for declaration checks."""
-            # Normalize path
-            rel_path = rel_path.strip().lstrip('./')
+            # Normalize path (do NOT strip leading dots; we need them to detect dotfiles)
+            rel_path = rel_path.strip()
             base = os.path.basename(rel_path)
             parts = rel_path.split(os.sep)
             # Ignore git-related files and dirs

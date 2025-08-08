@@ -203,6 +203,14 @@ def get_tab_status_list() -> Dict[str, Any]:
         ])
         
         has_cross_tab_conflicts = not validate_success
+        cross_conflict_output: List[str] = []
+        if has_cross_tab_conflicts:
+            # Preserve useful diagnostics for the UI
+            combined = (validate_stdout or '')
+            if not combined and validate_stderr:
+                combined = validate_stderr
+            # Fallback safe split
+            cross_conflict_output = [line for line in combined.split('\n') if line.strip()]
         
         # 3. For each uninstalled tab, check individual conflicts with core system
         for tab in tabs:
@@ -214,6 +222,11 @@ def get_tab_status_list() -> Dict[str, Any]:
                 
                 tab["conflictsWithCore"] = not check_success
                 tab["hasConflicts"] = tab["conflictsWithCore"]
+                if tab["hasConflicts"]:
+                    merged = (check_stdout or '')
+                    if not merged and check_stderr:
+                        merged = check_stderr
+                    tab["conflictOutput"] = [line for line in merged.split('\n') if line.strip()]
             else:
                 # Installed tabs don't have conflicts (they're already resolved)
                 tab["conflictsWithCore"] = False
@@ -229,7 +242,9 @@ def get_tab_status_list() -> Dict[str, Any]:
             "availableTabs": available_count,
             "hasAnyConflicts": has_cross_tab_conflicts,
             "canInstallAll": not has_cross_tab_conflicts and available_count > 0,
-            "canUninstallAll": installed_count > 0
+            "canUninstallAll": installed_count > 0,
+            # Attach a condensed cross-tab conflict report for UI visibility
+            "crossConflictOutput": cross_conflict_output[:200]  # cap to reasonable size
         }
         
         return {

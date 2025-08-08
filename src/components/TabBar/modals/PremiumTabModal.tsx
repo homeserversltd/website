@@ -825,6 +825,17 @@ export const PremiumTabModal: React.FC<PremiumTabModalProps> = ({ onClose }) => 
                       <span>Conflicts Detected</span>
                     </div>
                   )}
+                  {summary.crossConflictOutput && summary.crossConflictOutput.length > 0 && (
+                    <div className="premium-tab-conflict-summary">
+                      <div className="conflict-summary-header">
+                        <FontAwesomeIcon icon={faExclamationTriangle} />
+                        <span>Cross-tab validation report</span>
+                      </div>
+                      <pre className="conflict-summary-content">
+                        {summary.crossConflictOutput.join('\n')}
+                      </pre>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -901,6 +912,11 @@ export const PremiumTabModal: React.FC<PremiumTabModalProps> = ({ onClose }) => 
                           {tab.conflictsWithCore 
                             ? 'Conflicts with core system files' 
                             : 'Conflicts with other premium tabs'}
+                          {tab.conflictOutput && tab.conflictOutput.length > 0 && (
+                            <pre className="tab-conflict-details">
+                              {tab.conflictOutput.join('\n')}
+                            </pre>
+                          )}
                         </div>
                       )}
                       {/* Auto-update checkbox */}

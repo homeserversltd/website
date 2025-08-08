@@ -527,6 +527,8 @@ export interface PremiumTab {
   installed: boolean;
   hasConflicts: boolean;
   conflictsWithCore: boolean;
+  // Optional detailed diagnostics for UI rendering
+  conflictOutput?: string[];
 }
 
 export interface PremiumTabSummary {
@@ -536,6 +538,8 @@ export interface PremiumTabSummary {
   hasAnyConflicts: boolean;
   canInstallAll: boolean;
   canUninstallAll: boolean;
+  // Optional cross-tab validation diagnostics
+  crossConflictOutput?: string[];
 }
 
 export interface PremiumTabStatusResponse {

@@ -131,6 +131,7 @@ def list_modules():
         
         # Execute the module list command
         success, message, modules_info = utils.execute_update_manager("list")
+        if not modules_info.get("modules"): print("[UPDATEMAN-DEBUG] 0 modules; raw:\n" + (modules_info.get("raw_output", "")[:4000]), flush=True)
         
         operation_time = time.time() - start_time
         logger.info(f"[UPDATEMAN] Module listing completed in {operation_time:.2f} seconds")

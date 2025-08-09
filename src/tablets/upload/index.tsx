@@ -62,8 +62,7 @@ const UploadHistoryModalContent: React.FC = () => {
     if (!hasAttemptedLoad) {
       void withLoading(loadHistory());
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadHistory, hasAttemptedLoad]); // loadHistory is now stable due to useCallback
+  }, [loadHistory, hasAttemptedLoad, withLoading]); // loadHistory is now stable due to useCallback
 
   const handleClearHistory = useCallback(async () => {
     try {

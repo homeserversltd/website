@@ -164,6 +164,21 @@
           "isPinRequired": true
         }
       },
+      "dev": {
+        "config": {
+          "displayName": "Developer",
+          "adminOnly": false,
+          "order": 999,
+          "isEnabled": true
+        },
+        "visibility": {
+          "tab": true,
+          "elements": {
+            "placeholder": true
+          }
+        },
+        "data": {}
+      },
       "stats": {
         "config": {
           "displayName": "Stats",
@@ -190,31 +205,16 @@
           }
         }
       },
-      "dev": {
-        "config": {
-          "displayName": "Developer",
-          "adminOnly": false,
-          "order": 999,
-          "isEnabled": true
-        },
-        "visibility": {
-          "tab": true,
-          "elements": {
-            "placeholder": true
-          }
-        },
-        "data": {}
-      },
       "starred": "portals"
     },
     "global": {
       "root": "sda",
       "version": {
-        "version": "0.9.24",
-        "releaseDate": "08-08-2025",
+        "version": "0.9.25",
+        "releaseDate": "08-09-2025",
         "generation": 1,
         "buildId": "695fe2a",
-        "lastUpdated": "08-08-2025"
+        "lastUpdated": "08-09-2025"
       },
       "theme": {
         "name": "dark"

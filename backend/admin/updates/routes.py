@@ -398,12 +398,14 @@ def get_update_logfile():
             logger.warning(f"[UPDATEMAN] Update logfile not found at {UPDATE_LOG_PATH}")
             return error_response("Update logfile not found")
 
-        # Parse optional tail size
-        try:
-            lines = int(request.args.get('lines', 500))
-            lines = max(1, min(lines, 5000))
-        except Exception:
-            lines = 500
+        # Optional tail size: if provided, tail; otherwise return full file
+        lines = None
+        if 'lines' in request.args:
+            try:
+                lines_val = int(request.args.get('lines', 500))
+                lines = max(1, min(lines_val, 5000))
+            except Exception:
+                lines = 500
 
         # Use sudo to ensure permission to read logfile
         success, stdout, stderr = execute_command(["sudo", "/usr/bin/cat", UPDATE_LOG_PATH])
@@ -411,9 +413,16 @@ def get_update_logfile():
             logger.error(f"[UPDATEMAN] Failed to read logfile: {stderr}")
             return error_response(f"Failed to read logfile: {stderr}")
 
-        # Tail last N lines in Python
-        content_lines = stdout.splitlines()
-        tailed = '\n'.join(content_lines[-lines:])
+        # Tail last N lines only if requested; otherwise return full content
+        if lines is not None:
+            content_lines = stdout.splitlines()
+            content = '\n'.join(content_lines[-lines:])
+            total_lines = len(content_lines)
+            lines_returned = min(lines, total_lines)
+        else:
+            content = stdout
+            total_lines = len(stdout.splitlines())
+            lines_returned = total_lines
 
         operation_time = time.time() - start_time
         logger.info(f"[UPDATEMAN] Logfile retrieval completed in {operation_time:.2f} seconds")
@@ -422,9 +431,9 @@ def get_update_logfile():
             message="Update logfile retrieved successfully",
             details={
                 "path": UPDATE_LOG_PATH,
-                "lines": lines,
-                "totalLines": len(content_lines),
-                "content": tailed,
+                "lines": lines_returned,
+                "totalLines": total_lines,
+                "content": content,
                 "retrievalTime": int(time.time()),
                 "operationTime": f"{operation_time:.2f} seconds"
             }

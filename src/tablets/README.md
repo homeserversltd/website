@@ -57,17 +57,7 @@ The tablets system is the core UI architecture of HOMESERVER, providing a modula
   - Permission management
   - Blacklist configuration
 
-#### 5. **Dev Tablet** (`/tablets/dev/`)
-- **Purpose**: Development and testing tools
-- **Components**: Hard drive tests, thermal tests, completion guide
-- **Access**: Admin-only
-- **Features**:
-  - Hardware diagnostics
-  - Thermal monitoring
-  - Development utilities
-  - System testing tools
-
-#### 6. **Fallback Tablet** (`/tablets/fallback/`)
+#### 5. **Fallback Tablet** (`/tablets/fallback/`)
 - **Purpose**: Emergency UI when normal tablets fail
 - **Components**: Error display, recovery options, connection status
 - **Access**: Always available

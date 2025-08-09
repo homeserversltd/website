@@ -29,18 +29,47 @@ def check_vault_mounted() -> bool:
             current_app.logger.error("Invalid vault configuration: missing device or mountPoint")
             return False
 
-        # Use psutil to check for mounted partitions
-        partitions = psutil.disk_partitions()
-        for partition in partitions:
-            # If encrypted, check for the mapped device name. Otherwise, check directly.
-            if encrypted:
-                if partition.device == f'/dev/mapper/vault' and partition.mountpoint == mount_point:
-                    current_app.logger.info(f"Vault is mounted: /dev/mapper/vault at {partition.mountpoint}")
-                    return True
-            else:
-                if partition.device == f'/dev/{device}' and partition.mountpoint == mount_point:
-                    current_app.logger.info(f"Vault is mounted: {partition.device} at {partition.mountpoint}")
-                    return True
+        # Primary method: Check using mountpoint command (most reliable)
+        try:
+            import subprocess
+            result = subprocess.run(['/usr/bin/mountpoint', '-q', mount_point], 
+                                    capture_output=True, timeout=5)
+            if result.returncode == 0:
+                current_app.logger.info(f"Vault is mounted at {mount_point} (mountpoint check)")
+                return True
+        except Exception as e:
+            current_app.logger.warning(f"mountpoint command failed: {e}")
+
+        # Fallback method: Use psutil to check for mounted partitions
+        try:
+            partitions = psutil.disk_partitions()
+            for partition in partitions:
+                # If encrypted, check for the mapped device name. Otherwise, check directly.
+                if encrypted:
+                    if partition.device == f'/dev/mapper/vault' and partition.mountpoint == mount_point:
+                        current_app.logger.info(f"Vault is mounted: /dev/mapper/vault at {partition.mountpoint} (psutil check)")
+                        return True
+                else:
+                    if partition.device == f'/dev/{device}' and partition.mountpoint == mount_point:
+                        current_app.logger.info(f"Vault is mounted: {partition.device} at {partition.mountpoint} (psutil check)")
+                        return True
+        except Exception as e:
+            current_app.logger.warning(f"psutil check failed: {e}")
+
+        # Final fallback: Check /proc/mounts directly
+        try:
+            with open('/proc/mounts', 'r') as f:
+                mounts = f.read()
+                if encrypted:
+                    if f'/dev/mapper/vault {mount_point}' in mounts:
+                        current_app.logger.info(f"Vault is mounted: /dev/mapper/vault at {mount_point} (proc/mounts check)")
+                        return True
+                else:
+                    if f'/dev/{device} {mount_point}' in mounts:
+                        current_app.logger.info(f"Vault is mounted: /dev/{device} at {mount_point} (proc/mounts check)")
+                        return True
+        except Exception as e:
+            current_app.logger.warning(f"/proc/mounts check failed: {e}")
 
         current_app.logger.info(f"Vault is not mounted: {device} at {mount_point}")
         return False

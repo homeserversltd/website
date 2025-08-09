@@ -106,8 +106,7 @@ def create_app(config_object=None):
     from .sockets import bp as sockets_bp
     from .monitors import bp as monitors_bp
     from .utils import bp as utils_bp
-    from .dev import bp as dev_bp
-    app.register_blueprint(dev_bp)
+
     app.register_blueprint(broadcasts_bp)
     app.register_blueprint(tabman_bp)
     app.register_blueprint(stats_bp)

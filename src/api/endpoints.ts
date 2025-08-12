@@ -199,28 +199,6 @@ export type PremiumTabEndpoints = {
   autoUpdate: (tabName: string) => string;
 };
 
-export type DevEndpoints = {
-  disable: string;
-  files: string;
-  wipeDeployPartition: string;
-  finaleWrapup: string;
-  deploymentLog: string;
-  unlockDeploy: string;
-  step: (stepId: string) => string;
-  sequence: string;
-  hardDriveTest: {
-    devices: string;
-    start: string;
-    results: string;
-  };
-  thermalTest: {
-    start: string;
-    results: string;
-    clearResults: string;
-  };
-};
-
-
 // Main API endpoints type
 export type APIEndpoints = {
   auth: AuthEndpoints;
@@ -238,7 +216,6 @@ export type APIEndpoints = {
   version: VersionEndpoints;
   crypto: CryptoEndpoints;
   premium: PremiumTabEndpoints;
-  dev: DevEndpoints;
 };
 
 // API endpoints definition
@@ -437,25 +414,5 @@ export const API_ENDPOINTS: APIEndpoints = {
       autoUpdateStatus: '/admin/premium/auto-update-status',
       autoUpdate: (tabName: string) => `/admin/premium/auto-update/${encodeURIComponent(tabName)}`,
     },
-    // Dev endpoints (injected during development)
-    dev: {
-      disable: '/dev/disable',
-      files: '/dev/files',
-      wipeDeployPartition: '/dev/wipe-deploy-partition',
-      finaleWrapup: '/dev/finale-wrapup',
-      deploymentLog: '/dev/deployment-log',
-      unlockDeploy: '/dev/unlock-deploy',
-      step: (stepId: string) => `/dev/step/${encodeURIComponent(stepId)}`,
-      sequence: '/dev/sequence',
-      hardDriveTest: {
-        devices: '/dev/hard-drive-test/devices',
-        start: '/dev/hard-drive-test/start',
-        results: '/dev/hard-drive-test/results',
-      },
-      thermalTest: {
-        start: '/dev/thermal-test/start',
-        results: '/dev/thermal-test/results',
-        clearResults: '/dev/thermal-test/clear-results',
-      },
-    },
+
   } as const;

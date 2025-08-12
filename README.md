@@ -107,18 +107,9 @@ Real-time bidirectional communication:
 ### Configuration System
 Dynamic configuration with multiple layers:
 - **Environment Variables**: Development vs production settings
-- **JSON Config**: `/var/www/homeserver/src/config/homeserver.json`
+- **JSON Config**: `/etc/homeserver.json`
 - **Dynamic Secrets**: Fresh encryption keys on each startup
 - **Live Updates**: Configuration changes without restarting
-
-## System Requirements
-
-### Hardware
-- **CPU**: Intel processor (for power monitoring features)
-- **RAM**: 8GB+ recommended
-- **Storage**: SSD for system, additional storage for NAS connection
-- **Network**: Gigabit Ethernet for best performance
-- **OS**: Linux (Ubuntu/Debian recommended)
 
 ## Why This Matters
 

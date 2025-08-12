@@ -106,15 +106,6 @@
               "remoteURL": "https://home.tail13aff.ts.net/music/"
             },
             {
-              "name": "Ampache",
-              "description": "Music and video streaming server",
-              "services": ["php8.2-fpm"],
-              "type": "systemd",
-              "port": 7657,
-              "localURL": "https://ampache.home.arpa",
-              "remoteURL": "https://home.tail13aff.ts.net/ampache/"
-            },
-            {
               "name": "FileBrowser",
               "description": "File manager",
               "services": ["filebrowser"],

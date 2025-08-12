@@ -787,299 +787,43 @@ def apply_permissions():
         JSON response with status and details of operations performed
     """
     try:
-        current_app.logger.info("[DISKMAN] Starting permission application process")
+        current_app.logger.info("[DISKMAN] Applying NAS permissions via setupNAS.sh (single source of truth)")
         data = request.get_json() or {}
-        
-        # Load the NAS permissions configuration using the utility function
-        nas_permissions = utils.get_nas_config('permissions')
-        if not nas_permissions:
-            current_app.logger.error("[DISKMAN] No NAS permissions configuration found")
-            return error_response("No NAS permissions configuration found")
-            
-        # Get base path
-        base_path = nas_permissions.get('basePath')
-        if not base_path:
-            current_app.logger.error("[DISKMAN] No base path specified in NAS permissions")
-            return error_response("No base path specified in NAS permissions")
-            
-        # Check if base path exists
-        if not os.path.exists(base_path):
-            current_app.logger.error(f"[DISKMAN] Base path {base_path} does not exist")
-            return error_response(f"Base path {base_path} does not exist")
-            
-        # Get applications
-        applications = nas_permissions.get('applications', {})
-        if not applications:
-            current_app.logger.error("[DISKMAN] No applications configured in NAS permissions")
-            return error_response("No applications configured in NAS permissions")
-            
-        # Get included permissions
-        included_permissions = nas_permissions.get('includedPermissions', {})
-        included_users = included_permissions.get('user', [])
-        included_groups = included_permissions.get('group', [])
-        
-        # Filter applications if specified in request
+
+        # Optional application filter
         requested_apps = data.get('applications', [])
+        if requested_apps and not isinstance(requested_apps, list):
+            return error_response("'applications' must be an array of application names")
+
+        # Build command
+        cmd = ["/usr/bin/sudo", "/usr/local/sbin/setupNAS.sh"]
         if requested_apps:
-            applications = {app: config for app, config in applications.items() if app in requested_apps}
-            if not applications:
-                current_app.logger.error(f"[DISKMAN] None of the requested applications {requested_apps} found in configuration")
-                return error_response("None of the requested applications found in configuration")
-                
-        # Process each application
-        results = []
-        overall_success = True
-        failed_operations = []
-        
-        for app_name, app_config in applications.items():
-            current_app.logger.info(f"[DISKMAN] Processing application: {app_name}")
-            
-            app_results = {
-                "application": app_name,
-                "operations": [],
-                "status": "pending"
-            }
-            
-            # Get application configuration
-            user = app_config.get('user')
-            group = app_config.get('group')
-            permissions_mode = app_config.get('permissions')
-            paths = app_config.get('paths', [])
-            recursive = app_config.get('recursive', False)
-            include_included_permissions = app_config.get('includeIncludedPermissions', False)
-            
-            app_success = True # Initialize app_success for each app. Must be true if all ops succeed.
+            # Only include string app names
+            app_args = [str(a) for a in requested_apps if isinstance(a, str) and a]
+            cmd.extend(app_args)
 
-            if not user or not group or not permissions_mode or not paths:
-                current_app.logger.error(f"[DISKMAN] Missing required configuration for {app_name}")
-                app_results["status"] = "error"
-                app_results["message"] = "Missing required configuration"
-                overall_success = False
-                failed_operations.append(f"{app_name}: Missing configuration")
-                results.append(app_results)
-                continue
-                
-            # Process each path
-            for path in paths:
-                path_result = utils.apply_path_permissions(
-                    path, 
-                    user, 
-                    group, 
-                    permissions_mode, 
-                    recursive, 
-                    included_users if include_included_permissions else None,
-                    included_groups if include_included_permissions else None,
-                    include_included_permissions
-                )
-                
-                app_results["operations"].append(path_result)
-                
-                # Check if the path operation was successful
-                if path_result["status"] == "error":
-                    app_success = False
-                    overall_success = False
-                    failed_operations.append(f"{app_name}: {path} - {path_result.get('message', 'Unknown error')}")
-                elif path_result["status"] == "partial": # Treat partial as not fully successful for app_success
-                    app_success = False
-                    # overall_success might remain true if partial is acceptable at a higher level,
-                    # but for this app's specific success, it's not fully successful.
-                    # Let's assume partial means overall_success should also be false if strictness is required.
-                    # For now, let's make overall_success false for partial as well, to be safe.
-                    overall_success = False
-                    failed_operations.append(f"{app_name}: {path} - Partial success (ACL issues)")
+        current_app.logger.info(f"[DISKMAN] Executing: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
-                # START: metadata.db logic for CalibreWeb /mnt/nas/books
-                if app_name == "CalibreWeb" and path == "/mnt/nas/books" and path_result["status"] != "error":
-                    source_db_path = "/var/www/homeserver/backup/metadata.db"
-                    target_db_dir = path # This is /mnt/nas/books
-                    target_db_file = os.path.join(target_db_dir, "metadata.db")
-                    
-                    # Ensure we use the specific user, group, and permissions for CalibreWeb from app_config
-                    db_user = app_config.get('user')
-                    db_group = app_config.get('group')
-                    db_permissions_mode = app_config.get('permissions')
+        # Collate logs from stdout and stderr
+        all_lines = []
+        if result.stdout:
+            all_lines.extend([l for l in result.stdout.splitlines() if l.strip()])
+        if result.stderr:
+            all_lines.extend([l for l in result.stderr.splitlines() if l.strip()])
 
-                    if not os.path.exists(target_db_file):
-                        if os.path.exists(source_db_path):
-                            current_app.logger.info(f"[DISKMAN] metadata.db not found in {target_db_dir}. Attempting to copy from {source_db_path}")
-                            try:
-                                # Copy command
-                                copy_cmd = ["/usr/bin/sudo", "/usr/bin/cp", source_db_path, target_db_file]
-                                result = subprocess.run(copy_cmd, check=False, capture_output=True, text=True)
-                                if result.returncode != 0:
-                                    raise subprocess.CalledProcessError(result.returncode, copy_cmd, output=result.stdout, stderr=result.stderr)
-                                current_app.logger.info(f"[DISKMAN] Copied {source_db_path} to {target_db_file}")
+        details = {"log": all_lines}
 
-                                # Chown command
-                                chown_cmd = ["/usr/bin/sudo", "/usr/bin/chown", f"{db_user}:{db_group}", target_db_file]
-                                result = subprocess.run(chown_cmd, check=False, capture_output=True, text=True)
-                                if result.returncode != 0:
-                                    raise subprocess.CalledProcessError(result.returncode, chown_cmd, output=result.stdout, stderr=result.stderr)
-                                current_app.logger.info(f"[DISKMAN] Set owner of {target_db_file} to {db_user}:{db_group}")
-
-                                # Chmod command
-                                chmod_cmd = ["/usr/bin/sudo", "/usr/bin/chmod", db_permissions_mode, target_db_file]
-                                result = subprocess.run(chmod_cmd, check=False, capture_output=True, text=True)
-                                if result.returncode != 0:
-                                    raise subprocess.CalledProcessError(result.returncode, chmod_cmd, output=result.stdout, stderr=result.stderr)
-                                current_app.logger.info(f"[DISKMAN] Set permissions of {target_db_file} to {db_permissions_mode}")
-
-                                app_results["operations"].append({
-                                    "path": target_db_file,
-                                    "action": "ensure_metadata_db",
-                                    "status": "success",
-                                    "message": f"metadata.db copied from {source_db_path} and permissions set."
-                                })
-                            except subprocess.CalledProcessError as e:
-                                error_message = f"Failed operation for metadata.db ({e.cmd}): {e.stderr or e.stdout or str(e)}"
-                                current_app.logger.error(f"[DISKMAN] {error_message}")
-                                app_results["operations"].append({
-                                    "path": target_db_file,
-                                    "action": "ensure_metadata_db",
-                                    "status": "error",
-                                    "message": error_message
-                                })
-                                app_success = False
-                                overall_success = False
-                                failed_operations.append(f"{app_name} ({target_db_file}): {error_message}")
-                            except Exception as e_gen: # Catch other potential errors
-                                error_message = f"Unexpected error during metadata.db handling for {target_db_file}: {str(e_gen)}"
-                                current_app.logger.error(f"[DISKMAN] {error_message}")
-                                app_results["operations"].append({
-                                    "path": target_db_file,
-                                    "action": "ensure_metadata_db",
-                                    "status": "error",
-                                    "message": error_message
-                                })
-                                app_success = False
-                                overall_success = False
-                                failed_operations.append(f"{app_name} ({target_db_file}): {error_message}")
-                        else:
-                            warn_message = f"Source metadata.db ({source_db_path}) not found. Cannot copy."
-                            current_app.logger.warning(f"[DISKMAN] {warn_message}")
-                            app_results["operations"].append({
-                                "path": target_db_dir, 
-                                "action": "ensure_metadata_db",
-                                "status": "skipped",
-                                "message": warn_message
-                            })
-                            # Skipping is not an error for this app's success unless it's critical
-                            # If source_db is expected, this might be an error state for overall_success.
-                            # For now, let's consider it a warning and not a failure of the app_success.
-                    else:
-                        current_app.logger.info(f"[DISKMAN] metadata.db already exists at {target_db_file}. Skipping copy.")
-                # END: metadata.db logic
-            
-            # PIWIGO-SPECIFIC GALLERIES SYMLINK VERIFICATION
-            if app_name == "Piwigo":
-                current_app.logger.info(f"[DISKMAN] Verifying Piwigo galleries symlink setup.")
-                piwigo_galleries_dir = "/opt/piwigo/piwigo/galleries"
-                
-                # Get the NAS photos path dynamically from Piwigo's app_config
-                piwigo_configured_paths = app_config.get('paths', [])
-                if not piwigo_configured_paths or not piwigo_configured_paths[0]:
-                    error_message = "Piwigo NAS photos path not found in configuration."
-                    current_app.logger.error(f"[DISKMAN] {error_message}")
-                    app_results["operations"].append({
-                        "path": piwigo_galleries_dir,
-                        "action": "verify_gallery_symlink",
-                        "status": "error",
-                        "message": error_message
-                    })
-                    app_success = False
-                    overall_success = False
-                    failed_operations.append(f"{app_name} (symlink verification): {error_message}")
-                else:
-                    piwigo_nas_photos_path = piwigo_configured_paths[0]
-                    current_app.logger.info(f"[DISKMAN] Verifying Piwigo galleries symlink to: {piwigo_nas_photos_path}")
-
-                    # Check if Piwigo is actually installed by verifying galleries directory exists
-                    if not os.path.exists(piwigo_galleries_dir):
-                        skip_message = f"Piwigo galleries directory {piwigo_galleries_dir} does not exist. Skipping symlink verification."
-                        current_app.logger.info(f"[DISKMAN] {skip_message}")
-                        app_results["operations"].append({
-                            "path": piwigo_galleries_dir,
-                            "action": "verify_gallery_symlink",
-                            "status": "skipped",
-                            "message": skip_message
-                        })
-                    else:
-                        # Verify that the galleries directory is properly symlinked to the NAS photos path
-                        # The Piwigo installer should have already created: /opt/piwigo/piwigo/galleries -> /mnt/nas/photos
-                        verification_result = {
-                            "path": piwigo_galleries_dir,
-                            "action": "verify_gallery_symlink",
-                            "status": "pending",
-                            "message": ""
-                        }
-                        
-                        try:
-                            # Check if galleries is a symlink pointing to the correct NAS path
-                            if os.path.islink(piwigo_galleries_dir):
-                                actual_target = os.readlink(piwigo_galleries_dir)
-                                if actual_target == piwigo_nas_photos_path:
-                                    verification_result["status"] = "success"
-                                    verification_result["message"] = f"Piwigo galleries symlink correctly points to {piwigo_nas_photos_path}"
-                                    current_app.logger.info(f"[DISKMAN] {verification_result['message']}")
-                                else:
-                                    # Symlink exists but points to wrong location - this is a problem
-                                    error_message = f"Piwigo galleries symlink points to {actual_target} instead of {piwigo_nas_photos_path}"
-                                    current_app.logger.error(f"[DISKMAN] {error_message}")
-                                    verification_result["status"] = "error"
-                                    verification_result["message"] = error_message
-                                    app_success = False
-                                    overall_success = False
-                                    failed_operations.append(f"{app_name} (symlink verification): {error_message}")
-                            else:
-                                # Galleries directory exists but is not a symlink - this is a problem
-                                error_message = f"Piwigo galleries directory {piwigo_galleries_dir} exists but is not a symlink to {piwigo_nas_photos_path}"
-                                current_app.logger.error(f"[DISKMAN] {error_message}")
-                                verification_result["status"] = "error"
-                                verification_result["message"] = error_message
-                                app_success = False
-                                overall_success = False
-                                failed_operations.append(f"{app_name} (symlink verification): {error_message}")
-                                
-                        except Exception as e_gen:
-                            error_message = f"Unexpected error during Piwigo galleries symlink verification: {str(e_gen)}"
-                            current_app.logger.error(f"[DISKMAN] {error_message}")
-                            verification_result["status"] = "error"
-                            verification_result["message"] = error_message
-                            app_success = False
-                            overall_success = False
-                            failed_operations.append(f"{app_name} (symlink verification): {error_message}")
-                        
-                        app_results["operations"].append(verification_result)
-            # END PIWIGO-SPECIFIC GALLERIES SYMLINK VERIFICATION
-            
-            # Set application status based on all path operations, metadata.db, and symlink operations
-            if app_success:
-                 app_results["status"] = "success"
-            else:
-                 app_results["status"] = "error"
-                 if not app_results.get("message"): # Add a generic message if one isn't set by a specific failure
-                    app_results["message"] = "One or more operations failed for this application."
-            
-            results.append(app_results)
-            
-        # Return appropriate response based on overall success
-        if overall_success:
-            write_to_log('admin', f'Permissions applied successfully to NAS directories', 'info')
-            return success_response("Permissions applied successfully", {"results": results})
+        if result.returncode == 0:
+            write_to_log('admin', 'Permissions applied successfully to NAS directories (setupNAS.sh)', 'info')
+            return success_response("Permissions applied successfully", details)
         else:
-            write_to_log('admin', f'Failed to apply some permissions to NAS directories', 'error')
-            return error_response(
-                "Some permission operations failed",
-                status_code=500,
-                details={
-                    "results": results,
-                    "failed_operations": failed_operations
-                }
-            )
-        
+            current_app.logger.error(f"[DISKMAN] setupNAS.sh failed with code {result.returncode}")
+            write_to_log('admin', 'Failed to apply some permissions to NAS directories (setupNAS.sh)', 'error')
+            return error_response("Failed to apply permissions via setupNAS.sh", status_code=500, details=details)
+
     except Exception as e:
-        current_app.logger.error(f"[DISKMAN] Error applying permissions: {str(e)}")
-        # traceback.print_exc() # For debugging if needed
+        current_app.logger.error(f"[DISKMAN] Error applying permissions via setupNAS.sh: {str(e)}")
         return error_response(str(e), 500)
 
 @bp.route('/api/admin/diskman/check-services', methods=['GET'])

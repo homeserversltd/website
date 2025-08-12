@@ -216,9 +216,8 @@ def get_factory_portals():
     try:
         current_app.logger.info("[FACTORY] Starting factory portals request")
         
-        # Get the factory config path
-        factory_config_path = current_app.config.get('FACTORY_CONFIG', 
-                                                    current_app.config['HOMESERVER_CONFIG'].replace('.json', '.factory'))
+        # Get the factory config path (hardcoded to system-wide factory file)
+        factory_config_path = '/etc/homeserver.factory'
         current_app.logger.info(f"[FACTORY] Using factory config path: {factory_config_path}")
         
         # Check if file exists

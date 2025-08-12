@@ -39,7 +39,8 @@ export const useFactoryPortals = (): UseFactoryPortalsResult => {
     } catch (err) {
       logger.error('Error fetching factory portals:', err);
       setError('Failed to load factory portals');
-      // Set empty array as fallback - this means all portals will be considered custom
+      // Set empty array as fallback - this will be interpreted as "assume native",
+      // so no portals show a delete button until we can confirm they are custom.
       setFactoryPortals([]);
     } finally {
       setIsLoading(false);
@@ -47,6 +48,10 @@ export const useFactoryPortals = (): UseFactoryPortalsResult => {
   };
 
   const isCustomPortal = (portalName: string): boolean => {
+    // If we don't have any factory list loaded, assume native (not custom)
+    if (!portalName || factoryPortals.length === 0) {
+      return false;
+    }
     return !factoryPortals.includes(portalName);
   };
 

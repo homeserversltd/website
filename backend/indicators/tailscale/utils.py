@@ -217,17 +217,15 @@ def get_tailscale_status() -> dict:
             try:
                 current_app.logger.info(f"[TAIL] Service enabled but not connected, checking for login URL...")
 
-                # Only detect need for auth and surface a cached URL if available.
-                needs_auth = needs_initial_authentication()
-                current_app.logger.info(f"[TAIL] needs_initial_authentication() returned: {needs_auth}")
-
-                if needs_auth:
-                    # Reuse any cached link generated explicitly via connect endpoint
-                    cached = _read_cached_login_url()
-                    if cached:
-                        login_url = cached
-                    else:
-                        # As a passive fallback, try to scrape from systemctl if present without running tailscale up
+                # First preference: if a cached link exists (e.g., created by Connect button), surface it immediately
+                cached = _read_cached_login_url()
+                if cached:
+                    login_url = cached
+                else:
+                    # Only then check whether initial authentication is needed and try passive scrape
+                    needs_auth = needs_initial_authentication()
+                    current_app.logger.info(f"[TAIL] needs_initial_authentication() returned: {needs_auth}")
+                    if needs_auth:
                         service_status_result = subprocess.run(
                             ['/usr/bin/sudo', '/usr/bin/systemctl', 'status', 'tailscaled.service'],
                             capture_output=True,

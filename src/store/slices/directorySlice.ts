@@ -347,6 +347,7 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
   loadDirectoryHierarchical: async (path: string, forceRefresh = false) => {
     const state = get();
     debug(`[DirectorySlice] loadDirectoryHierarchical start`, { path, forceRefresh });
+    console.log('[DirectorySlice] loadDirectoryHierarchical begin', { path, forceRefresh });
     
     // Check cache first for hierarchical data
     const cached = state.directoryCache[path];
@@ -398,10 +399,12 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
       }));
 
       debug(`[DirectorySlice] loadDirectoryHierarchical success`, { path, entries: entries.length });
+      console.log('[DirectorySlice] loadDirectoryHierarchical success', { path, count: entries.length });
       return entries;
     } catch (error: any) {
       logger.error(`API error for hierarchical ${path}:`, error);
       debug(`[DirectorySlice] loadDirectoryHierarchical error`, { path, error: String(error) });
+      console.log('[DirectorySlice] loadDirectoryHierarchical error', { path, error: String(error) });
       
       let errorObj: Error;
       if (error?.response?.data?.nas_unavailable) {
@@ -517,13 +520,6 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
   toggleDirectoryExpansion: async (path: string) => {
     const state = get();
     console.log('[DirectorySlice] toggleDirectoryExpansion begin', { path });
-    
-    // Prevent overlapping toggles per path
-    if (state._inFlightByPath[path]) {
-      debug(`toggleDirectoryExpansion in-flight for ${path}, skipping`);
-      return;
-    }
-    set(s => ({ _inFlightByPath: { ...s._inFlightByPath, [path]: true } }));
 
     // Find the directory entry across all cached data
     let currentEntry: DirectoryEntry | null = null;
@@ -541,11 +537,6 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
     if (!currentEntry) {
       logger.warn(`Cannot find entry for path: ${path}`);
       console.log('[DirectorySlice] toggleDirectoryExpansion: entry not found', { path });
-      set(s => {
-        const next = { ...s._inFlightByPath };
-        delete next[path];
-        return { _inFlightByPath: next } as Partial<StoreState> as any;
-      });
       return;
     }
 
@@ -555,11 +546,6 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
     if (currentEntry.isLoading) {
       debug(`Directory ${path} is loading, ignoring toggle`);
       console.log('[DirectorySlice] toggle ignored: entry is loading', { path });
-      set(s => {
-        const next = { ...s._inFlightByPath };
-        delete next[path];
-        return { _inFlightByPath: next } as Partial<StoreState> as any;
-      });
       return;
     }
     
@@ -576,17 +562,13 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
         await state.expandDirectory(path);
       }
     } finally {
-      set(s => {
-        const next = { ...s._inFlightByPath };
-        delete next[path];
-        return { _inFlightByPath: next } as Partial<StoreState> as any;
-      });
       console.log('[DirectorySlice] toggleDirectoryExpansion end', { path });
     }
   },
 
   setDirectoryExpansion: (path: string, isExpanded: boolean, isLoading = false) => {
     debug(`setDirectoryExpansion: ${path}, expanded: ${isExpanded}, loading: ${isLoading}`);
+    console.log('[DirectorySlice] setDirectoryExpansion', { path, isExpanded, isLoading });
     set(state => {
       const newCache = { ...state.directoryCache };
       
@@ -606,6 +588,7 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
             ...cache,
             entries: updatedEntries
           };
+          console.log('[DirectorySlice] setDirectoryExpansion applied', { cachePath, index: entryIndex });
         }
       });
       

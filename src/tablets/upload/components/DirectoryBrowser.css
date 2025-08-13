@@ -67,6 +67,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Ensure the left gutter captures clicks comfortably */
+  position: relative;
 }
 
 .directory-entry:hover {

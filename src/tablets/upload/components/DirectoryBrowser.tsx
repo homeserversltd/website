@@ -650,7 +650,19 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
       <React.Fragment key={entry.path}>
         <div
           className={`directory-entry ${selectedPath === entry.path ? 'selected' : ''} ${isLoading ? 'loading' : ''}`}
-          onClick={() => handleEntrySelect(entry)}
+          onClick={(e) => {
+            // Make the entire left gutter (lines + caret + icon) behave like +/- toggle
+            const target = e.currentTarget as HTMLDivElement;
+            const rect = target.getBoundingClientRect();
+            const clickOffsetX = e.clientX - rect.left;
+            // Width budget: tree line (approx 24*depth) + caret (24) + spacing (~12)
+            const TOGGLE_ZONE_WIDTH = 24 * depth + 24 + 12;
+            if (hasChildren && clickOffsetX <= TOGGLE_ZONE_WIDTH) {
+              handleToggleExpansion(entry, e);
+              return;
+            }
+            handleEntrySelect(entry);
+          }}
           style={{ 
             position: 'relative',
             paddingLeft: `${24 * depth + 12}px`,

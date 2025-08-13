@@ -427,37 +427,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
       childrenCount: entry.children?.length || 0
     }, null);
     
-    logger.debug('⚡ Setting immediate loading state', {
-      path: entry.path,
-      operation: 'lock-button',
-      previousLoadingState: entry.isLoading
-    });
-    
-    // IMMEDIATELY set loading state to lock the button
-    setTreeData(prevTreeData => {
-      const updateEntryLoading = (entries: DirectoryEntry[]): DirectoryEntry[] => {
-        return entries.map(e => {
-          if (e.path === entry.path) {
-            const updatedEntry = { ...e, isLoading: true };
-            logger.debug('🔄 Entry loading state updated', {
-              path: e.path,
-              wasLoading: e.isLoading,
-              nowLoading: updatedEntry.isLoading,
-              depth: (e.path.split('/').length - 3) // depth from /mnt/nas
-            });
-            return updatedEntry;
-          }
-          if (e.children) {
-            return { ...e, children: updateEntryLoading(e.children) };
-          }
-          return e;
-        });
-      };
-      const updatedTree = updateEntryLoading(prevTreeData);
-      
-      debugState.stateChange('TreeData', 'loading-state-set', prevTreeData, updatedTree);
-      return updatedTree;
-    });
+    // Rely on global store to manage loading/expanded state to avoid UI/store races
     
     logger.debug('🚀 Initiating server request', {
       path: entry.path,

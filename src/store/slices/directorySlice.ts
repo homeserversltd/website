@@ -38,6 +38,7 @@ export interface DirectorySlice {
   cacheTimeout: number;
   isLoading: boolean;
   error: Error | null;
+  _inFlightByPath: Record<string, boolean>;
   
   // Actions
   loadDirectory: (path: string, forceRefresh?: boolean) => Promise<DirectoryEntry[]>;
@@ -67,6 +68,7 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
   cacheTimeout: CACHE_TIMEOUT,
   isLoading: false,
   error: null,
+  _inFlightByPath: {},
 
   loadDirectoryDeep: async (path: string, forceRefresh = false) => {
     const state = get();
@@ -423,6 +425,13 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
     
     debug(`expandDirectory called for: ${path}`);
     
+    // Prevent overlapping expand operations per path
+    if (state._inFlightByPath[path]) {
+      debug(`expandDirectory in-flight for ${path}, skipping`);
+      return [];
+    }
+    set(s => ({ _inFlightByPath: { ...s._inFlightByPath, [path]: true } }));
+
     // Check if already loading to prevent race conditions
     let currentEntry: DirectoryEntry | null = null;
     for (const [cachePath, cache] of Object.entries(state.directoryCache)) {
@@ -484,12 +493,25 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
       // Mark directory as not loading and not expanded on error
       state.setDirectoryExpansion(path, false, false);
       throw error;
+    } finally {
+      set(s => {
+        const next = { ...s._inFlightByPath };
+        delete next[path];
+        return { _inFlightByPath: next } as Partial<StoreState> as any;
+      });
     }
   },
 
   toggleDirectoryExpansion: async (path: string) => {
     const state = get();
     
+    // Prevent overlapping toggles per path
+    if (state._inFlightByPath[path]) {
+      debug(`toggleDirectoryExpansion in-flight for ${path}, skipping`);
+      return;
+    }
+    set(s => ({ _inFlightByPath: { ...s._inFlightByPath, [path]: true } }));
+
     // Find the directory entry across all cached data
     let currentEntry: DirectoryEntry | null = null;
     let parentPath: string | null = null;
@@ -505,6 +527,11 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
 
     if (!currentEntry) {
       logger.warn(`Cannot find entry for path: ${path}`);
+      set(s => {
+        const next = { ...s._inFlightByPath };
+        delete next[path];
+        return { _inFlightByPath: next } as Partial<StoreState> as any;
+      });
       return;
     }
 
@@ -513,17 +540,30 @@ export const createDirectorySlice: StateCreator<StoreState, [], [], DirectorySli
     
     if (currentEntry.isLoading) {
       debug(`Directory ${path} is loading, ignoring toggle`);
+      set(s => {
+        const next = { ...s._inFlightByPath };
+        delete next[path];
+        return { _inFlightByPath: next } as Partial<StoreState> as any;
+      });
       return;
     }
     
-    if (isCurrentlyExpanded) {
-      // Collapse: set children to null and isExpanded to false
-      debug(`Collapsing: ${path}`);
-      state.setDirectoryExpansion(path, false, false);
-    } else {
-      // Expand: load children
-      debug(`Expanding: ${path}`);
-      await state.expandDirectory(path);
+    try {
+      if (isCurrentlyExpanded) {
+        // Collapse: set children to null and isExpanded to false
+        debug(`Collapsing: ${path}`);
+        state.setDirectoryExpansion(path, false, false);
+      } else {
+        // Expand: load children
+        debug(`Expanding: ${path}`);
+        await state.expandDirectory(path);
+      }
+    } finally {
+      set(s => {
+        const next = { ...s._inFlightByPath };
+        delete next[path];
+        return { _inFlightByPath: next } as Partial<StoreState> as any;
+      });
     }
   },
 

@@ -184,8 +184,8 @@ export const createComponentLogger = (componentName: string) => {
       info(message, data, { ...options, component: componentName }),
     warn: (message: string, data?: any, options?: DebugOptions) => 
       warn(message, data, { ...options, component: componentName }),
-    error: (message: string, error?: any, options?: DebugOptions) => 
-      error(message, error, { ...options, component: componentName }),
+    error: (message: string, err?: any, options?: DebugOptions) => 
+      error(message, err, { ...options, component: componentName }),
     verbose: (message: string, data?: any, options?: DebugOptions) => 
       verbose(message, data, { ...options, component: componentName })
   };

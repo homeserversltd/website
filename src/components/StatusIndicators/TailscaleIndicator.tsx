@@ -216,7 +216,17 @@ export function useTailscaleStatus() {
     updateActivity();
     pendingConnectionOperation.current = 'connect';
     try {
-      await withConnectLoading(api.post(API_ENDPOINTS.status.tailscale.connect));
+      const response: any = await withConnectLoading(api.post(API_ENDPOINTS.status.tailscale.connect));
+      // If backend returns an authUrl, surface it immediately so the modal shows yellow state with link
+      const authUrl = response?.authUrl || response?.url;
+      if (authUrl) {
+        setStatus(prev => ({
+          ...prev,
+          status: 'disconnected',
+          loginUrl: authUrl,
+          timestamp: Date.now()
+        }));
+      }
     } catch (error: any) {
       console.error('Failed to connect Tailscale:', error);
       const message = error?.response?.data?.error || error?.message || 'Failed to connect Tailscale';
@@ -527,7 +537,15 @@ const TailscaleConfigForm = React.memo(({
           {`Unique name used for DNS entries and TLS certificates.
           You can find this name on the DNS page of your tailscale dashboard.
           This change will reboot the website and tailscale service. 
-          Please wait and refresh the page after submitting changes.`}
+          Please wait and refresh the page after submitting changes.
+
+          Note: HOMESERVER will automatically regenerate the HTTPS self-signed
+          certificate to reference your new tailnet. If you previously
+          installed the certificate on any device, open the site in a
+          private/incognito window and re-download the certificate before
+          returning to normal browsing. Until the new certificate is
+          installed, browsers may report a certificate name mismatch for both
+          local and remote access.`}
         </div>
       </div>
     </div>

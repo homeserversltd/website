@@ -399,13 +399,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
     
     event.stopPropagation(); // Prevent selection when clicking expand/collapse
     
-    console.log('[DirectoryBrowser] click: toggle', {
-      path: entry.path,
-      isExpanded: entry.isExpanded,
-      isLoading: entry.isLoading,
-      hasChildren: entry.hasChildren,
-      ts: Date.now()
-    });
+    // Click lifecycle logging removed after verification
 
     logger.debug('🔧 Expand button clicked', {
       path: entry.path,
@@ -436,7 +430,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
     }, null);
     
     // Rely on global store to manage loading/expanded state to avoid UI/store races
-    console.log('[DirectoryBrowser] dispatch: toggleDirectoryExpansion -> store', { path: entry.path });
+    // Dispatch to store
     
     logger.debug('🚀 Initiating server request', {
       path: entry.path,
@@ -452,10 +446,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
         () => toggleDirectoryExpansion(entry.path)
       );
       
-      console.log('[DirectoryBrowser] store.toggleDirectoryExpansion resolved', {
-        path: entry.path,
-        timeMs: toggleResult
-      });
+      // Store toggle resolved
 
       logger.debug('✅ Server response received', {
         path: entry.path,
@@ -474,10 +465,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
         });
         
         debugState.stateChange('TreeData', 'server-response-update', treeData, updatedTree);
-        console.log('[DirectoryBrowser] UI setTreeData from store cache', {
-          root: '/mnt/nas',
-          size: updatedTree.length
-        });
+        // Sync UI with store cache
         setTreeData(updatedTree);
         
         // Find and log the updated entry state
@@ -510,7 +498,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
           cacheState: directoryCache['/mnt/nas'] ? 'has-root-cache' : 'no-root-cache',
           operation: 'tree-refresh-failed'
         });
-        console.log('[DirectoryBrowser] warning: no updated tree found after toggle', { path: entry.path });
+        // No updated tree found after toggle
         
         // Reset loading state if no tree found
         setTreeData(prevTreeData => {
@@ -521,7 +509,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
                   path: e.path,
                   wasLoading: e.isLoading
                 });
-                console.log('[DirectoryBrowser] local reset loading due to missing tree', { path: e.path });
+                // Local reset loading due to missing tree
                 return { ...e, isLoading: false };
               }
               if (e.children) {
@@ -540,10 +528,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
         stack: error instanceof Error ? error.stack : undefined,
         operation: 'toggle-error'
       });
-      console.log('[DirectoryBrowser] error: toggle failed', {
-        path: entry.path,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Toggle failed
       
       toast.error('Failed to expand directory');
       
@@ -581,10 +566,7 @@ export const DirectoryBrowser = forwardRef<DirectoryBrowserRef, DirectoryBrowser
         operation: 'complete',
         finalTreeSize: treeData.length
       });
-      console.log('[DirectoryBrowser] done: toggle lifecycle complete', {
-        path: entry.path,
-        totalTimeMs: Number(totalTime.toFixed(2))
-      });
+      // Toggle lifecycle complete
     }
   }, [toggleDirectoryExpansion, getDirectoryTree, toast, logger, directoryCache, treeData]);
 

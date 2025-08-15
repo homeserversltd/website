@@ -334,7 +334,7 @@ class ConfigManager:
             return False
     
     def _remove_patch_keys(self, config: dict, patch: dict, path: str = "") -> bool:
-        """Recursively remove keys from config that were added by patch."""
+        """Remove keys from config that were added by patch."""
         modified = False
         
         for key, value in patch.items():
@@ -342,23 +342,16 @@ class ConfigManager:
             
             if key in config:
                 if isinstance(value, dict) and isinstance(config[key], dict):
-                    # Special handling for tab sections - if we're removing a complete tab,
-                    # remove the entire tab section regardless of minor differences
-                    if path == "tabs" and self._is_complete_tab_removal(value):
+                    # Special handling for tabs - if we're at the tabs level, remove the entire tab
+                    if path == "tabs":
                         del config[key]
                         modified = True
-                        self.logger.debug(f"Removed complete tab section: {current_path}")
+                        self.logger.debug(f"Removed tab: {current_path}")
                         continue
                     
-                    # Recursively remove nested keys
+                    # For other nested dicts, recursively remove keys
                     nested_modified = self._remove_patch_keys(config[key], value, current_path)
-                    
-                    # If the nested dict is now empty, remove it
-                    if nested_modified and not config[key]:
-                        del config[key]
-                        modified = True
-                        self.logger.debug(f"Removed empty config section: {current_path}")
-                    elif nested_modified:
+                    if nested_modified:
                         modified = True
                 else:
                     # Remove the key if it matches the patch value

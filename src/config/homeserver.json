@@ -150,7 +150,7 @@
           }
         },
         "data": {
-          "blacklist": ["/mnt/nas/backup","git","media","torrents","downloads"],
+          "blacklist": [],
           "default-directory": "/mnt/nas",
           "isPinRequired": true
         }

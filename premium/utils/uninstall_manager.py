@@ -94,13 +94,30 @@ class UninstallManager:
         if not source_directory:
             self.logger.warning(f"Could not find source directory for tab: {tab_name}")
         
+        # Get backend name from configuration (may differ from folder name)
+        backend_name = tab_name  # Default to folder name
+        if source_directory:
+            backend_index_file = os.path.join(source_directory, "backend", "index.json")
+            if os.path.exists(backend_index_file):
+                try:
+                    import json
+                    with open(backend_index_file, 'r') as f:
+                        backend_manifest = json.load(f)
+                    backend_name = backend_manifest.get("name", tab_name)
+                    self.logger.debug(f"Using backend name '{backend_name}' from configuration (folder: '{tab_name}')")
+                except Exception as e:
+                    self.logger.warning(f"Error reading backend manifest, using folder name: {str(e)}")
+        
         # Initialize installation data
         installation_data = {
             "tab_name": tab_name,
+            "backend_name": backend_name,  # Store the actual backend name
             "source_directory": source_directory,
-            "tab_directory": os.path.join(self.tablets_dir, tab_name),
+            "tab_directory": os.path.join(self.tablets_dir, backend_name),  # Use backend name, not folder name
+            "backend_directory": os.path.join("/var/www/homeserver/backend", backend_name),  # Use backend name, not folder name
             "permissions_file": None,
             "files_to_remove": [],
+            "backend_files_to_remove": [],  # New: backend files to remove
             "append_operations": [],
             "packages": {
                 "python": [],
@@ -115,6 +132,24 @@ class UninstallManager:
         if not os.path.exists(tab_dir):
             self.logger.error(f"Tab directory not found: {tab_dir}")
             return None
+        
+        # 1.5. Check if backend directory exists (new structure)
+        backend_dir = installation_data["backend_directory"]
+        if os.path.exists(backend_dir):
+            self.logger.debug(f"Found backend directory: {backend_dir}")
+            # Add all backend files to removal list
+            try:
+                for root, dirs, files in os.walk(backend_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        installation_data["backend_files_to_remove"].append(file_path)
+                        self.logger.debug(f"Found backend file to remove: {file_path}")
+                
+                self.logger.debug(f"Found {len(installation_data['backend_files_to_remove'])} backend files to remove")
+            except Exception as e:
+                self.logger.error(f"Error scanning backend directory: {str(e)}")
+        else:
+            self.logger.debug(f"Backend directory not found: {backend_dir}")
         
         # 2. Find permissions file
         permissions_file = os.path.join(self.sudoers_dir, f"premium_{tab_name}")
@@ -134,8 +169,8 @@ class UninstallManager:
                     # Extract file targets from manifest
                     for file_operation in frontend_manifest.get("files", []):
                         target_path = file_operation["target"]
-                        # Replace {tabName} placeholder if present
-                        target_path = target_path.replace("{tabName}", tab_name)
+                        # Replace {tabName} placeholder if present - use backend name for consistency
+                        target_path = target_path.replace("{tabName}", backend_name)
                         installation_data["files_to_remove"].append(target_path)
                         self.logger.debug(f"Found file to remove: {target_path}")
                     
@@ -205,7 +240,7 @@ class UninstallManager:
             # NPM packages
             npm_patch_file = os.path.join(source_directory, "frontend", "package.patch.json")
             if os.path.exists(npm_patch_file):
-                installation_data["packages"]["npm_patch"] = npm_patch_file
+                installation_data["npm_patch"] = npm_patch_file
                 try:
                     packages = self.package_manager.get_packages_from_npm_patch(npm_patch_file)
                     self.logger.debug(f"Found {len(packages)} NPM packages to uninstall")
@@ -339,6 +374,11 @@ class UninstallManager:
                 if not self.file_operations.remove_file_or_symlink(file_path):
                     self.logger.warning(f"Failed to remove file: {file_path}")
             
+            # 2.5. Remove backend files from /var/www/homeserver/backend/{tabName}/ (new structure)
+            for file_path in installation_data["backend_files_to_remove"]:
+                if not self.file_operations.remove_file_or_symlink(file_path):
+                    self.logger.warning(f"Failed to remove backend file: {file_path}")
+            
             # 3. Remove permissions file
             if installation_data["permissions_file"]:
                 if not self.file_operations.remove_file_or_symlink(installation_data["permissions_file"]):
@@ -353,13 +393,26 @@ class UninstallManager:
                 except Exception as e:
                     self.logger.error(f"Failed to remove tab directory: {str(e)}")
             
+            # 4.5. Remove backend directory (new structure)
+            backend_dir = installation_data["backend_directory"]
+            if os.path.exists(backend_dir):
+                try:
+                    shutil.rmtree(backend_dir)
+                    self.logger.info(f"Removed backend directory: {backend_dir}")
+                except Exception as e:
+                    self.logger.error(f"Failed to remove backend directory: {str(e)}")
+            
             # 5. Clean up empty directories
-            self.file_operations.remove_empty_directories(os.path.dirname(tab_dir))
+            self.file_operations.remove_empty_directories(tab_dir)
+            # Also clean up empty backend directories
+            self.file_operations.remove_empty_directories(backend_dir)
             
             # 5.5. Clean up development artifacts from source directory
             source_dir = installation_data.get("source_directory")
             if source_dir and os.path.exists(source_dir):
                 self._cleanup_development_artifacts(source_dir)
+                # Also clean up empty source directories
+                self.file_operations.remove_empty_directories(source_dir)
             
             # 6. Revert package installations
             # Handle Python packages from installation data
@@ -493,11 +546,14 @@ class UninstallManager:
         dry_run_result = {
             "tab_name": tab_name,
             "files_to_remove": installation_data["files_to_remove"],
+            "backend_files_to_remove": installation_data["backend_files_to_remove"],  # New: backend files
             "append_operations_to_revert": installation_data["append_operations"],
             "permissions_file": installation_data["permissions_file"],
             "tab_directory": installation_data["tab_directory"],
+            "backend_directory": installation_data["backend_directory"],  # New: backend directory
             "estimated_impact": {
                 "files_count": len(installation_data["files_to_remove"]),
+                "backend_files_count": len(installation_data["backend_files_to_remove"]),  # New: backend count
                 "has_permissions": installation_data["permissions_file"] is not None,
                 "has_append_operations": len(installation_data["append_operations"]) > 0
             }

@@ -370,6 +370,34 @@ app.register_blueprint(test_bp)
 7. **Path Security**: Target paths within allowed directories
 8. **Configuration Validation**: Config patches tested before apply
 
+### Development Workflow: Reinstall Command
+
+**Streamlined Development Process**: The `reinstall` command provides a one-step solution for development iterations:
+
+```bash
+# Traditional 3-step process:
+sudo python3 installer.py uninstall devTab
+rsync -av --delete ./devTab/ root@server:/var/www/homeserver/premium/devTab/
+sudo python3 installer.py install devTab
+
+# New streamlined process:
+rsync -av --delete ./devTab/ root@server:/var/www/homeserver/premium/devTab/
+sudo python3 installer.py reinstall devTab
+```
+
+**Benefits**:
+- **Atomic Operation**: Single command ensures consistency
+- **Error Handling**: Automatic rollback if either step fails
+- **Logging**: Clear separation of uninstall and install phases
+- **Development Speed**: Faster iteration cycles
+- **Reduced Commands**: Fewer commands to remember and execute
+
+**Use Cases**:
+- **Code Updates**: After syncing modified files
+- **Configuration Changes**: After updating manifest files
+- **Testing**: Validate changes without manual uninstall/install
+- **Debugging**: Clean slate for troubleshooting
+
 ### Installation Sequence
 
 1. **Backup Phase**: Current config backed up to `/tmp`
@@ -510,6 +538,9 @@ sudo python3 installer.py install tabName
 
 # Install all tabs in directory
 sudo python3 installer.py install --all [directory]
+
+# Reinstall single tab (uninstall then install from same path)
+sudo python3 installer.py reinstall tabName
 
 # Uninstall single tab
 sudo python3 installer.py uninstall tabName

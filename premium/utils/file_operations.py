@@ -218,48 +218,36 @@ class FileOperationsManager:
                 tab_name = operation.identifier
                 
                 # Transform the source content to include both import and registration
-                # Replace ANY relative import with correct premium directory path AND add registration
-                if "from .routes import bp" in source_content:
-                    # Replace the entire content with proper import and registration
-                    source_content = f"# {tab_name.title()} Premium Tab Blueprint Registration\nfrom premium.{tab_name}.backend import bp as {tab_name}_bp\napp.register_blueprint({tab_name}_bp)"
-                else:
-                    # Fallback for other patterns
-                    relative_import_pattern = r'from\s+\.[a-zA-Z_][a-zA-Z0-9_]*\s+import\s+bp'
-                    replacement = f"from premium.{tab_name}.backend import bp as {tab_name}_bp\napp.register_blueprint({tab_name}_bp)"
-                    source_content = re.sub(relative_import_pattern, replacement, source_content)
-                
-                # Also handle specific known patterns for backwards compatibility
-                source_content = source_content.replace(
-                    f"from .{tab_name} import bp as {tab_name}_bp",
-                    f"from premium.{tab_name}.backend import bp as {tab_name}_bp\napp.register_blueprint({tab_name}_bp)"
-                )
-                source_content = source_content.replace(
-                    f"from .test import bp as test_bp",
-                    f"from premium.{tab_name}.backend import bp as {tab_name}_bp\napp.register_blueprint({tab_name}_bp)"
-                )
+                # Generate relative import from the main backend directory
+                source_content = f"# {tab_name.title()} Premium Tab Blueprint Registration\nfrom .{tab_name}.routes import bp as {tab_name}_bp\napp.register_blueprint({tab_name}_bp)"
                 
         except Exception as e:
             self.logger.error(f"Failed to read source file: {str(e)}")
             return False
         
-        # Detect indentation context at the end marker
+        # Find the proper indentation context by looking at existing blueprint registrations
         lines = content.split('\n')
-        end_marker_line_idx = None
+        
+        # Look for existing blueprint registrations to determine proper indentation
+        blueprint_indent = None
         for i, line in enumerate(lines):
-            if end_marker in line:
-                end_marker_line_idx = i
+            if "app.register_blueprint(" in line:
+                blueprint_indent = len(line) - len(line.lstrip())
                 break
         
-        if end_marker_line_idx is None:
-            self.logger.error(f"Could not find end marker line: {end_marker}")
-            return False
+        # If no existing blueprints found, look for the start marker indentation
+        if blueprint_indent is None:
+            for i, line in enumerate(lines):
+                if start_marker in line:
+                    blueprint_indent = len(line) - len(line.lstrip())
+                    break
         
-        # Get indentation from the end marker line
-        end_marker_line = lines[end_marker_line_idx]
-        base_indent = len(end_marker_line) - len(end_marker_line.lstrip())
-        indent_str = ' ' * base_indent
+        # Fallback: use 4-space indentation if nothing else works
+        if blueprint_indent is None:
+            blueprint_indent = 4
         
-        # Apply indentation to source content
+        # Apply the detected indentation to source content
+        indent_str = ' ' * blueprint_indent
         source_lines = source_content.split('\n')
         indented_source_lines = []
         for line in source_lines:
@@ -287,7 +275,7 @@ class FileOperationsManager:
             with open(target_path, 'w') as f:
                 f.write(new_content)
             
-            self.logger.info(f"Appended content to {target_path} with proper indentation")
+            self.logger.info(f"Appended content to {target_path} with proper indentation ({blueprint_indent} spaces)")
             self.operations_history.append(operation)
             return True
             

@@ -225,7 +225,55 @@ class PremiumInstaller:
         if not self.installation_state.package_manager.install_python_requirements(requirements_file):
             raise Exception("Failed to install Python requirements")
         
-        # Process backend file operations
+        # Create backend directory for this tab in the main backend directory
+        # Use the backend configuration's name field, not the folder name
+        backend_name = backend_manifest.get("name", self.installation_state.tab_name)
+        backend_dir = os.path.join("/var/www/homeserver/backend", backend_name)
+        if not os.path.exists(backend_dir):
+            os.makedirs(backend_dir, exist_ok=True)
+            self.installation_state.file_operations.set_permissions(backend_dir, "www-data", "www-data", "775")
+            self.installation_state.file_operations.created_directories.append(backend_dir)
+        
+        # Copy all backend files to the main backend directory
+        source_backend_dir = os.path.join(tab_path, "backend")
+        if os.path.exists(source_backend_dir):
+            for item in os.listdir(source_backend_dir):
+                source_item = os.path.join(source_backend_dir, item)
+                target_item = os.path.join(backend_dir, item)
+                
+                if os.path.isfile(source_item):
+                    # Copy file
+                    operation = FileOperation(
+                        source=f"backend/{item}",
+                        target=target_item,
+                        operation_type="copy",
+                        description=f"Backend file: {item}"
+                    )
+                    if not self.installation_state.file_operations.perform_copy_operation(operation, tab_path):
+                        raise Exception(f"Failed to copy backend file: {item}")
+                elif os.path.isdir(source_item):
+                    # Copy directory recursively
+                    if not os.path.exists(target_item):
+                        os.makedirs(target_item, exist_ok=True)
+                        self.installation_state.file_operations.set_permissions(target_item, "www-data", "www-data", "775")
+                        self.installation_state.file_operations.created_directories.append(target_item)
+                    
+                    # Copy contents recursively
+                    for subitem in os.listdir(source_item):
+                        source_subitem = os.path.join(source_item, subitem)
+                        target_subitem = os.path.join(target_item, subitem)
+                        
+                        if os.path.isfile(source_subitem):
+                            operation = FileOperation(
+                                source=f"backend/{item}/{subitem}",
+                                target=target_subitem,
+                                operation_type="copy",
+                                description=f"Backend subfile: {item}/{subitem}"
+                            )
+                            if not self.installation_state.file_operations.perform_copy_operation(operation, tab_path):
+                                raise Exception(f"Failed to copy backend subfile: {item}/{subitem}")
+        
+        # Process backend file operations (for append operations like blueprint registration)
         for file_op in backend_manifest.get("files", []):
             operation = FileOperation(
                 source=file_op["source"],
@@ -256,8 +304,9 @@ class PremiumInstaller:
         if not self.installation_state.package_manager.apply_npm_patch(patch_file):
             raise Exception("Failed to apply NPM patch")
         
-        # Create tablet directory if needed
-        tablet_dir = os.path.join(TABLETS_DIR, self.installation_state.tab_name)
+        # Create tablet directory using the frontend manifest name, not the folder name
+        frontend_name = frontend_manifest.get("name", self.installation_state.tab_name)
+        tablet_dir = os.path.join(TABLETS_DIR, frontend_name)
         if not os.path.exists(tablet_dir):
             os.makedirs(tablet_dir, exist_ok=True)
             self.installation_state.file_operations.set_permissions(tablet_dir, "www-data", "www-data", "775")
@@ -265,8 +314,8 @@ class PremiumInstaller:
         
         # Process frontend file operations
         for file_op in frontend_manifest.get("files", []):
-            # Replace {tabName} placeholder
-            target_path = file_op["target"].replace("{tabName}", self.installation_state.tab_name)
+            # Replace {tabName} placeholder with the frontend manifest name
+            target_path = file_op["target"].replace("{tabName}", frontend_name)
             
             operation = FileOperation(
                 source=file_op["source"],
@@ -595,6 +644,37 @@ class PremiumInstaller:
             category_logger.error(f"Uninstallation failed: {str(e)}")
             return False
     
+    def reinstall_premium_tab(self, tab_path: str) -> bool:
+        """Reinstall a premium tab by uninstalling first, then installing from the same path."""
+        # Get category logger for reinstall operations
+        category_logger = self._get_category_logger("reinstall")
+        tab_name = os.path.basename(tab_path)
+        
+        category_logger.info(f"Starting reinstall of premium tab: {tab_name}")
+        category_logger.info("This will uninstall the tab first, then install it from the current path")
+        
+        try:
+            # Step 1: Uninstall the existing tab
+            category_logger.info("=== STEP 1: UNINSTALLING EXISTING TAB ===")
+            if not self.uninstall_premium_tab(tab_name):
+                category_logger.error(f"Failed to uninstall existing tab: {tab_name}")
+                return False
+            
+            category_logger.info(f"Successfully uninstalled existing tab: {tab_name}")
+            
+            # Step 2: Install the tab from the current path
+            category_logger.info("=== STEP 2: INSTALLING FROM CURRENT PATH ===")
+            if not self.install_premium_tab(tab_path):
+                category_logger.error(f"Failed to install tab from path: {tab_path}")
+                return False
+            
+            category_logger.info(f"Successfully reinstalled premium tab: {tab_name}")
+            return True
+            
+        except Exception as e:
+            category_logger.error(f"Reinstall failed: {str(e)}")
+            return False
+    
     def validate_premium_tab(self, tab_path: str) -> bool:
         """Validate a premium tab without installing."""
         # Get category logger for validate operations
@@ -680,7 +760,7 @@ class PremiumInstaller:
         return tabs
     
     def list_installed_premium_tabs(self, premium_dir: str = "/var/www/homeserver/premium") -> List[str]:
-        """List installed premium tabs by checking for __pycache__ directories."""
+        """List installed premium tabs by checking for actual backend installations."""
         installed_tabs = []
         
         if os.path.exists(premium_dir):
@@ -691,10 +771,33 @@ class PremiumInstaller:
                     item != "utils" and  # Skip utils directory
                     os.path.exists(os.path.join(item_path, "index.json"))):
                     
-                    # Check for __pycache__ in backend directory (indicates installation)
-                    pycache_path = os.path.join(item_path, "backend", "__pycache__")
-                    if os.path.exists(pycache_path) and os.path.isdir(pycache_path):
-                        installed_tabs.append(item)
+                    # Check if this tab is actually installed by looking at backend installation
+                    backend_index_file = os.path.join(item_path, "backend", "index.json")
+                    if os.path.exists(backend_index_file):
+                        try:
+                            import json
+                            with open(backend_index_file, 'r') as f:
+                                backend_manifest = json.load(f)
+                            
+                            # Get the backend name from the configuration
+                            backend_name = backend_manifest.get("name", item)
+                            
+                            # Check if the backend directory exists in the main backend location
+                            backend_install_path = os.path.join("/var/www/homeserver/backend", backend_name)
+                            if os.path.exists(backend_install_path):
+                                # Check for actual backend files (not just __pycache__)
+                                backend_files = [f for f in os.listdir(backend_install_path) 
+                                               if f.endswith('.py') or f.endswith('.json') or f.endswith('.txt')]
+                                if backend_files:
+                                    installed_tabs.append(item)
+                                    self.logger.debug(f"Tab {item} is installed (backend: {backend_name}, files: {len(backend_files)})")
+                                else:
+                                    self.logger.debug(f"Tab {item} has backend directory but no files")
+                            else:
+                                self.logger.debug(f"Tab {item} backend directory not found at {backend_install_path}")
+                                
+                        except Exception as e:
+                            self.logger.warning(f"Error checking backend manifest for {item}: {str(e)}")
         
         installed_tabs.sort()  # Sort alphabetically for consistent output
         self.logger.info(f"Found {len(installed_tabs)} installed premium tabs: {', '.join(installed_tabs) if installed_tabs else 'none'}")
@@ -714,6 +817,10 @@ def main():
     install_group.add_argument("tab_path", nargs="?", help="Path to premium tab directory")
     install_group.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
                               help="Install all premium tabs from directory (defaults to current directory)")
+    
+    # Reinstall command
+    reinstall_parser = subparsers.add_parser("reinstall", help="Reinstall premium tab (uninstall then install from same path)")
+    reinstall_parser.add_argument("tab_path", help="Path to premium tab directory")
     
     # Uninstall command
     uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall premium tab(s)")
@@ -760,6 +867,14 @@ def main():
                 success = installer.install_all_premium_tabs(args.all)
             else:
                 success = installer.install_premium_tab(args.tab_path)
+            return 0 if success else 1
+            
+        elif args.command == "reinstall":
+            if args.tab_path:
+                success = installer.reinstall_premium_tab(args.tab_path)
+            else:
+                print("Error: --tab-path is required for reinstall command.")
+                return 1
             return 0 if success else 1
             
         elif args.command == "uninstall":

@@ -446,11 +446,14 @@ class UninstallManager:
         except Exception as e:
             self.logger.error(f"Error checking/clearing starred tab: {str(e)}")
     
-    def uninstall_premium_tab(self, tab_name: str, 
-                             requirements_file: Optional[str] = None,
-                             npm_patch_file: Optional[str] = None,
-                             config_patch_file: Optional[str] = None) -> bool:
-        """Uninstall a specific premium tab."""
+    def uninstall_premium_tab(self, tab_name: str, skip_build_and_restart: bool = False) -> bool:
+        """Uninstall a premium tab completely.
+        
+        Args:
+            tab_name: Name of the tab to uninstall
+            skip_build_and_restart: If True, skip frontend rebuild and service restart
+                                   (useful for reinstall operations)
+        """
         self.logger.info(f"Starting uninstallation of premium tab: {tab_name}")
         
         try:
@@ -556,17 +559,6 @@ class UninstallManager:
                 # This is a more advanced feature that could be implemented later
                 # if we want to track system package dependencies across tabs
             
-            # Handle legacy parameters for backward compatibility
-            if requirements_file and os.path.exists(requirements_file):
-                packages = self.package_manager.get_packages_from_requirements(requirements_file)
-                if packages:
-                    if not self.package_manager.uninstall_python_packages(packages):
-                        self.logger.warning("Failed to uninstall some Python packages")
-            
-            if npm_patch_file and os.path.exists(npm_patch_file):
-                if not self.package_manager.revert_npm_patch(npm_patch_file):
-                    self.logger.warning("Failed to revert NPM patch")
-            
             # 7. Revert configuration changes
             # Use config patch from installation data first
             config_patch_from_data = installation_data.get("config_patch")
@@ -574,21 +566,19 @@ class UninstallManager:
                 self.logger.info(f"Reverting config patch: {config_patch_from_data}")
                 if not self.config_manager.revert_config_patch(config_patch_from_data):
                     self.logger.warning("Failed to revert configuration patch")
-            elif config_patch_file and os.path.exists(config_patch_file):
-                self.logger.info(f"Reverting config patch (legacy): {config_patch_file}")
-                if not self.config_manager.revert_config_patch(config_patch_file):
-                    self.logger.warning("Failed to revert configuration patch")
             
             # 7.5. Check and clear starred tab if it's being uninstalled
             self._clear_starred_tab_if_needed(tab_name)
             
             # 8. Rebuild frontend
-            if not self.build_manager.rebuild_frontend():
-                self.logger.warning("Failed to rebuild frontend")
+            if not skip_build_and_restart:
+                if not self.build_manager.rebuild_frontend():
+                    self.logger.warning("Failed to rebuild frontend")
             
             # 9. Restart services
-            if not self.service_manager.restart_homeserver_services():
-                self.logger.warning("Failed to restart services")
+            if not skip_build_and_restart:
+                if not self.service_manager.restart_homeserver_services():
+                    self.logger.warning("Failed to restart services")
             
             # Post-validation
             self.logger.info("=== POST-UNINSTALL VALIDATION ===")

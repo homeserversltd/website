@@ -632,27 +632,183 @@ class PremiumInstaller:
         """Get detailed information about currently installed premium tabs using InstallationTracker."""
         return self.installation_tracker.get_installed_premium_tabs()
     
-    def reinstall_premium_tabs_from_state(self, tab_states: List[Dict[str, Any]]) -> bool:
-        """Reinstall premium tabs from stored state information for website update integration."""
-        if not tab_states:
-            self.logger.info("No premium tabs to reinstall")
-            return True
+    def reinstall_premium_tab(self, tab_name: str) -> bool:
+        """Reinstall a premium tab by first uninstalling then installing."""
+        # Get category logger for reinstall operations
+        category_logger = self._get_category_logger("reinstall")
         
-        self.logger.info(f"Reinstalling {len(tab_states)} premium tabs from stored state")
+        category_logger.info(f"Starting reinstallation of premium tab: {tab_name}")
         
-        # Extract tab paths from state
-        tab_paths = [tab["tab_path"] for tab in tab_states if tab.get("tab_path")]
-        
-        if not tab_paths:
-            self.logger.error("No valid tab paths found in state")
+        try:
+            # Check if tab is currently installed
+            installed_tabs = self.get_installed_premium_tabs()
+            tab_installed = any(tab['name'] == tab_name for tab in installed_tabs)
+            
+            if not tab_installed:
+                category_logger.warning(f"Tab '{tab_name}' is not currently installed, performing fresh installation")
+                # Find the tab in premium directory and install it
+                premium_dir = "/var/www/homeserver/premium"
+                tab_path = None
+                
+                if os.path.exists(premium_dir):
+                    for item in os.listdir(premium_dir):
+                        item_path = os.path.join(premium_dir, item)
+                        if (os.path.isdir(item_path) and 
+                            os.path.basename(item_path) != "utils" and
+                            os.path.exists(os.path.join(item_path, "index.json"))):
+                            
+                            try:
+                                with open(os.path.join(item_path, "index.json"), 'r') as f:
+                                    tab_info = json.load(f)
+                                if tab_info.get("name") == tab_name:
+                                    tab_path = item_path
+                                    break
+                            except Exception:
+                                continue
+                
+                if tab_path:
+                    category_logger.info(f"Found tab '{tab_name}' in premium directory, installing...")
+                    return self.install_premium_tab(tab_path)
+                else:
+                    category_logger.error(f"Tab '{tab_name}' not found in premium directory")
+                    return False
+            
+            # Tab is installed, proceed with reinstall
+            category_logger.info(f"Tab '{tab_name}' is currently installed, proceeding with reinstall")
+            
+            # Step 1: Uninstall the current installation
+            category_logger.info("Step 1: Uninstalling current installation")
+            if not self.uninstall_manager.uninstall_premium_tab(tab_name, skip_build_and_restart=True):
+                category_logger.error("Failed to uninstall current installation")
+                return False
+            
+            # Step 2: Find and reinstall the tab
+            category_logger.info("Step 2: Reinstalling tab")
+            premium_dir = "/var/www/homeserver/premium"
+            tab_path = None
+            
+            if os.path.exists(premium_dir):
+                for item in os.listdir(premium_dir):
+                    item_path = os.path.join(premium_dir, item)
+                    if (os.path.isdir(item_path) and 
+                        os.path.basename(item_path) != "utils" and
+                        os.path.exists(os.path.join(item_path, "index.json"))):
+                        
+                        try:
+                            with open(os.path.join(item_path, "index.json"), 'r') as f:
+                                tab_info = json.load(f)
+                            if tab_info.get("name") == tab_name:
+                                tab_path = item_path
+                                break
+                        except Exception:
+                            continue
+            
+            if tab_path:
+                category_logger.info(f"Found tab '{tab_name}' in premium directory, reinstalling...")
+                if self.install_premium_tab(tab_path):
+                    category_logger.info(f"✅ Premium tab '{tab_name}' reinstalled successfully")
+                    return True
+                else:
+                    category_logger.error(f"❌ Failed to reinstall tab '{tab_name}'")
+                    return False
+            else:
+                category_logger.error(f"Tab '{tab_name}' not found in premium directory after uninstall")
+                return False
+                
+        except Exception as e:
+            category_logger.error(f"Reinstallation failed with exception: {str(e)}")
             return False
+    
+    def reinstall_premium_tabs_batch(self, tab_names: List[str], 
+                                   defer_build: bool = True,
+                                   defer_service_restart: bool = True) -> bool:
+        """Reinstall multiple premium tabs using batch operations."""
+        # Get category logger for batch reinstall operations
+        category_logger = self._get_category_logger("batch_reinstall")
         
-        # Use batch installation with deferred operations for efficiency
-        return self.install_premium_tabs_batch(
-            tab_paths=tab_paths,
-            defer_build=True,
-            defer_service_restart=True
-        )
+        category_logger.info(f"Starting batch reinstallation of {len(tab_names)} premium tabs")
+        
+        try:
+            # Step 1: Uninstall all specified tabs
+            category_logger.info("=== STEP 1: UNINSTALLING CURRENT INSTALLATIONS ===")
+            uninstall_successes = []
+            uninstall_failures = []
+            
+            for tab_name in tab_names:
+                category_logger.info(f"Uninstalling tab: {tab_name}")
+                if self.uninstall_manager.uninstall_premium_tab(tab_name, skip_build_and_restart=True):
+                    uninstall_successes.append(tab_name)
+                    category_logger.info(f"✅ Successfully uninstalled: {tab_name}")
+                else:
+                    uninstall_failures.append(tab_name)
+                    category_logger.error(f"❌ Failed to uninstall: {tab_name}")
+            
+            if uninstall_failures:
+                category_logger.warning(f"Some tabs failed to uninstall: {', '.join(uninstall_failures)}")
+                # Continue with the ones that were successfully uninstalled
+                tab_names = uninstall_successes
+            
+            if not tab_names:
+                category_logger.error("No tabs were successfully uninstalled, cannot proceed with reinstall")
+                return False
+            
+            # Step 2: Find tab paths and reinstall
+            category_logger.info("=== STEP 2: REINSTALLING TABS ===")
+            premium_dir = "/var/www/homeserver/premium"
+            tab_paths = []
+            
+            if os.path.exists(premium_dir):
+                for item in os.listdir(premium_dir):
+                    item_path = os.path.join(premium_dir, item)
+                    if (os.path.isdir(item_path) and 
+                        os.path.basename(item_path) != "utils" and
+                        os.path.exists(os.path.join(item_path, "index.json"))):
+                        
+                        try:
+                            with open(os.path.join(item_path, "index.json"), 'r') as f:
+                                tab_info = json.load(f)
+                            if tab_info.get("name") in tab_names:
+                                tab_paths.append(item_path)
+                                category_logger.info(f"Found tab '{tab_info.get('name')}' at: {item_path}")
+                        except Exception as e:
+                            category_logger.error(f"Error reading manifest for {item_path}: {e}")
+                            continue
+            
+            if not tab_paths:
+                category_logger.error("No tab paths found for reinstallation")
+                return False
+            
+            # Step 3: Use batch installation for reinstall
+            category_logger.info("=== STEP 3: PERFORMING BATCH REINSTALLATION ===")
+            success, status = self.batch_manager.install_premium_tabs_batch(
+                tab_paths=tab_paths,
+                defer_build=defer_build,
+                defer_service_restart=defer_service_restart,
+                logger=category_logger
+            )
+            
+            if success:
+                category_logger.info("=== BATCH REINSTALLATION COMPLETED SUCCESSFULLY ===")
+                category_logger.info(f"Successfully reinstalled: {', '.join(status.get('successful_tabs', []))}")
+                
+                if status.get('failed_tabs'):
+                    category_logger.warning(f"Some tabs failed reinstallation: {', '.join(status['failed_tabs'])}")
+                
+                if status.get('fallback_attempted'):
+                    category_logger.info("Fallback to individual installation was used")
+                    category_logger.info(f"Individual successes: {', '.join(status.get('individual_successes', []))}")
+                    
+                    if status.get('individual_failures'):
+                        category_logger.warning(f"Individual failures: {', '.join(status['individual_failures'])}")
+            else:
+                category_logger.error("=== BATCH REINSTALLATION FAILED ===")
+                category_logger.error(f"Failed tabs: {', '.join(status.get('failed_tabs', []))}")
+            
+            return success
+            
+        except Exception as e:
+            category_logger.error(f"Batch reinstallation failed with exception: {str(e)}")
+            return False
     
     def get_installation_status(self) -> Dict[str, Any]:
         """Get detailed installation status for the update system integration."""
@@ -680,6 +836,15 @@ EXAMPLES:
   
   # Batch install specific tabs with deferred operations
   sudo python3 installer.py batch testTab devTab
+  
+  # Reinstall a single tab
+  sudo python3 installer.py reinstall testTab
+  
+  # Reinstall multiple tabs with deferred operations
+  sudo python3 installer.py reinstall testTab devTab
+  
+  # Reinstall with immediate build and restart
+  sudo python3 installer.py reinstall testTab --no-defer-build --no-defer-restart
   
   # Uninstall a specific tab
   sudo python3 installer.py uninstall testTab
@@ -715,6 +880,14 @@ EXAMPLES:
                              help="Don't defer frontend rebuild (rebuild after each tab)")
     batch_parser.add_argument("--no-defer-restart", action="store_true", 
                              help="Don't defer service restart (restart after each tab)")
+    
+    # Reinstall command
+    reinstall_parser = subparsers.add_parser("reinstall", help="Reinstall premium tab(s)")
+    reinstall_parser.add_argument("tab_names", nargs="+", help="Names of premium tabs to reinstall")
+    reinstall_parser.add_argument("--no-defer-build", action="store_true", 
+                                 help="Don't defer frontend rebuild (rebuild after each tab)")
+    reinstall_parser.add_argument("--no-defer-restart", action="store_true", 
+                                 help="Don't defer service restart (restart after each tab)")
     
     # Uninstall command
     uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall premium tab(s)")
@@ -796,6 +969,29 @@ EXAMPLES:
                 defer_build=defer_build,
                 defer_service_restart=defer_service_restart
             )
+            return 0 if success else 1
+            
+        elif args.command == "reinstall":
+            if args.no_defer_build:
+                defer_build = False
+            else:
+                defer_build = True
+            if args.no_defer_restart:
+                defer_service_restart = False
+            else:
+                defer_service_restart = True
+            
+            # Handle single vs batch reinstallation
+            if len(args.tab_names) == 1:
+                # Single tab reinstallation
+                success = installer.reinstall_premium_tab(args.tab_names[0])
+            else:
+                # Batch reinstallation
+                success = installer.reinstall_premium_tabs_batch(
+                    tab_names=args.tab_names,
+                    defer_build=defer_build,
+                    defer_service_restart=defer_service_restart
+                )
             return 0 if success else 1
             
         elif args.command == "uninstall":

@@ -4,7 +4,7 @@ Premium Tab JSON Logger
 A dedicated logging system for premium tab operations that organizes logs by categories
 with timestamps and preserves logs across different operations.
 
-Categories: install, uninstall, git, validate
+Categories: install, uninstall, git, validate, batch_install, reinstall, batch_reinstall
 """
 
 import json
@@ -19,7 +19,7 @@ from pathlib import Path
 class PremiumJSONLogger:
     """JSON logger for premium tab operations with category-based organization."""
     
-    VALID_CATEGORIES = {"install", "uninstall", "git", "validate", "batch_install"}
+    VALID_CATEGORIES = {"install", "uninstall", "git", "validate", "batch_install", "reinstall", "batch_reinstall"}
     
     def __init__(self, log_file: str = "/var/log/homeserver/premium_installer.log"):
         self.log_file = log_file

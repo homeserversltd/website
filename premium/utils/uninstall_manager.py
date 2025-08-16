@@ -16,6 +16,7 @@ from .file_operations import FileOperationsManager, FileOperation
 from .package_manager import PackageManager
 from .config_manager import ConfigManager, ServiceManager, BuildManager
 from .validation import ValidationManager
+from .installation_tracker import InstallationTracker
 
 
 class UninstallManager:
@@ -38,42 +39,122 @@ class UninstallManager:
         self.service_manager = ServiceManager(logger)
         self.build_manager = BuildManager(logger)
         self.validation_manager = ValidationManager(logger)
+        self.installation_tracker = InstallationTracker(logger)
     
     def discover_installed_tabs(self) -> List[str]:
-        """Discover all installed premium tabs by looking for premium tab identifiers."""
-        tabs = []
+        """Discover all installed premium tabs using InstallationTracker.
         
-        # CRITICAL: Only discover tabs that have premium tab identifiers in backend/__init__.py
-        # This prevents uninstalling core system tabs (admin, stats, portals, upload, fallback)
-        backend_init_path = "/var/www/homeserver/backend/__init__.py"
-        if os.path.exists(backend_init_path):
+        This will find both properly installed tabs (with blueprints) and 
+        broken installations (files exist but no blueprints).
+        """
+        try:
+            # Use InstallationTracker to get comprehensive installation info
+            installed_tabs = self.installation_tracker.get_installed_premium_tabs()
+            
+            # Extract just the tab names
+            tab_names = [tab["name"] for tab in installed_tabs]
+            
+            # Log what we found
+            if tab_names:
+                self.logger.info(f"Discovered {len(tab_names)} installed premium tabs: {', '.join(tab_names)}")
+                
+                # Log details about each tab's installation status
+                for tab in installed_tabs:
+                    status = tab.get("status", "unknown")
+                    has_blueprint = tab.get("has_blueprint", False)
+                    
+                    if has_blueprint:
+                        self.logger.info(f"  ✅ {tab['name']}: {status} (blueprint registered)")
+                    else:
+                        self.logger.warning(f"  ⚠️  {tab['name']}: {status} (NO blueprint - broken installation)")
+            else:
+                self.logger.info("No premium tabs currently installed")
+            
+            return tab_names
+            
+        except Exception as e:
+            self.logger.error(f"Failed to discover installed tabs: {str(e)}")
+            return []
+    
+    def discover_broken_installations(self) -> List[str]:
+        """Discover premium tabs that are installed but missing blueprint registrations.
+        
+        These are tabs that exist in the filesystem but won't work because
+        they're not registered with Flask.
+        """
+        try:
+            installed_tabs = self.installation_tracker.get_installed_premium_tabs()
+            broken_tabs = []
+            
+            for tab in installed_tabs:
+                has_blueprint = tab.get("has_blueprint", False)
+                if not has_blueprint:
+                    broken_tabs.append(tab["name"])
+            
+            if broken_tabs:
+                self.logger.warning(f"Found {len(broken_tabs)} broken installations: {', '.join(broken_tabs)}")
+                self.logger.warning("These tabs exist but won't work due to missing blueprint registrations")
+            else:
+                self.logger.info("No broken installations found")
+            
+            return broken_tabs
+            
+        except Exception as e:
+            self.logger.error(f"Failed to discover broken installations: {str(e)}")
+            return []
+    
+    def cleanup_broken_installations(self) -> bool:
+        """Clean up all broken premium tab installations.
+        
+        This removes tabs that exist in filesystem but lack blueprint registrations,
+        effectively cleaning up failed or incomplete installations.
+        """
+        self.logger.info("Starting cleanup of broken premium tab installations")
+        
+        broken_tabs = self.discover_broken_installations()
+        if not broken_tabs:
+            self.logger.info("No broken installations to clean up")
+            return True
+        
+        self.logger.warning(f"Found {len(broken_tabs)} broken installations to clean up")
+        
+        cleaned_tabs = []
+        failed_tabs = []
+        
+        for tab_name in broken_tabs:
+            self.logger.info(f"Cleaning up broken installation: {tab_name}")
+            
             try:
-                with open(backend_init_path, 'r') as f:
-                    content = f.read()
-                
-                # Look for premium tab identifiers
-                import re
-                identifier_pattern = r'# PREMIUM_TAB_IDENTIFIER: (\w+)'
-                matches = re.findall(identifier_pattern, content)
-                tabs = list(set(matches))  # Remove duplicates
-                
+                if self.uninstall_premium_tab(tab_name):
+                    cleaned_tabs.append(tab_name)
+                    self.logger.info(f"✅ Successfully cleaned up: {tab_name}")
+                else:
+                    failed_tabs.append(tab_name)
+                    self.logger.error(f"❌ Failed to clean up: {tab_name}")
+                    
             except Exception as e:
-                self.logger.error(f"Failed to read backend init file: {str(e)}")
+                failed_tabs.append(tab_name)
+                self.logger.error(f"❌ Exception during cleanup of {tab_name}: {str(e)}")
         
-        # Also check if the tab directory exists in tablets
-        existing_tabs = []
-        for tab in tabs:
-            tab_dir = os.path.join(self.tablets_dir, tab)
-            if os.path.exists(tab_dir):
-                existing_tabs.append(tab)
+        # Summary
+        self.logger.info(f"=== BROKEN INSTALLATION CLEANUP SUMMARY ===")
+        self.logger.info(f"Total broken installations: {len(broken_tabs)}")
+        self.logger.info(f"Successfully cleaned up: {len(cleaned_tabs)} - {', '.join(cleaned_tabs)}")
         
-        self.logger.info(f"Discovered {len(existing_tabs)} installed premium tabs: {', '.join(existing_tabs) if existing_tabs else 'none'}")
-        return existing_tabs
+        if failed_tabs:
+            self.logger.error(f"Failed cleanups: {len(failed_tabs)} - {', '.join(failed_tabs)}")
+            return False
+        else:
+            self.logger.info("🎉 All broken installations cleaned up successfully!")
+            return True
     
     def find_premium_tab_source_directory(self, tab_name: str) -> Optional[str]:
-        """Find the original premium tab source directory containing index.json."""
-        # Look in the premium directory structure
-        premium_base_dir = os.path.dirname(os.path.dirname(__file__))  # Go up from utils/
+        """Find the original premium tab source directory containing index.json.
+        
+        The tab_name should be the exact folder name in the premium directory.
+        """
+        # Direct path to premium directory
+        premium_base_dir = "/var/www/homeserver/premium"
         potential_tab_dir = os.path.join(premium_base_dir, tab_name)
         
         if os.path.exists(potential_tab_dir):
@@ -83,6 +164,7 @@ class UninstallManager:
                 return potential_tab_dir
         
         self.logger.warning(f"Could not find premium tab source directory for: {tab_name}")
+        self.logger.warning(f"Expected path: {potential_tab_dir}")
         return None
     
     def find_tab_installation_data(self, tab_name: str) -> Optional[Dict[str, Any]]:
@@ -339,6 +421,31 @@ class UninstallManager:
         except Exception as e:
             self.logger.error(f"Error during development artifacts cleanup: {str(e)}")
     
+    def _clear_starred_tab_if_needed(self, tab_name: str) -> None:
+        """Clear the starred tab field if it's set to the tab being uninstalled.
+        
+        This prevents the site from failing to load when the starred tab
+        no longer exists after uninstallation.
+        """
+        try:
+            # Get current starred tab value
+            starred_tab = self.config_manager.get_config_value("tabs.starred")
+            
+            if starred_tab == tab_name:
+                self.logger.warning(f"Starred tab is set to '{tab_name}' which is being uninstalled")
+                self.logger.info("Clearing starred tab field to prevent site loading failure")
+                
+                # Clear the starred tab field
+                if self.config_manager.set_config_value("tabs.starred", ""):
+                    self.logger.info("Successfully cleared starred tab field")
+                else:
+                    self.logger.error("Failed to clear starred tab field")
+            else:
+                self.logger.debug(f"Starred tab '{starred_tab}' is not being uninstalled, leaving unchanged")
+                
+        except Exception as e:
+            self.logger.error(f"Error checking/clearing starred tab: {str(e)}")
+    
     def uninstall_premium_tab(self, tab_name: str, 
                              requirements_file: Optional[str] = None,
                              npm_patch_file: Optional[str] = None,
@@ -472,6 +579,9 @@ class UninstallManager:
                 if not self.config_manager.revert_config_patch(config_patch_file):
                     self.logger.warning("Failed to revert configuration patch")
             
+            # 7.5. Check and clear starred tab if it's being uninstalled
+            self._clear_starred_tab_if_needed(tab_name)
+            
             # 8. Rebuild frontend
             if not self.build_manager.rebuild_frontend():
                 self.logger.warning("Failed to rebuild frontend")
@@ -495,21 +605,36 @@ class UninstallManager:
 
     
     def uninstall_all_premium_tabs(self) -> bool:
-        """Uninstall all premium tabs."""
+        """Uninstall all premium tabs, including broken installations."""
         self.logger.info("Starting uninstallation of all premium tabs")
         
-        # Discover all installed tabs
+        # Discover all installed tabs (including broken ones)
         installed_tabs = self.discover_installed_tabs()
         if not installed_tabs:
             self.logger.info("No premium tabs found to uninstall")
             return True
+        
+        # Separate properly installed tabs from broken ones
+        broken_tabs = self.discover_broken_installations()
+        proper_tabs = [tab for tab in installed_tabs if tab not in broken_tabs]
+        
+        if broken_tabs:
+            self.logger.warning(f"Found {len(broken_tabs)} broken installations that will also be cleaned up")
+            self.logger.warning(f"Broken tabs: {', '.join(broken_tabs)}")
+        
+        if proper_tabs:
+            self.logger.info(f"Found {len(proper_tabs)} properly installed tabs to uninstall")
+            self.logger.info(f"Proper tabs: {', '.join(proper_tabs)}")
         
         # Uninstall each tab
         uninstalled_tabs = []
         failed_tabs = []
         
         for tab_name in installed_tabs:
-            self.logger.info(f"Uninstalling premium tab: {tab_name}")
+            is_broken = tab_name in broken_tabs
+            status_msg = "broken installation" if is_broken else "proper installation"
+            
+            self.logger.info(f"Uninstalling premium tab: {tab_name} ({status_msg})")
             
             try:
                 if self.uninstall_premium_tab(tab_name):
@@ -525,7 +650,9 @@ class UninstallManager:
         
         # Summary
         self.logger.info(f"=== BATCH UNINSTALLATION SUMMARY ===")
-        self.logger.info(f"Total tabs: {len(installed_tabs)}")
+        self.logger.info(f"Total tabs processed: {len(installed_tabs)}")
+        self.logger.info(f"  - Proper installations: {len(proper_tabs)}")
+        self.logger.info(f"  - Broken installations: {len(broken_tabs)}")
         self.logger.info(f"Successfully uninstalled: {len(uninstalled_tabs)} - {', '.join(uninstalled_tabs)}")
         
         if failed_tabs:

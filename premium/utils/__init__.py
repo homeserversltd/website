@@ -7,6 +7,7 @@ This package contains utility modules for the premium tab system:
 - validation: Manifest and security validation
 - package_manager: Python, NPM, and system package management
 - config_manager: Configuration and service management
+- batch_manager: Batch installation with intelligent fallback strategies
 - logger: JSON-based category logging system
 """
 
@@ -16,6 +17,8 @@ from .validation import ValidationManager
 from .package_manager import PackageManager, PackageInstallationState, SystemPackage, SystemDependencies
 from .config_manager import ConfigManager, ServiceManager, BuildManager
 from .uninstall_manager import UninstallManager
+from .batch_manager import BatchManager, BatchInstallationState
+from .installation_tracker import InstallationTracker
 from .logger import PremiumJSONLogger, CategoryLogger, create_category_logger
 
 __all__ = [
@@ -46,10 +49,17 @@ __all__ = [
     # Uninstall management
     'UninstallManager',
     
+    # Batch management
+    'BatchManager',
+    'BatchInstallationState',
+    
+    # Installation tracking
+    'InstallationTracker',
+    
     # JSON Category Logging
     'PremiumJSONLogger',
     'CategoryLogger',
     'create_category_logger'
 ]
 
-__version__ = '1.2.1' 
+__version__ = '1.4.0'  # Increment version for new utility

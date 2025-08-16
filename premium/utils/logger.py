@@ -19,7 +19,7 @@ from pathlib import Path
 class PremiumJSONLogger:
     """JSON logger for premium tab operations with category-based organization."""
     
-    VALID_CATEGORIES = {"install", "uninstall", "git", "validate"}
+    VALID_CATEGORIES = {"install", "uninstall", "git", "validate", "batch_install"}
     
     def __init__(self, log_file: str = "/var/log/homeserver/premium_installer.log"):
         self.log_file = log_file

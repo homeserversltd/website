@@ -180,6 +180,8 @@ The Premium Tab System enables dynamic injection of paid features into the homes
 }
 ```
 
+**Marker Field**: The `marker` field is **optional** for append operations. If not specified, the installer automatically detects the default `"PREMIUM TAB BLUEPRINTS"` marker for blueprint registration. This simplifies manifest creation while maintaining flexibility for future marker types.
+
 ### Frontend Component Manifest (frontend/index.json)
 
 **Purpose**: Define frontend file operations, primarily copy operations for React components.
@@ -618,6 +620,56 @@ python3 version_checker.py compare 1.0.0 2.0.0
 5. **Testing**: Validate with version checker before installation
 6. **Documentation**: Describe file purposes in manifests
 7. **System Dependencies**: Only include essential system packages, avoid duplicating packages available in other tabs
+
+### ⚠️ CRITICAL: Naming Consistency Requirements
+
+**ALL names must match exactly across ALL files for the tab to work properly:**
+
+1. **Tab Directory Name**: The folder name in `/premium/` (e.g., `devTab`)
+2. **Tab Name in Root index.json**: The `"name"` field (e.g., `"devTab"`)
+3. **Configuration Key in homeserver.patch.json**: The key under `"tabs"` (e.g., `"devTab"`)
+4. **Blueprint Name in routes.py**: The Blueprint constructor name (e.g., `Blueprint('devTab', ...)`)
+5. **Backend Directory Name**: The directory created in `/backend/` (e.g., `devTab`)
+
+**Example of CORRECT naming consistency:**
+```python
+# routes.py
+bp = Blueprint('devTab', __name__, url_prefix='/api/dev')
+
+# homeserver.patch.json
+{
+  "tabs": {
+    "devTab": {  // ← Must match blueprint name exactly
+      "config": { ... }
+    }
+  }
+}
+
+# Root index.json
+{
+  "name": "devTab",  // ← Must match blueprint name exactly
+  ...
+}
+```
+
+**What happens if names don't match:**
+- ❌ **Blueprint name mismatch**: Tab won't load, "Cannot find module" errors
+- ❌ **Config key mismatch**: Tab appears in UI but has no functionality
+- ❌ **Directory name mismatch**: Files won't be found during installation
+- ❌ **Mixed naming**: Partial functionality or complete failure
+
+**Golden Rule**: Use the SAME name everywhere. If your tab is called `devTab`, use `devTab` in:
+- Folder name
+- Blueprint constructor
+- Configuration keys
+- Manifest names
+- All references
+
+**Common Mistakes to Avoid:**
+- Using `"dev"` in config but `"devTab"` in blueprint
+- Using `"test"` in config but `"testTab"` in blueprint  
+- Mixing camelCase and snake_case
+- Using abbreviations in one place but full names in another
 
 ### System Dependencies Best Practices
 

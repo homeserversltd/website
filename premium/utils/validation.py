@@ -64,7 +64,8 @@ class ValidationManager:
             if schema_type == "root_index":
                 required_fields = ["name", "version", "files"]
                 if not all(field in data for field in required_fields):
-                    self.logger.error(f"Missing required fields in {file_path}")
+                    missing_fields = [f for f in required_fields if f not in data]
+                    self.logger.error(f"Missing required fields in {file_path}: {missing_fields}")
                     return False
                     
                 # Validate version format (semantic versioning)
@@ -76,7 +77,8 @@ class ValidationManager:
                 # Version field is NOT required for component manifests
                 required_fields = ["name", "files"]
                 if not all(field in data for field in required_fields):
-                    self.logger.error(f"Missing required fields in {file_path}")
+                    missing_fields = [f for f in required_fields if f not in data]
+                    self.logger.error(f"Missing required fields in {file_path}: {missing_fields}")
                     return False
                     
                 # Validate file operations
@@ -283,7 +285,7 @@ class ValidationManager:
                     self.logger.error(f"Error reading {component} manifest: {str(e)}")
                     return False, {}
         
-        # Validate name consistency
+        # Validate name consistency - all names should match the root folder name
         root_name = root_manifest["name"]
         for component, manifest in component_manifests.items():
             if manifest["name"] != root_name:

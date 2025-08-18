@@ -831,11 +831,14 @@ EXAMPLES:
   # Install a single tab
   sudo python3 installer.py install testTab
   
+  # Install multiple specific tabs (automatically uses batch mode)
+  sudo python3 installer.py install testTab devTab
+  
+  # Install multiple tabs with immediate build/restart
+  sudo python3 installer.py install testTab devTab --no-defer-build --no-defer-restart
+  
   # Install all tabs from premium directory
   sudo python3 installer.py install --all
-  
-  # Batch install specific tabs with deferred operations
-  sudo python3 installer.py batch testTab devTab
   
   # Reinstall a single tab
   sudo python3 installer.py reinstall testTab
@@ -866,20 +869,17 @@ EXAMPLES:
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
-    # Install command
+    # Install command - now handles both single and multiple tabs intelligently
+    # Automatically detects single vs batch mode based on number of tab paths provided
     install_parser = subparsers.add_parser("install", help="Install premium tab(s)")
     install_group = install_parser.add_mutually_exclusive_group(required=True)
-    install_group.add_argument("tab_path", nargs="?", help="Path to premium tab directory")
+    install_group.add_argument("tab_paths", nargs="*", help="Paths to premium tab directories (multiple paths for batch install)")
     install_group.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
                               help="Install all premium tabs from directory (defaults to current directory)")
-    
-    # Batch install command
-    batch_parser = subparsers.add_parser("batch", help="Install multiple specific premium tabs with deferred operations")
-    batch_parser.add_argument("tab_paths", nargs="+", help="Paths to premium tab directories")
-    batch_parser.add_argument("--no-defer-build", action="store_true", 
-                             help="Don't defer frontend rebuild (rebuild after each tab)")
-    batch_parser.add_argument("--no-defer-restart", action="store_true", 
-                             help="Don't defer service restart (restart after each tab)")
+    install_parser.add_argument("--no-defer-build", action="store_true", 
+                               help="Don't defer frontend rebuild (rebuild after each tab)")
+    install_parser.add_argument("--no-defer-restart", action="store_true", 
+                               help="Don't defer service restart (restart after each tab)")
     
     # Reinstall command
     reinstall_parser = subparsers.add_parser("reinstall", help="Reinstall premium tab(s)")
@@ -924,8 +924,18 @@ EXAMPLES:
     
     try:
         if args.command == "install":
-            if args.tab_path:
-                success = installer.install_premium_tab(args.tab_path)
+            if args.tab_paths:
+                # Check if we have multiple tab paths or just one
+                if len(args.tab_paths) == 1:
+                    # Single tab installation
+                    success = installer.install_premium_tab(args.tab_paths[0])
+                else:
+                    # Multiple tab paths - use batch installation
+                    success = installer.install_premium_tabs_batch(
+                        tab_paths=args.tab_paths,
+                        defer_build=not args.no_defer_build,
+                        defer_service_restart=not args.no_defer_restart
+                    )
             else:
                 # Install all tabs from directory
                 premium_dir = args.all or "."
@@ -953,22 +963,6 @@ EXAMPLES:
                     defer_service_restart=True
                 )
             
-            return 0 if success else 1
-            
-        elif args.command == "batch":
-            if args.no_defer_build:
-                defer_build = False
-            else:
-                defer_build = True
-            if args.no_defer_restart:
-                defer_service_restart = False
-            else:
-                defer_service_restart = True
-            success = installer.install_premium_tabs_batch(
-                tab_paths=args.tab_paths,
-                defer_build=defer_build,
-                defer_service_restart=defer_service_restart
-            )
             return 0 if success else 1
             
         elif args.command == "reinstall":

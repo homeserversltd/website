@@ -418,6 +418,14 @@ sudo python3 installer.py reinstall tab1 tab2 --no-defer-build --no-defer-restar
 
 **Deferred Operations**: By default, reinstall defers frontend rebuild and service restart until all tabs are processed, improving efficiency for multiple tab updates.
 
+**💡 Pro Tip**: The new consolidated `install` command also automatically handles multiple tabs:
+```bash
+# Install multiple tabs (automatically uses batch mode)
+sudo python3 installer.py install tab1 tab2 tab3
+
+# This is equivalent to the old batch command but simpler!
+```
+
 ### How Reinstall Optimization Works
 
 **Technical Implementation**: The reinstall process uses a `skip_build_and_restart` flag during the uninstall phase:
@@ -583,6 +591,45 @@ chmod 664 /var/www/homeserver/src/config/homeserver.json
 **Service Failure**: Automatic systemd restart, fallback to previous state
 **No Cascading Failures**: Other services remain unaffected
 
+## 🎯 Smart Install Command (New!)
+
+**Consolidated Installation**: The `install` command now automatically detects whether you're installing one tab or multiple tabs, eliminating the need for separate `batch` and `install` commands.
+
+### How It Works
+
+**Single Tab Detection**:
+```bash
+sudo python3 installer.py install tabName
+# Automatically uses individual installation logic
+```
+
+**Multiple Tab Detection**:
+```bash
+sudo python3 installer.py install tab1 tab2 tab3
+# Automatically switches to batch mode with deferred operations
+```
+
+**Benefits**:
+- **Simpler CLI**: One command for all installation scenarios
+- **Automatic Optimization**: Multiple tabs automatically use batch mode
+- **Consistent Options**: Same flags work for both single and multiple installations
+- **Backward Compatible**: Single tab installations work exactly the same
+- **No More Confusion**: Don't need to remember whether to use `install` or `batch`
+
+### Deferred Operations Control
+
+**Default Behavior** (recommended for multiple tabs):
+```bash
+sudo python3 installer.py install tab1 tab2 tab3
+# Deferred: Single frontend build and service restart at the end
+```
+
+**Immediate Operations** (faster but less efficient):
+```bash
+sudo python3 installer.py install tab1 tab2 --no-defer-build --no-defer-restart
+# Immediate: Build and restart after each tab
+```
+
 ## Command Reference
 
 ### Installer Commands (requires sudo)
@@ -590,6 +637,12 @@ chmod 664 /var/www/homeserver/src/config/homeserver.json
 ```bash
 # Install single tab
 sudo python3 installer.py install tabName
+
+# Install multiple specific tabs (automatically uses batch mode)
+sudo python3 installer.py install tab1 tab2 tab3
+
+# Install multiple tabs with immediate build and restart (no deferral)
+sudo python3 installer.py install tab1 tab2 --no-defer-build --no-defer-restart
 
 # Install all tabs in directory
 sudo python3 installer.py install --all [directory]
@@ -680,6 +733,7 @@ python3 version_checker.py compare 1.0.0 2.0.0
 6. **Documentation**: Describe file purposes in manifests
 7. **System Dependencies**: Only include essential system packages, avoid duplicating packages available in other tabs
 8. **Development Workflow**: Use `reinstall` command for rapid iteration cycles instead of manual uninstall/install
+9. **Installation**: Use the consolidated `install` command for both single and multiple tabs - it automatically detects batch mode when needed
 
 ### ⚠️ CRITICAL: Naming Consistency Requirements
 

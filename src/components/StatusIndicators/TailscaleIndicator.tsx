@@ -45,6 +45,9 @@ export function useTailscaleStatus() {
   // Add refs to track pending connect/disconnect operations
   const pendingConnectionOperation = useRef<'connect' | 'disconnect' | null>(null);
   
+  // Add ref to track manually set loginUrl to prevent it from being lost
+  const manuallySetLoginUrl = useRef<string | null>(null);
+  
   // Create refs to store latest state
   const statusRef = useRef(status);
   const configRef = useRef(config);
@@ -112,9 +115,50 @@ export function useTailscaleStatus() {
         
         // Clear the pending operation when status changes
         pendingConnectionOperation.current = null;
+        
+        // If we're now connected, clear the manually set loginUrl
+        if (latestStatusData.status === 'connected') {
+          console.log('[TAIL] Connection successful, clearing manually set loginUrl');
+          manuallySetLoginUrl.current = null;
+        }
+        
+        // Also clear if we have a loginUrl in the broadcast data (means auth was successful)
+        if (latestStatusData.loginUrl && latestStatusData.status === 'connected') {
+          console.log('[TAIL] Connection successful with loginUrl, clearing manually set loginUrl');
+          manuallySetLoginUrl.current = null;
+        }
       }
       
-      setStatus(latestStatusData);
+      // Preserve manually set loginUrl when updating from broadcast data
+      setStatus(prevStatus => {
+        const newStatus = { ...latestStatusData };
+        
+        console.log('[TAIL] Broadcast update received:', {
+          prevLoginUrl: prevStatus.loginUrl,
+          newLoginUrl: newStatus.loginUrl,
+          pendingOperation: pendingConnectionOperation.current,
+          prevStatus: prevStatus.status,
+          newStatus: newStatus.status
+        });
+        
+        // If we have a manually set loginUrl and the broadcast data doesn't have one,
+        // preserve the manual one (this prevents the flash/disappear issue)
+        if (prevStatus.loginUrl && !newStatus.loginUrl && 
+            pendingConnectionOperation.current === 'connect') {
+          console.log('[TAIL] Preserving manually set loginUrl:', prevStatus.loginUrl);
+          newStatus.loginUrl = prevStatus.loginUrl;
+        }
+        
+        // Also check if we have a manually set loginUrl in the ref that should be preserved
+        if (manuallySetLoginUrl.current && !newStatus.loginUrl && 
+            pendingConnectionOperation.current === 'connect') {
+          console.log('[TAIL] Preserving manually set loginUrl from ref:', manuallySetLoginUrl.current);
+          newStatus.loginUrl = manuallySetLoginUrl.current;
+        }
+        
+        return newStatus;
+      });
+      
       setError(null);
       
       if (latestStatusData.tailnet) {
@@ -145,7 +189,7 @@ export function useTailscaleStatus() {
           if (updatedData.isEnabled === pendingServiceOperation.current.enable) {
             toast.success(`Tailscale service ${updatedData.isEnabled ? 'enabled' : 'disabled'} successfully`);
           } else {
-            toast.error(`Failed to ${pendingServiceOperation.current.enable ? 'enable' : 'disable'} Tailscale service`);
+            toast.error(`Failed to ${updatedData.isEnabled ? 'enable' : 'disable'} Tailscale service`);
           }
           
           // Clear the pending operation
@@ -158,9 +202,50 @@ export function useTailscaleStatus() {
           
           // Clear the pending operation when status changes
           pendingConnectionOperation.current = null;
+          
+          // If we're now connected, clear the manually set loginUrl
+          if (updatedData.status === 'connected') {
+            console.log('[TAIL] Connection successful in polling, clearing manually set loginUrl');
+            manuallySetLoginUrl.current = null;
+          }
+          
+          // Also clear if we have a loginUrl in the broadcast data (means auth was successful)
+          if (updatedData.loginUrl && updatedData.status === 'connected') {
+            console.log('[TAIL] Connection successful with loginUrl in polling, clearing manually set loginUrl');
+            manuallySetLoginUrl.current = null;
+          }
         }
         
-        setStatus(updatedData);
+        // Preserve manually set loginUrl when updating from broadcast data
+        setStatus(prevStatus => {
+          const newStatus = { ...updatedData };
+          
+          console.log('[TAIL] Polling update received:', {
+            prevLoginUrl: prevStatus.loginUrl,
+            newLoginUrl: newStatus.loginUrl,
+            pendingOperation: pendingConnectionOperation.current,
+            prevStatus: prevStatus.status,
+            newStatus: newStatus.status
+          });
+          
+          // If we have a manually set loginUrl and the broadcast data doesn't have one,
+          // preserve the manual one (this prevents the flash/disappear issue)
+          if (prevStatus.loginUrl && !newStatus.loginUrl && 
+              pendingConnectionOperation.current === 'connect') {
+            console.log('[TAIL] Preserving manually set loginUrl in polling:', prevStatus.loginUrl);
+            newStatus.loginUrl = prevStatus.loginUrl;
+          }
+          
+          // Also check if we have a manually set loginUrl in the ref that should be preserved
+          if (manuallySetLoginUrl.current && !newStatus.loginUrl && 
+              pendingConnectionOperation.current === 'connect') {
+            console.log('[TAIL] Preserving manually set loginUrl from ref in polling:', manuallySetLoginUrl.current);
+            newStatus.loginUrl = manuallySetLoginUrl.current;
+          }
+          
+          return newStatus;
+        });
+        
         setError(null);
         
         if (updatedData.tailnet) {
@@ -179,6 +264,17 @@ export function useTailscaleStatus() {
     
     return () => clearInterval(interval);
   }, [getBroadcastData, isAdmin, pendingTailnet]);
+  
+  // Cleanup effect for manually set loginUrl
+  useEffect(() => {
+    return () => {
+      // Clear manually set loginUrl on unmount
+      if (manuallySetLoginUrl.current) {
+        console.log('[TAIL] Component unmounting, clearing manually set loginUrl');
+        manuallySetLoginUrl.current = null;
+      }
+    };
+  }, []);
   
   // Fetch initial config when in admin mode
   useEffect(() => {
@@ -220,12 +316,19 @@ export function useTailscaleStatus() {
       // If backend returns an authUrl, surface it immediately so the modal shows yellow state with link
       const authUrl = response?.authUrl || response?.url;
       if (authUrl) {
-        setStatus(prev => ({
-          ...prev,
-          status: 'disconnected',
-          loginUrl: authUrl,
-          timestamp: Date.now()
-        }));
+        console.log('[TAIL] Connect button returned authUrl:', authUrl);
+        // Track the manually set loginUrl to prevent it from being lost
+        manuallySetLoginUrl.current = authUrl;
+        setStatus(prev => {
+          const newStatus = {
+            ...prev,
+            status: 'disconnected' as const,
+            loginUrl: authUrl,
+            timestamp: Date.now()
+          };
+          console.log('[TAIL] Setting status with loginUrl:', newStatus);
+          return newStatus;
+        });
       }
     } catch (error: any) {
       console.error('Failed to connect Tailscale:', error);
@@ -333,6 +436,7 @@ export function useTailscaleStatus() {
     pendingTailnet,
     pendingServiceOperation,
     pendingConnectionOperation,
+    manuallySetLoginUrl,
     isAdmin,
     isAdminRef,
     getStatusColor,
@@ -665,6 +769,7 @@ export const TailscaleIndicator: React.FC = React.memo(() => {
     pendingTailnet,
     pendingServiceOperation,
     pendingConnectionOperation,
+    manuallySetLoginUrl,
     isAdmin,
     isAdminRef,
     getStatusColor,
@@ -900,6 +1005,11 @@ export const TailscaleIndicator: React.FC = React.memo(() => {
         // Clear any pending connection operations
         if (pendingConnectionOperation.current) {
           pendingConnectionOperation.current = null;
+        }
+        // Clear manually set loginUrl when modal is closed
+        if (manuallySetLoginUrl.current) {
+          console.log('[TAIL] Modal closed, clearing manually set loginUrl');
+          manuallySetLoginUrl.current = null;
         }
       }
     });

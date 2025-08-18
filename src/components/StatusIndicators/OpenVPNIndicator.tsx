@@ -104,6 +104,12 @@ const CredentialForm = React.memo(({
     }
   }, []);
 
+  // Handle form submission
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    handleUpdate();
+  }, [handleUpdate]);
+
   // Update disabled state
   const isButtonDisabled = isUpdating || 
     (!username || !password) ||
@@ -113,47 +119,49 @@ const CredentialForm = React.memo(({
 
   return (
     <div className="credential-group">
-      <div className="credential-fields">
-        <input
-          type="text"
-          value={username}
-          onChange={handleInputChange(setUsername)}
-          onBlur={handleInputBlur}
-          placeholder={`${serviceName} Username`}
-          disabled={isUpdating || updateInProgress.current || pendingOperation.current}
-          autoFocus={false}
-          tabIndex={-1}
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={handleInputChange(setPassword)}
-          onBlur={handleInputBlur}
-          placeholder={`${serviceName} Password`}
-          disabled={isUpdating || updateInProgress.current || pendingOperation.current}
-          autoFocus={false}
-          tabIndex={-1}
-        />
-      </div>
-      <button
-        className={`primary-button ${pendingOperation.current ? 'pending-operation' : ''}`}
-        onClick={handleUpdate}
-        disabled={isButtonDisabled}
-      >
-        {isUpdating || pendingOperation.current ? (
-          <>
-            <FontAwesomeIcon icon={faSpinner} spin /> {pendingOperation.current ? 'Loading...' : 'Updating...'}
-          </>
-        ) : keyExists ? (
-          serviceName === "Transmission" ? 
-            "Update\nTransmission" : 
-            "Update\nPIA Key"
-        ) : (
-          serviceName === "Transmission" ? 
-            "Create\nTransmission" : 
-            "Create\nPIA Key"
-        )}
-      </button>
+      <form onSubmit={handleSubmit}>
+        <div className="credential-fields">
+          <input
+            type="text"
+            value={username}
+            onChange={handleInputChange(setUsername)}
+            onBlur={handleInputBlur}
+            placeholder={`${serviceName} Username`}
+            disabled={isUpdating || updateInProgress.current || pendingOperation.current}
+            autoFocus={false}
+            tabIndex={-1}
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={handleInputChange(setPassword)}
+            onBlur={handleInputBlur}
+            placeholder={`${serviceName} Password`}
+            disabled={isUpdating || updateInProgress.current || pendingOperation.current}
+            autoFocus={false}
+            tabIndex={-1}
+          />
+        </div>
+        <button
+          type="submit"
+          className={`primary-button ${pendingOperation.current ? 'pending-operation' : ''}`}
+          disabled={isButtonDisabled}
+        >
+          {isUpdating || pendingOperation.current ? (
+            <>
+              <FontAwesomeIcon icon={faSpinner} spin /> {pendingOperation.current ? 'Loading...' : 'Updating...'}
+            </>
+          ) : keyExists ? (
+            serviceName === "Transmission" ? 
+              "Update\nTransmission" : 
+              "Update\nPIA Key"
+          ) : (
+            serviceName === "Transmission" ? 
+              "Create\nTransmission" : 
+              "Create\nPIA Key"
+          )}
+        </button>
+      </form>
     </div>
   );
 });

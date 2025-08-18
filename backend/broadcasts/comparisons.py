@@ -52,6 +52,11 @@ def compare_tailscale_status(old_data: Dict, new_data: Dict) -> bool:
     if 'isEnabled' in old_data and 'isEnabled' in new_data and old_data.get('isEnabled') != new_data.get('isEnabled'):
         return True
         
+    # Compare loginUrl changes (admin-only field) - this is critical for showing/hiding login prompts
+    if 'loginUrl' in old_data or 'loginUrl' in new_data:
+        if old_data.get('loginUrl') != new_data.get('loginUrl'):
+            return True
+        
     return False
 
 def compare_power_status(old_data: Dict, new_data: Dict) -> bool:

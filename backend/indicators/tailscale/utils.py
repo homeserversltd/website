@@ -250,12 +250,17 @@ def get_tailscale_status() -> dict:
         }
         
         # If connected, clear any stale cached login url
-        if connected:
+        # Only clear if we have a truly stable connection (interface up + IP + backend running)
+        if connected and interface_up and ip is not None and truly_connected:
+            current_app.logger.info("[TAIL] Stable connection detected, clearing cached login URL")
             _clear_cached_login_url()
 
         # Add login URL if found
         if login_url:
             result["loginUrl"] = login_url
+            current_app.logger.info(f"[TAIL] Including loginUrl in status: {login_url}")
+        else:
+            current_app.logger.debug("[TAIL] No loginUrl found for status")
             
         return result
 

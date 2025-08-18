@@ -72,6 +72,48 @@ class ValidationManager:
                 if not re.match(r'^\d+\.\d+\.\d+$', data["version"]):
                     self.logger.error(f"Invalid version format in {file_path}: {data['version']}")
                     return False
+                
+                # Validate config field if present
+                if "config" in data:
+                    config = data["config"]
+                    if not isinstance(config, dict):
+                        self.logger.error(f"Config field must be an object in {file_path}")
+                        return False
+                    
+                    # Validate repository subfield if present
+                    if "repository" in config:
+                        repository = config["repository"]
+                        if not isinstance(repository, dict):
+                            self.logger.error(f"Repository config must be an object in {file_path}")
+                            return False
+                        
+                        # Check for required repository fields
+                        if "url" not in repository:
+                            self.logger.error(f"Repository config missing 'url' field in {file_path}")
+                            return False
+                        if "branch" not in repository:
+                            self.logger.error(f"Repository config missing 'branch' field in {file_path}")
+                            return False
+                        
+                        # Validate url and branch are strings (can be empty)
+                        if not isinstance(repository["url"], str):
+                            self.logger.error(f"Repository URL must be a string in {file_path}")
+                            return False
+                        if not isinstance(repository["branch"], str):
+                            self.logger.error(f"Repository branch must be a string in {file_path}")
+                            return False
+                    
+                    # Validate git_managed field if present
+                    if "git_managed" in config:
+                        if not isinstance(config["git_managed"], bool):
+                            self.logger.error(f"Git_managed config must be a boolean in {file_path}")
+                            return False
+                    
+                    # Log unknown config fields for awareness
+                    known_config_fields = {"repository", "git_managed"}
+                    unknown_fields = set(config.keys()) - known_config_fields
+                    if unknown_fields:
+                        self.logger.warning(f"Unknown config fields in {file_path}: {unknown_fields}")
                     
             elif schema_type == "component_index":
                 # Version field is NOT required for component manifests

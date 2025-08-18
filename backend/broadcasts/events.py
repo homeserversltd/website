@@ -455,7 +455,7 @@ def init_broadcasters(app):
         broadcast_manager.register_admin_fields('internet_status', {'publicIp', 'ipDetails', 'dnsServers'})
         broadcast_manager.register_admin_fields('vpn_status', {'connectionDetails', 'credentials'})
         broadcast_manager.register_admin_fields('system_stats', {'processes', 'users', 'networkConnections'})
-        broadcast_manager.register_admin_fields('tailscale_status', {'ip', 'tailnet', 'isEnabled'})
+        broadcast_manager.register_admin_fields('tailscale_status', {'ip', 'tailnet', 'isEnabled', 'loginUrl'})
         broadcast_manager.register_admin_fields('services_status', {'isEnabled'})
 
         # Start broadcaster threads

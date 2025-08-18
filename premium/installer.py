@@ -872,10 +872,14 @@ EXAMPLES:
     # Install command - now handles both single and multiple tabs intelligently
     # Automatically detects single vs batch mode based on number of tab paths provided
     install_parser = subparsers.add_parser("install", help="Install premium tab(s)")
-    install_group = install_parser.add_mutually_exclusive_group(required=True)
-    install_group.add_argument("tab_paths", nargs="*", help="Paths to premium tab directories (multiple paths for batch install)")
-    install_group.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
+    
+    # Add the --all flag first (optional)
+    install_parser.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
                               help="Install all premium tabs from directory (defaults to current directory)")
+    
+    # Add tab paths as optional (can be empty when using --all)
+    install_parser.add_argument("tab_paths", nargs="*", help="Paths to premium tab directories (multiple paths for batch install)")
+    
     install_parser.add_argument("--no-defer-build", action="store_true", 
                                help="Don't defer frontend rebuild (rebuild after each tab)")
     install_parser.add_argument("--no-defer-restart", action="store_true", 
@@ -924,6 +928,15 @@ EXAMPLES:
     
     try:
         if args.command == "install":
+            # Check if we have tab paths or --all flag
+            if args.tab_paths and args.all:
+                print("Error: Cannot specify both tab paths and --all flag")
+                return 1
+            
+            if not args.tab_paths and not args.all:
+                print("Error: Must specify either tab paths or --all flag")
+                return 1
+            
             if args.tab_paths:
                 # Check if we have multiple tab paths or just one
                 if len(args.tab_paths) == 1:

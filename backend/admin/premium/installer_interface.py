@@ -278,31 +278,42 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
     try:
         lines = stdout.strip().split('\n')
         current_section = None
+        write_to_log('premium', f'Parsing {len(lines)} lines from stdout', 'debug')
         
-        for line in lines:
+        for i, line in enumerate(lines):
+            original_line = line
             line = line.strip()
+            write_to_log('premium', f'Line {i}: {repr(original_line)} -> {repr(line)}', 'debug')
+            
             if not line:
+                write_to_log('premium', f'Skipping empty line {i}', 'debug')
                 continue
                 
             # Detect section headers
             if line.startswith('=== AVAILABLE PREMIUM TABS'):
                 current_section = 'available'
+                write_to_log('premium', f'Found AVAILABLE section at line {i}', 'debug')
                 continue
             elif line.startswith('=== INSTALLED PREMIUM TABS'):
                 current_section = 'installed'
+                write_to_log('premium', f'Found INSTALLED section at line {i}', 'debug')
                 continue
             elif line.startswith('==='):
                 # Skip other section headers
+                write_to_log('premium', f'Skipping other section header at line {i}', 'debug')
                 continue
             
             # Parse folder entries ([DIR] for available, [INSTALLED] for installed)
             if line.startswith('  [DIR]') or line.startswith('  [INSTALLED]'):
+                write_to_log('premium', f'Found tab entry at line {i}: {line}', 'debug')
                 # Extract folder name (remove indicator and leading spaces)
                 folder_name = line.replace('  [DIR]', '').replace('  [INSTALLED]', '').strip()
                 
                 # Remove version info if present (e.g., "testTab (v1.0.4)" -> "testTab")
                 if ' (' in folder_name:
                     folder_name = folder_name.split(' (')[0]
+                
+                write_to_log('premium', f'Extracted folder name: {folder_name}, section: {current_section}', 'debug')
                 
                 # Create tab entry
                 tab = {
@@ -317,6 +328,7 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 }
                 
                 tabs.append(tab)
+                write_to_log('premium', f'Added tab: {tab}', 'debug')
                 continue
             
             # Parse tab details (Name, Version, Description, Installed time)
@@ -337,6 +349,10 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                         current_tab['description'] = value
                     elif key == 'Installed':
                         current_tab['installTime'] = value
+                    
+                    write_to_log('premium', f'Updated tab detail: {key} = {value}', 'debug')
+        
+        write_to_log('premium', f'Before post-processing: {len(tabs)} tabs', 'debug')
         
         # Post-process to handle edge cases and ensure data consistency
         for tab in tabs:
@@ -351,9 +367,13 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 tab['description'] = ''
             if 'installTime' not in tab:
                 tab['installTime'] = None
+        
+        write_to_log('premium', f'After post-processing: {len(tabs)} tabs', 'debug')
                 
     except Exception as e:
         write_to_log('premium', f'Error parsing tab list: {str(e)}', 'error')
+        import traceback
+        write_to_log('premium', f'Traceback: {traceback.format_exc()}', 'error')
     
     return tabs
 

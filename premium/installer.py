@@ -54,7 +54,7 @@ class PremiumInstaller:
     def __init__(self, logger=None):
         # Set up main logger
         self.logger = logger or self._setup_logger()
-        
+                
         # Initialize utility managers
         self.file_operations = FileOperationsManager(self.logger)
         self.package_manager = PackageManager(self.logger, VENV_PATH, PACKAGE_JSON_PATH)
@@ -877,8 +877,8 @@ EXAMPLES:
     install_parser = subparsers.add_parser("install", help="Install premium tab(s) with dependency validation")
     
     # Add the --all flag first (optional)
-    install_parser.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
-                              help="Install all premium tabs from directory (defaults to current directory)")
+    install_parser.add_argument("--all", nargs="?", const="/var/www/homeserver/premium", metavar="PREMIUM_DIR", 
+                              help="Install all premium tabs from directory (defaults to premium directory)")
     
     # Add tab paths as optional (can be empty when using --all)
     install_parser.add_argument("tab_paths", nargs="*", help="Paths to premium tab directories (multiple paths for batch install)")
@@ -906,8 +906,8 @@ EXAMPLES:
     validate_parser = subparsers.add_parser("validate", help="Validate premium tab(s) for compatibility and completeness")
     validate_group = validate_parser.add_mutually_exclusive_group(required=True)
     validate_group.add_argument("tab_path", nargs="?", help="Path to premium tab directory")
-    validate_group.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
-                               help="Validate all premium tabs from directory (defaults to current directory)")
+    validate_group.add_argument("--all", nargs="?", const="/var/www/homeserver/premium", metavar="PREMIUM_DIR", 
+                               help="Validate all premium tabs from directory (defaults to premium directory)")
     
     # List command
     list_parser = subparsers.add_parser("list", help="List premium tabs with status information")
@@ -954,7 +954,7 @@ EXAMPLES:
                     )
             else:
                 # Install all tabs from directory
-                premium_dir = args.all or "."
+                premium_dir = args.all or "/var/www/homeserver/premium"
                 if not os.path.exists(premium_dir):
                     print(f"Error: Directory does not exist: {premium_dir}")
                     return 1
@@ -1016,7 +1016,7 @@ EXAMPLES:
                 success = installer.validate_premium_tab(args.tab_path)
             else:
                 # Validate all tabs from directory
-                premium_dir = args.all or "."
+                premium_dir = args.all or "/var/www/homeserver/premium"
                 if not os.path.exists(premium_dir):
                     print(f"Error: Directory does not exist: {premium_dir}")
                     return 1

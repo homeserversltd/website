@@ -187,7 +187,6 @@ def get_tab_status_list() -> Dict[str, Any]:
     Returns:
         Dict with tabs list, summary, and success status
     """
-    write_to_log('premium', 'Getting tab status list', 'info')
     
     # 1. Get all tabs using installer.py list --all
     # Use full path to premium directory for CLI commands
@@ -203,9 +202,7 @@ def get_tab_status_list() -> Dict[str, Any]:
             }
         
         # Parse the tab list
-        write_to_log('premium', f'Raw stdout from list command: {repr(stdout)}', 'debug')
         available_tabs = _parse_tab_list(stdout)
-        write_to_log('premium', f'Parsed {len(available_tabs)} tabs from list output', 'info')
         
         # 2. Check for cross-tab conflicts using validate --all
         validate_success, validate_stdout, validate_stderr = execute_command([
@@ -235,7 +232,6 @@ def get_tab_status_list() -> Dict[str, Any]:
                     if len(parts) > 1:
                         tab_name = parts[1].split(":")[0].strip()
                         tabs_with_individual_conflicts.add(tab_name)
-                        write_to_log('premium', f'Found manifest conflict for tab: {tab_name}', 'debug')
                 
                 # Look for dependency validation lines: "Validating dependencies for premium tab: /path/to/tabName"
                 elif "Validating dependencies for premium tab:" in line:
@@ -251,32 +247,29 @@ def get_tab_status_list() -> Dict[str, Any]:
                 elif "Found" in line and "dependency conflicts" in line:
                     if 'current_validating_tab' in locals():
                         tabs_with_individual_conflicts.add(current_validating_tab)
-                        write_to_log('premium', f'Found dependency conflict for tab: {current_validating_tab}', 'debug')
         
         # Set conflict flags only for tabs that actually have individual conflicts
         for tab in tabs:
             if tab['name'] in tabs_with_individual_conflicts:
                 tab["hasConflicts"] = True
                 tab["conflictsWithCore"] = True  # Individual tab conflicts are with core system
-                write_to_log('premium', f'Marked tab {tab["name"]} as having conflicts', 'debug')
         
         # Calculate summary statistics for frontend
         installed_tabs = [tab for tab in tabs if tab["installed"]]
-        available_tabs = [tab for tab in tabs if not tab["installed"]]
+        # Available tabs = not installed AND no conflicts
+        available_for_install_tabs = [tab for tab in tabs if not tab["installed"] and not tab.get("hasConflicts", False)]
         tabs_with_conflicts = [tab for tab in tabs if tab.get("hasConflicts", False)]
         
         summary = {
             "totalTabs": len(tabs),
             "installedTabs": len(installed_tabs),
-            "availableTabs": len(available_tabs),
+            "availableTabs": len(available_for_install_tabs),  # Only tabs that can actually be installed
             "hasAnyConflicts": has_cross_tab_conflicts or len(tabs_with_conflicts) > 0,
-            "canInstallAll": len(available_tabs) > 0 and not has_cross_tab_conflicts,
+            "canInstallAll": len(available_for_install_tabs) > 0 and not has_cross_tab_conflicts,
             "canUninstallAll": len(installed_tabs) > 0
         }
         
-        write_to_log('premium', f'Summary data: {summary}', 'info')
         
-        write_to_log('premium', f'Returning {len(tabs)} tabs in final result', 'info')
         return {
             "success": True,
             "tabs": tabs,
@@ -319,34 +312,27 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
     try:
         lines = stdout.strip().split('\n')
         current_section = None
-        write_to_log('premium', f'Parsing {len(lines)} lines from stdout', 'debug')
         
         for i, line in enumerate(lines):
             original_line = line
             line = line.strip()
-            write_to_log('premium', f'Line {i}: {repr(original_line)} -> {repr(line)}', 'debug')
             
             if not line:
-                write_to_log('premium', f'Skipping empty line {i}', 'debug')
                 continue
                 
             # Detect section headers
             if line.startswith('=== AVAILABLE PREMIUM TABS'):
                 current_section = 'available'
-                write_to_log('premium', f'Found AVAILABLE section at line {i}', 'debug')
                 continue
             elif line.startswith('=== INSTALLED PREMIUM TABS'):
                 current_section = 'installed'
-                write_to_log('premium', f'Found INSTALLED section at line {i}', 'debug')
                 continue
             elif line.startswith('==='):
                 # Skip other section headers
-                write_to_log('premium', f'Skipping other section header at line {i}', 'debug')
                 continue
             
             # Parse folder entries ([DIR] for available, [INSTALLED] for installed)
             if line.startswith('[DIR]') or line.startswith('[INSTALLED]'):
-                write_to_log('premium', f'Found tab entry at line {i}: {line}', 'debug')
                 # Extract folder name (remove indicator and leading spaces)
                 folder_name = line.replace('[DIR]', '').replace('[INSTALLED]', '').strip()
                 
@@ -354,7 +340,6 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 if ' (' in folder_name:
                     folder_name = folder_name.split(' (')[0]
                 
-                write_to_log('premium', f'Extracted folder name: {folder_name}, section: {current_section}', 'debug')
                 
                 # Create tab entry
                 tab = {
@@ -369,7 +354,6 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 }
                 
                 tabs.append(tab)
-                write_to_log('premium', f'Added tab: {tab}', 'debug')
                 continue
             
             # Parse tab details (Name, Version, Description, Installed time)
@@ -389,9 +373,6 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 elif key == 'Installed':
                     current_tab['installTime'] = value
                 
-                write_to_log('premium', f'Updated tab detail: {key} = {value}', 'debug')
-        
-        write_to_log('premium', f'Before post-processing: {len(tabs)} tabs', 'debug')
         
         # Post-process to handle edge cases and ensure data consistency
         for tab in tabs:
@@ -407,7 +388,6 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
             if 'installTime' not in tab:
                 tab['installTime'] = None
         
-        write_to_log('premium', f'After post-processing: {len(tabs)} tabs', 'debug')
         
         # Deduplicate tabs - if a tab appears in both available and installed, keep only the installed version
         unique_tabs = {}
@@ -422,10 +402,8 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
         
         # Convert back to list
         tabs = list(unique_tabs.values())
-        write_to_log('premium', f'After deduplication: {len(tabs)} tabs', 'debug')
                 
     except Exception as e:
-        write_to_log('premium', f'Error parsing tab list: {str(e)}', 'error')
         import traceback
         write_to_log('premium', f'Traceback: {traceback.format_exc()}', 'error')
     

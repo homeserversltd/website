@@ -367,6 +367,21 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 tab['installTime'] = None
         
         write_to_log('premium', f'After post-processing: {len(tabs)} tabs', 'debug')
+        
+        # Deduplicate tabs - if a tab appears in both available and installed, keep only the installed version
+        unique_tabs = {}
+        for tab in tabs:
+            tab_name = tab['name']
+            if tab_name in unique_tabs:
+                # If we already have this tab, keep the installed version
+                if tab['installed'] or not unique_tabs[tab_name]['installed']:
+                    unique_tabs[tab_name] = tab
+            else:
+                unique_tabs[tab_name] = tab
+        
+        # Convert back to list
+        tabs = list(unique_tabs.values())
+        write_to_log('premium', f'After deduplication: {len(tabs)} tabs', 'debug')
                 
     except Exception as e:
         write_to_log('premium', f'Error parsing tab list: {str(e)}', 'error')

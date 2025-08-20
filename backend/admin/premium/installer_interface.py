@@ -211,6 +211,9 @@ def get_tab_status_list() -> Dict[str, Any]:
         
         has_cross_tab_conflicts = not validate_success
         
+        # Extract detailed conflict information from validation output
+        conflict_details = _parse_validation_output(validate_stdout, validate_stderr)
+        
         # 3. For each uninstalled tab, check individual conflicts with core system
         for tab in tabs:
             if not tab["installed"]:
@@ -222,12 +225,19 @@ def get_tab_status_list() -> Dict[str, Any]:
                 
                 tab["conflictsWithCore"] = not check_success
                 tab["hasConflicts"] = tab["conflictsWithCore"]
+                
+                # Add detailed conflict information if available
+                if not check_success:
+                    tab["conflictDetails"] = _parse_validation_output(check_stdout, check_stderr)
+                else:
+                    tab["conflictDetails"] = None
             else:
                 # Installed tabs don't have conflicts (they're already resolved)
                 tab["conflictsWithCore"] = False
                 tab["hasConflicts"] = False
+                tab["conflictDetails"] = None
         
-        # 4. Generate summary
+        # 4. Generate summary with enhanced conflict information
         installed_count = sum(1 for tab in tabs if tab["installed"])
         available_count = len(tabs) - installed_count
         
@@ -237,7 +247,8 @@ def get_tab_status_list() -> Dict[str, Any]:
             "availableTabs": available_count,
             "hasAnyConflicts": has_cross_tab_conflicts,
             "canInstallAll": not has_cross_tab_conflicts and available_count > 0,
-            "canUninstallAll": installed_count > 0
+            "canUninstallAll": installed_count > 0,
+            "conflictDetails": conflict_details if has_cross_tab_conflicts else None
         }
         
         return {
@@ -260,16 +271,16 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
     Parse installer.py list --all output.
     
     New format (as of CLI consolidation):
-    === AVAILABLE PREMIUM TABS (ready to install) ===
-      📁 testTab
+    === AVAILABLE PREMIUM TABS ===
+      [DIR] testTab
          Name: testTab
          Version: 1.0.4
-      📁 conflictTab
+      [DIR] conflictTab
          Name: conflict
          Version: 1.0.0
     === INSTALLED PREMIUM TABS ===
-      ✅ testTab (v1.0.4)
-         Installed: 2025-08-19T09:13:39.436263
+      [INSTALLED] testTab (v1.0.4)
+         Installed: 2025-08-20T09:51:44.014521
     
     Args:
         stdout: Raw output from installer.py list --all
@@ -299,10 +310,14 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 # Skip other section headers
                 continue
             
-            # Parse folder entries (📁 for available, ✅ for installed)
-            if line.startswith('  📁') or line.startswith('  ✅'):
-                # Extract folder name (remove emoji and leading spaces)
-                folder_name = line.replace('  📁', '').replace('  ✅', '').strip()
+            # Parse folder entries ([DIR] for available, [INSTALLED] for installed)
+            if line.startswith('  [DIR]') or line.startswith('  [INSTALLED]'):
+                # Extract folder name (remove indicator and leading spaces)
+                folder_name = line.replace('  [DIR]', '').replace('  [INSTALLED]', '').strip()
+                
+                # Remove version info if present (e.g., "testTab (v1.0.4)" -> "testTab")
+                if ' (' in folder_name:
+                    folder_name = folder_name.split(' (')[0]
                 
                 # Create tab entry
                 tab = {
@@ -356,6 +371,43 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
         write_to_log('premium', f'Error parsing tab list: {str(e)}', 'error')
     
     return tabs
+
+
+def _parse_validation_output(stdout: str, stderr: str) -> Dict[str, Any]:
+    """
+    Parse the detailed conflict information from the output of installer.py validate --all.
+    
+    The new CLI output includes specific error messages for conflicts.
+    This function extracts these messages.
+    
+    Args:
+        stdout: Standard output from installer.py validate --all
+        stderr: Standard error output from installer.py validate --all
+        
+    Returns:
+        Dict containing conflict details, or an empty dict if no conflicts.
+    """
+    conflict_details = {}
+    
+    # Combine stdout and stderr for full context
+    full_output = stdout + stderr
+    
+    # Look for lines starting with "ERROR:" or "WARNING:"
+    for line in full_output.splitlines():
+        line = line.strip()
+        if line.startswith("ERROR:") or line.startswith("WARNING:"):
+            # Extract the conflict type and message
+            parts = line.split(":", 1)
+            if len(parts) > 1:
+                conflict_type = parts[0].strip()
+                conflict_message = parts[1].strip()
+                
+                # Clean up the conflict type (e.g., "ERROR:" -> "Error")
+                conflict_type = conflict_type.replace("ERROR:", "Error").replace("WARNING:", "Warning")
+                
+                conflict_details[conflict_type] = conflict_message
+    
+    return conflict_details
 
 
 def check_installer_available() -> bool:

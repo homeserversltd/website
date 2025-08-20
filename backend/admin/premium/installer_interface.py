@@ -203,7 +203,9 @@ def get_tab_status_list() -> Dict[str, Any]:
             }
         
         # Parse the tab list
+        write_to_log('premium', f'Raw stdout from list command: {repr(stdout)}', 'debug')
         available_tabs = _parse_tab_list(stdout)
+        write_to_log('premium', f'Parsed {len(available_tabs)} tabs from list output', 'info')
         
         # 2. Check for cross-tab conflicts using validate --all
         validate_success, validate_stdout, validate_stderr = execute_command([
@@ -234,6 +236,7 @@ def get_tab_status_list() -> Dict[str, Any]:
             else:
                 tabs.append(tab)
         
+        write_to_log('premium', f'Returning {len(tabs)} tabs in final result', 'info')
         return {
             "success": True,
             "tabs": tabs,

@@ -220,11 +220,45 @@ def get_tab_status_list() -> Dict[str, Any]:
         # 3. Use the already parsed tabs from the list command
         tabs = available_tabs
         
-        # Set conflict flags based on the overall validation result
-        if has_cross_tab_conflicts:
-            for tab in tabs:
-                if not tab["installed"]:
-                    tab["hasConflicts"] = True
+        # Parse validation output to identify which specific tabs have conflicts
+        tabs_with_individual_conflicts = set()
+        if validate_stdout or validate_stderr:
+            full_validation_output = validate_stdout + validate_stderr
+            
+            # Look for tab-specific error patterns
+            for line in full_validation_output.splitlines():
+                line = line.strip()
+                
+                # Look for manifest errors: "Manifest completeness errors in tabName:"
+                if "Manifest completeness errors in" in line:
+                    parts = line.split("Manifest completeness errors in")
+                    if len(parts) > 1:
+                        tab_name = parts[1].split(":")[0].strip()
+                        tabs_with_individual_conflicts.add(tab_name)
+                        write_to_log('premium', f'Found manifest conflict for tab: {tab_name}', 'debug')
+                
+                # Look for dependency validation lines: "Validating dependencies for premium tab: /path/to/tabName"
+                elif "Validating dependencies for premium tab:" in line:
+                    # Extract tab name from path
+                    if "/premium/" in line:
+                        tab_path = line.split("/premium/")[-1]
+                        tab_name = tab_path.strip()
+                        # Check if the next few lines contain "Found X dependency conflicts"
+                        # We'll mark this tab for conflict checking
+                        current_validating_tab = tab_name
+                
+                # Look for dependency conflicts: "Found X dependency conflicts"
+                elif "Found" in line and "dependency conflicts" in line:
+                    if 'current_validating_tab' in locals():
+                        tabs_with_individual_conflicts.add(current_validating_tab)
+                        write_to_log('premium', f'Found dependency conflict for tab: {current_validating_tab}', 'debug')
+        
+        # Set conflict flags only for tabs that actually have individual conflicts
+        for tab in tabs:
+            if tab['name'] in tabs_with_individual_conflicts:
+                tab["hasConflicts"] = True
+                tab["conflictsWithCore"] = True  # Individual tab conflicts are with core system
+                write_to_log('premium', f'Marked tab {tab["name"]} as having conflicts', 'debug')
         
         # Calculate summary statistics for frontend
         installed_tabs = [tab for tab in tabs if tab["installed"]]

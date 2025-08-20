@@ -196,10 +196,11 @@ def get_tab_status_list() -> Dict[str, Any]:
         ])
         
         # DEBUG: Log what we're actually getting back from CLI
-        write_to_log('premium', f'CLI command stdout length: {len(stdout) if stdout else 0}', 'info')
-        write_to_log('premium', f'CLI command stderr length: {len(stderr) if stderr else 0}', 'info')
-        write_to_log('premium', f'CLI command stdout: {repr(stdout)}', 'info')
-        write_to_log('premium', f'CLI command stderr: {repr(stderr)}', 'info')
+        from .utils import premium_json_log
+        premium_json_log('debug', f'CLI command stdout length: {len(stdout) if stdout else 0}')
+        premium_json_log('debug', f'CLI command stderr length: {len(stderr) if stderr else 0}')
+        premium_json_log('debug', f'CLI command stdout: {repr(stdout)}')
+        premium_json_log('debug', f'CLI command stderr: {repr(stderr)}')
         
         if not success:
             return {
@@ -216,10 +217,10 @@ def get_tab_status_list() -> Dict[str, Any]:
         ])
         
         # DEBUG: Log validation command output
-        write_to_log('premium', f'Validation command stdout length: {len(validate_stdout) if validate_stdout else 0}', 'info')
-        write_to_log('premium', f'Validation command stderr length: {len(validate_stderr) if validate_stderr else 0}', 'info')
-        write_to_log('premium', f'Validation command stdout: {repr(validate_stdout)}', 'info')
-        write_to_log('premium', f'Validation command stderr: {repr(validate_stderr)}', 'info')
+        premium_json_log('debug', f'Validation command stdout length: {len(validate_stdout) if validate_stdout else 0}')
+        premium_json_log('debug', f'Validation command stderr length: {len(validate_stderr) if validate_stderr else 0}')
+        premium_json_log('debug', f'Validation command stdout: {repr(validate_stdout)}')
+        premium_json_log('debug', f'Validation command stderr: {repr(validate_stderr)}')
         
         has_cross_tab_conflicts = not validate_success
         

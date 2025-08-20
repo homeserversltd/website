@@ -177,6 +177,62 @@ def install_tab(tab_name):
         }
 ```
 
+#### `POST /api/admin/premium/reinstall/{tabName}`
+**Purpose**: Reinstall single premium tab (development iteration)
+
+**Response**:
+```json
+{
+  "success": true,
+  "tabName": "test-tab",
+  "message": "Reinstallation completed successfully for test-tab.",
+  "error": null
+}
+```
+
+**Implementation**:
+```python
+def reinstall_tab(tab_name):
+    # Direct call to installer.py reinstall command
+    reinstall_cmd = f"/usr/bin/sudo /usr/bin/python3 /var/www/homeserver/premium/installer.py reinstall {tab_name}"
+    result = subprocess.run(reinstall_cmd, shell=True, capture_output=True, text=True)
+    
+    if result.returncode == 0:
+        return {
+            "success": True,
+            "tabName": tab_name,
+            "message": f"Reinstallation completed successfully for {tab_name}."
+        }
+    else:
+        return {
+            "success": False,
+            "tabName": tab_name,
+            "error": result.stderr
+        }
+```
+
+#### `POST /api/admin/premium/reinstall-multiple`
+**Purpose**: Reinstall multiple premium tabs with optional deferred operations
+
+**Request Body**:
+```json
+{
+  "tabNames": ["tab1", "tab2", "tab3"],
+  "deferBuild": true,
+  "deferServiceRestart": true
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Reinstallation of 3 tabs completed successfully.",
+  "reinstalledTabs": ["tab1", "tab2", "tab3"],
+  "error": null
+}
+```
+
 #### `DELETE /api/admin/premium/uninstall/{tabName}`
 **Purpose**: Uninstall single premium tab
 
@@ -525,6 +581,8 @@ backend/admin/premium/
 |-------|--------|---------|-------------------|
 | `/validate-and-clone` | POST | Validate & clone repo | Git operations only |
 | `/install/{tabName}` | POST | Install single tab | `installer.py install {tab}` |
+| `/reinstall/{tabName}` | POST | Reinstall single tab | `installer.py reinstall {tab}` |
+| `/reinstall-multiple` | POST | Reinstall multiple tabs | `installer.py reinstall {tab1} {tab2}...` |
 | `/uninstall/{tabName}` | DELETE | Uninstall single tab | `installer.py uninstall {tab}` |
 | `/status` | GET | Get all tab statuses | `installer.py list --all` + `installer.py validate --all` |
 | `/install-all` | POST | Install all tabs | `installer.py install --all` |
@@ -534,6 +592,6 @@ backend/admin/premium/
 | `/auto-update/{tabName}` | GET | Get auto-update setting | Read `dependencies.json` |
 | `/auto-update/{tabName}` | POST | Toggle auto-update setting | Modify `dependencies.json` |
 
-**Total: 10 routes - 6 that map to installer commands + 4 for log viewing and auto-update management.**
+**Total: 12 routes - 7 that map to installer commands + 5 for log viewing and auto-update management.**
 
 This is clean, simple, and does exactly what you need without any overcomplicated simulation or extra features.

@@ -4,7 +4,7 @@ This file documents the commands available in the premium tab installer for remo
 
 ## Available Commands
 
-### Install Commands (Consolidated - Handles Single and Multiple Tabs)
+### Install Commands (Auto-detects single vs batch)
 ```bash
 # Install a single tab
 sudo python3 installer.py install tabName
@@ -12,11 +12,11 @@ sudo python3 installer.py install tabName
 # Install multiple specific tabs (automatically uses batch mode)
 sudo python3 installer.py install tab1 tab2 tab3
 
-# Install multiple tabs with immediate build and restart (no deferral)
-sudo python3 installer.py install tab1 tab2 --no-defer-build --no-defer-restart
-
 # Install all tabs from premium directory
 sudo python3 installer.py install --all
+
+# Install with immediate build/restart (no deferral)
+sudo python3 installer.py install tab1 tab2 --no-defer-build --no-defer-restart
 ```
 
 ### Reinstall Commands (for development iteration)
@@ -24,10 +24,10 @@ sudo python3 installer.py install --all
 # Reinstall a single tab
 sudo python3 installer.py reinstall tabName
 
-# Reinstall multiple tabs with deferred operations
+# Reinstall multiple tabs
 sudo python3 installer.py reinstall tab1 tab2 tab3
 
-# Reinstall with immediate build and restart
+# Reinstall with immediate operations
 sudo python3 installer.py reinstall tabName --no-defer-build --no-defer-restart
 ```
 
@@ -78,6 +78,12 @@ python3 installer.py list --all
 - **Single tab**: Uses individual installation logic
 - **Multiple tabs**: Automatically switches to batch mode with deferred operations
 - **No more separate `batch` command**: Everything is handled by the smart `install` command
+
+**New Reinstall Command**: Added for development iteration without manual uninstall/install steps
+
+**Enhanced Validation**: New `validate` command for checking tab compatibility before installation
+
+**Improved Listing**: More granular control over what tabs are displayed
 
 **Benefits**:
 - **Simpler CLI**: One command for all installation scenarios

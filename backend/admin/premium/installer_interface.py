@@ -215,8 +215,9 @@ def get_tab_status_list() -> Dict[str, Any]:
         for tab in tabs:
             if not tab["installed"]:
                 # Check individual tab conflicts with core system
+                # New CLI expects just the tab name, not the full path
                 check_success, check_stdout, check_stderr = execute_command([
-                    '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'validate', os.path.join(PREMIUM_DIR, tab['name'])
+                    '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'validate', tab['name']
                 ])
                 
                 tab["conflictsWithCore"] = not check_success
@@ -258,9 +259,17 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
     """
     Parse installer.py list --all output.
     
-    Expected format:
-    tab-name: INSTALLED
-    another-tab: AVAILABLE
+    New format (as of CLI consolidation):
+    === AVAILABLE PREMIUM TABS (ready to install) ===
+      📁 testTab
+         Name: testTab
+         Version: 1.0.4
+      📁 conflictTab
+         Name: conflict
+         Version: 1.0.0
+    === INSTALLED PREMIUM TABS ===
+      ✅ testTab (v1.0.4)
+         Installed: 2025-08-19T09:13:39.436263
     
     Args:
         stdout: Raw output from installer.py list --all
@@ -272,16 +281,77 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
     
     try:
         lines = stdout.strip().split('\n')
+        current_section = None
+        
         for line in lines:
             line = line.strip()
-            if ': ' in line:
-                name, status = line.split(': ', 1)
-                tabs.append({
-                    "name": name.strip(),
-                    "installed": status.strip().upper() == "INSTALLED",
+            if not line:
+                continue
+                
+            # Detect section headers
+            if line.startswith('=== AVAILABLE PREMIUM TABS'):
+                current_section = 'available'
+                continue
+            elif line.startswith('=== INSTALLED PREMIUM TABS'):
+                current_section = 'installed'
+                continue
+            elif line.startswith('==='):
+                # Skip other section headers
+                continue
+            
+            # Parse folder entries (📁 for available, ✅ for installed)
+            if line.startswith('  📁') or line.startswith('  ✅'):
+                # Extract folder name (remove emoji and leading spaces)
+                folder_name = line.replace('  📁', '').replace('  ✅', '').strip()
+                
+                # Create tab entry
+                tab = {
+                    "name": folder_name,  # Use folder name as identifier
+                    "folder": folder_name,
+                    "installed": current_section == 'installed',
                     "hasConflicts": False,  # Will be set later
-                    "conflictsWithCore": False  # Will be set later
-                })
+                    "conflictsWithCore": False,  # Will be set later
+                    "version": None,
+                    "description": None,
+                    "installTime": None
+                }
+                
+                tabs.append(tab)
+                continue
+            
+            # Parse tab details (Name, Version, Description, Installed time)
+            if line.startswith('     ') and tabs:  # Indented detail line
+                detail_line = line.strip()
+                if ':' in detail_line:
+                    key, value = detail_line.split(':', 1)
+                    key = key.strip()
+                    value = value.strip()
+                    
+                    current_tab = tabs[-1]  # Get the last added tab
+                    
+                    if key == 'Name':
+                        current_tab['displayName'] = value
+                    elif key == 'Version':
+                        current_tab['version'] = value
+                    elif key == 'Description':
+                        current_tab['description'] = value
+                    elif key == 'Installed':
+                        current_tab['installTime'] = value
+        
+        # Post-process to handle edge cases and ensure data consistency
+        for tab in tabs:
+            # If no display name was found, use the folder name
+            if 'displayName' not in tab or not tab['displayName']:
+                tab['displayName'] = tab['name']
+            
+            # Ensure required fields exist
+            if 'version' not in tab:
+                tab['version'] = 'unknown'
+            if 'description' not in tab:
+                tab['description'] = ''
+            if 'installTime' not in tab:
+                tab['installTime'] = None
+                
     except Exception as e:
         write_to_log('premium', f'Error parsing tab list: {str(e)}', 'error')
     
@@ -299,3 +369,95 @@ def check_installer_available() -> bool:
         return os.path.exists(INSTALLER_PATH) and os.access(INSTALLER_PATH, os.R_OK)
     except Exception:
         return False
+
+
+def reinstall_single_tab(tab_name: str) -> Dict[str, Any]:
+    """
+    Reinstall a single premium tab using installer.py.
+    
+    Args:
+        tab_name: Name of the tab to reinstall
+        
+    Returns:
+        Dict with success status and message or error
+    """
+    try:
+        write_to_log('premium', f'Executing installer.py reinstall {tab_name}', 'info')
+        
+        success, stdout, stderr = execute_command([
+            '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'reinstall', tab_name
+        ])
+        
+        if success:
+            return {
+                "success": True,
+                "tabName": tab_name,
+                "message": f"Reinstallation completed successfully for {tab_name}.",
+                "error": None
+            }
+        else:
+            return {
+                "success": False,
+                "tabName": tab_name,
+                "message": None,
+                "error": stderr.strip() if stderr else "Reinstallation failed with unknown error"
+            }
+            
+    except Exception as e:
+        write_to_log('premium', f'Exception in reinstall_single_tab: {str(e)}', 'error')
+        return {
+            "success": False,
+            "tabName": tab_name,
+            "message": None,
+            "error": f"Internal error: {str(e)}"
+        }
+
+
+def reinstall_multiple_tabs(tab_names: List[str], 
+                          defer_build: bool = True,
+                          defer_service_restart: bool = True) -> Dict[str, Any]:
+    """
+    Reinstall multiple premium tabs using installer.py.
+    
+    Args:
+        tab_names: List of tab names to reinstall
+        defer_build: Whether to defer frontend rebuild
+        defer_service_restart: Whether to defer service restart
+        
+    Returns:
+        Dict with success status and message or error
+    """
+    try:
+        write_to_log('premium', f'Executing installer.py reinstall for tabs: {", ".join(tab_names)}', 'info')
+        
+        # Build command with optional flags
+        cmd = ['/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'reinstall'] + tab_names
+        
+        if not defer_build:
+            cmd.append('--no-defer-build')
+        if not defer_service_restart:
+            cmd.append('--no-defer-restart')
+        
+        success, stdout, stderr = execute_command(cmd)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Reinstallation of {len(tab_names)} tabs completed successfully.",
+                "reinstalledTabs": tab_names,
+                "error": None
+            }
+        else:
+            return {
+                "success": False,
+                "message": None,
+                "error": stderr.strip() if stderr else "Reinstallation of multiple tabs failed with unknown error"
+            }
+            
+    except Exception as e:
+        write_to_log('premium', f'Exception in reinstall_multiple_tabs: {str(e)}', 'error')
+        return {
+            "success": False,
+            "message": None,
+            "error": f"Internal error: {str(e)}"
+        }

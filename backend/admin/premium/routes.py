@@ -8,7 +8,7 @@ from .git_manager import validate_and_clone_repository
 from .installer_interface import (
     install_single_tab, uninstall_single_tab,
     install_all_tabs, uninstall_all_tabs,
-    get_tab_status_list
+    get_tab_status_list, reinstall_single_tab, reinstall_multiple_tabs
 )
 from .utils import get_installer_logs, delete_premium_tab_folder, update_tab_auto_update_setting
 from ...utils.utils import write_to_log
@@ -96,6 +96,59 @@ def uninstall_tab(tab_name):
             
     except Exception as e:
         write_to_log('premium', f'Exception uninstalling tab {tab_name}: {str(e)}', 'error')
+        return jsonify({"success": False, "error": f"Internal server error: {str(e)}"}), 500
+
+
+@bp.route('/api/admin/premium/reinstall/<tab_name>', methods=['POST'])
+@admin_required
+def reinstall_tab(tab_name):
+    """Reinstall a single premium tab."""
+    try:
+        write_to_log('premium', f'Starting reinstallation of tab: {tab_name}', 'info')
+        
+        result = reinstall_single_tab(tab_name)
+        
+        if result['success']:
+            write_to_log('premium', f'Successfully reinstalled tab: {tab_name}', 'info')
+            return jsonify(result), 200
+        else:
+            write_to_log('premium', f'Failed to reinstall tab {tab_name}: {result["error"]}', 'error')
+            return jsonify(result), 400
+            
+    except Exception as e:
+        write_to_log('premium', f'Exception reinstalling tab {tab_name}: {str(e)}', 'error')
+        return jsonify({"success": False, "error": f"Internal server error: {str(e)}"}), 500
+
+
+@bp.route('/api/admin/premium/reinstall-multiple', methods=['POST'])
+@admin_required
+def reinstall_multiple_tabs():
+    """Reinstall multiple premium tabs."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "Request body is required"}), 400
+        
+        tab_names = data.get('tabNames', [])
+        defer_build = data.get('deferBuild', True)
+        defer_service_restart = data.get('deferServiceRestart', True)
+        
+        if not tab_names:
+            return jsonify({"success": False, "error": "tabNames array is required"}), 400
+        
+        write_to_log('premium', f'Starting reinstallation of tabs: {", ".join(tab_names)}', 'info')
+        
+        result = reinstall_multiple_tabs(tab_names, defer_build, defer_service_restart)
+        
+        if result['success']:
+            write_to_log('premium', f'Successfully started reinstallation of tabs: {", ".join(tab_names)}', 'info')
+            return jsonify(result), 200
+        else:
+            write_to_log('premium', f'Failed to reinstall tabs: {result["error"]}', 'error')
+            return jsonify(result), 400
+            
+    except Exception as e:
+        write_to_log('premium', f'Exception reinstalling multiple tabs: {str(e)}', 'error')
         return jsonify({"success": False, "error": f"Internal server error: {str(e)}"}), 500
 
 

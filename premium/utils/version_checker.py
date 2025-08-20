@@ -973,9 +973,9 @@ class SemanticVersionChecker:
         # Version consistency section
         report += f"Version Consistency Check\n{'-' * 30}\n"
         if summary["tabs_with_version_errors"] == 0:
-            report += "✅ All tabs have consistent version numbers across index.json files\n\n"
+            report += "All tabs have consistent version numbers across index.json files\n\n"
         else:
-            report += f"❌ {summary['tabs_with_version_errors']} tabs have version consistency issues:\n"
+            report += f"{summary['tabs_with_version_errors']} tabs have version consistency issues:\n"
             for tab_name, version_info in results["version_consistency"].items():
                 if not version_info["valid"]:
                     report += f"  • {tab_name}:\n"
@@ -997,7 +997,7 @@ class SemanticVersionChecker:
                     already_installed_tabs.append(tab_name)
         
         if manifest_errors == 0:
-            report += "✅ All tabs contain only files declared in root index.json\n\n"
+            report += "All tabs contain only files declared in root index.json\n\n"
         else:
             # Separate already installed tabs from other manifest errors
             other_manifest_errors = manifest_errors - len(already_installed_tabs)
@@ -1010,7 +1010,7 @@ class SemanticVersionChecker:
                 report += "\n"
             
             if other_manifest_errors > 0:
-                report += f"❌ {other_manifest_errors} tabs have undeclared files (SECURITY RISK):\n"
+                report += f"{other_manifest_errors} tabs have undeclared files (SECURITY RISK):\n"
                 for tab_name, version_info in results["version_consistency"].items():
                     if ("manifest_valid" in version_info and not version_info["manifest_valid"] 
                         and tab_name not in already_installed_tabs):
@@ -1023,9 +1023,9 @@ class SemanticVersionChecker:
         # Dependency conflicts section
         report += f"Dependency Conflicts (vs Current Environment)\n{'-' * 50}\n"
         if not results["dependency_conflicts"]:
-            report += "✅ No dependency conflicts with current environment\n\n"
+            report += "No dependency conflicts with current environment\n\n"
         else:
-            report += f"❌ Found conflicts in {summary['tabs_with_dependency_conflicts']} tabs:\n"
+            report += f"Found conflicts in {summary['tabs_with_dependency_conflicts']} tabs:\n"
             for conflict_info in results["dependency_conflicts"]:
                 tab = conflict_info["tab"]
                 conflict = conflict_info["conflict"]
@@ -1036,9 +1036,9 @@ class SemanticVersionChecker:
         # Cross-tab conflicts section
         report += f"Cross-Tab Conflicts (Premium Tab vs Premium Tab)\n{'-' * 55}\n"
         if not results["cross_tab_conflicts"]:
-            report += "✅ No conflicts between premium tabs\n\n"
+            report += "No conflicts between premium tabs\n\n"
         else:
-            report += f"❌ Found {summary['cross_tab_conflicts']} cross-tab conflicts:\n"
+            report += f"Found {summary['cross_tab_conflicts']} cross-tab conflicts:\n"
             for conflict in results["cross_tab_conflicts"]:
                 report += f"  • {conflict.package_name} - {conflict.conflict_type}\n"
                 report += f"    {conflict.description}\n"
@@ -1051,11 +1051,11 @@ class SemanticVersionChecker:
         # Recommendations
         if not results["overall_valid"]:
             report += f"Recommendations\n{'-' * 15}\n"
-            report += "❌ VALIDATION FAILED - Premium tabs are not ready for release\n"
+            report += "VALIDATION FAILED - Premium tabs are not ready for release\n"
             report += "Please fix all issues above before proceeding with installation or distribution.\n\n"
         else:
             report += f"Recommendations\n{'-' * 15}\n"
-            report += "✅ VALIDATION PASSED - All premium tabs are compatible and ready for release\n"
+            report += "VALIDATION PASSED - All premium tabs are compatible and ready for release\n"
             report += "All version numbers are consistent and no dependency conflicts detected.\n\n"
         
         return report
@@ -1145,9 +1145,9 @@ def main():
             is_valid, errors = checker.validate_index_version_consistency(args.tab_path)
             
             if is_valid:
-                print("✅ All index.json files have consistent versions")
+                print("All index.json files have consistent versions")
             else:
-                print("❌ Version consistency errors found:")
+                print("Version consistency errors found:")
                 for error in errors:
                     print(f"  - {error}")
             
@@ -1157,9 +1157,9 @@ def main():
             is_valid, errors = checker.validate_complete_manifest(args.tab_path)
             
             if is_valid:
-                print("✅ Manifest completeness validation passed - no extra files found")
+                print("Manifest completeness validation passed - no extra files found")
             else:
-                print("❌ Manifest completeness validation failed:")
+                print("Manifest completeness validation failed:")
                 for error in errors:
                     print(f"  - {error}")
             

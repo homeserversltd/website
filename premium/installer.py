@@ -543,9 +543,9 @@ class PremiumInstaller:
             success = self.uninstall_manager.uninstall_premium_tab(tab_name)
             
             if success:
-                category_logger.info(f"✅ Premium tab '{tab_name}' uninstalled successfully")
+                category_logger.info(f"Premium tab '{tab_name}' uninstalled successfully")
             else:
-                category_logger.error(f"❌ Premium tab '{tab_name}' uninstallation failed")
+                category_logger.error(f"Premium tab '{tab_name}' uninstallation failed")
             
             return success
             
@@ -564,9 +564,9 @@ class PremiumInstaller:
             success = self.uninstall_manager.uninstall_all_premium_tabs()
             
             if success:
-                category_logger.info("🎉 All premium tabs uninstalled successfully!")
+                category_logger.info("All premium tabs uninstalled successfully")
             else:
-                category_logger.error("❌ Some premium tabs failed to uninstall")
+                category_logger.error("Some premium tabs failed to uninstall")
             
             return success
             
@@ -596,7 +596,7 @@ class PremiumInstaller:
                     category_logger.error(f"  - {conflict.description}")
                 return False
             
-            category_logger.info("✅ Premium tab validation passed")
+            category_logger.info("Premium tab validation passed")
             return True
             
         except Exception as e:
@@ -614,9 +614,9 @@ class PremiumInstaller:
             valid, results = self.version_checker.validate_all_premium_tabs(premium_dir)
             
             if valid:
-                category_logger.info("✅ All premium tabs validation passed")
+                category_logger.info("All premium tabs validation passed")
             else:
-                category_logger.error("❌ Premium tabs validation failed")
+                category_logger.error("Premium tabs validation failed")
                 
                 # Log detailed results
                 summary = results.get("summary", {})
@@ -706,10 +706,10 @@ class PremiumInstaller:
             if tab_path:
                 category_logger.info(f"Found tab '{tab_name}' in premium directory, reinstalling...")
                 if self.install_premium_tab(tab_path):
-                    category_logger.info(f"✅ Premium tab '{tab_name}' reinstalled successfully")
+                    category_logger.info(f"Premium tab '{tab_name}' reinstalled successfully")
                     return True
                 else:
-                    category_logger.error(f"❌ Failed to reinstall tab '{tab_name}'")
+                    category_logger.error(f"Failed to reinstall tab '{tab_name}'")
                     return False
             else:
                 category_logger.error(f"Tab '{tab_name}' not found in premium directory after uninstall")
@@ -738,10 +738,10 @@ class PremiumInstaller:
                 category_logger.info(f"Uninstalling tab: {tab_name}")
                 if self.uninstall_manager.uninstall_premium_tab(tab_name, skip_build_and_restart=True):
                     uninstall_successes.append(tab_name)
-                    category_logger.info(f"✅ Successfully uninstalled: {tab_name}")
+                    category_logger.info(f"Successfully uninstalled: {tab_name}")
                 else:
                     uninstall_failures.append(tab_name)
-                    category_logger.error(f"❌ Failed to uninstall: {tab_name}")
+                    category_logger.error(f"Failed to uninstall: {tab_name}")
             
             if uninstall_failures:
                 category_logger.warning(f"Some tabs failed to uninstall: {', '.join(uninstall_failures)}")
@@ -824,7 +824,7 @@ class PremiumInstaller:
 def main():
     """Main CLI interface."""
     parser = argparse.ArgumentParser(
-        description="Premium Tab Installer - Manage premium tabs for homeserver",
+        description="Premium Tab Installer - Professional-grade tab management for homeserver",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 EXAMPLES:
@@ -863,15 +863,18 @@ EXAMPLES:
   
   # List both available and installed tabs
   python3 installer.py list --all
+  
+  # Validate all premium tabs
+  python3 installer.py validate --all
         """
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
-    # Install command - now handles both single and multiple tabs intelligently
+    # Install command - handles both single and multiple tabs intelligently
     # Automatically detects single vs batch mode based on number of tab paths provided
-    install_parser = subparsers.add_parser("install", help="Install premium tab(s)")
+    install_parser = subparsers.add_parser("install", help="Install premium tab(s) with dependency validation")
     
     # Add the --all flag first (optional)
     install_parser.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
@@ -881,33 +884,33 @@ EXAMPLES:
     install_parser.add_argument("tab_paths", nargs="*", help="Paths to premium tab directories (multiple paths for batch install)")
     
     install_parser.add_argument("--no-defer-build", action="store_true", 
-                               help="Don't defer frontend rebuild (rebuild after each tab)")
+                               help="Rebuild frontend after each tab (default: defer until all tabs installed)")
     install_parser.add_argument("--no-defer-restart", action="store_true", 
-                               help="Don't defer service restart (restart after each tab)")
+                               help="Restart services after each tab (default: defer until all tabs installed)")
     
     # Reinstall command
-    reinstall_parser = subparsers.add_parser("reinstall", help="Reinstall premium tab(s)")
+    reinstall_parser = subparsers.add_parser("reinstall", help="Reinstall premium tab(s) with clean state")
     reinstall_parser.add_argument("tab_names", nargs="+", help="Names of premium tabs to reinstall")
     reinstall_parser.add_argument("--no-defer-build", action="store_true", 
-                                 help="Don't defer frontend rebuild (rebuild after each tab)")
+                                 help="Rebuild frontend after each tab (default: defer until all tabs reinstalled)")
     reinstall_parser.add_argument("--no-defer-restart", action="store_true", 
-                                 help="Don't defer service restart (restart after each tab)")
+                                 help="Restart services after each tab (default: defer until all tabs reinstalled)")
     
     # Uninstall command
-    uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall premium tab(s)")
+    uninstall_parser = subparsers.add_parser("uninstall", help="Remove premium tab(s) and clean up dependencies")
     uninstall_group = uninstall_parser.add_mutually_exclusive_group(required=True)
     uninstall_group.add_argument("tab_name", nargs="?", help="Name of premium tab to uninstall (use manifest name, not folder name)")
     uninstall_group.add_argument("--all", action="store_true", help="Uninstall all currently installed premium tabs")
     
     # Validate command
-    validate_parser = subparsers.add_parser("validate", help="Validate premium tab(s)")
+    validate_parser = subparsers.add_parser("validate", help="Validate premium tab(s) for compatibility and completeness")
     validate_group = validate_parser.add_mutually_exclusive_group(required=True)
     validate_group.add_argument("tab_path", nargs="?", help="Path to premium tab directory")
     validate_group.add_argument("--all", nargs="?", const=".", metavar="PREMIUM_DIR", 
                                help="Validate all premium tabs from directory (defaults to current directory)")
     
     # List command
-    list_parser = subparsers.add_parser("list", help="List premium tabs")
+    list_parser = subparsers.add_parser("list", help="List premium tabs with status information")
     list_group = list_parser.add_mutually_exclusive_group()
     list_group.add_argument("--available", action="store_true", help="List available tabs in premium directory (ready to install)")
     list_group.add_argument("--installed", action="store_true", help="List currently installed tabs")
@@ -930,7 +933,7 @@ EXAMPLES:
         if args.command == "install":
             # Check if we have tab paths or --all flag
             if args.tab_paths and args.all:
-                print("Error: Cannot specify both tab paths and --all flag")
+                print("Error: Cannot specify both tab paths and --all flag simultaneously")
                 return 1
             
             if not args.tab_paths and not args.all:
@@ -966,7 +969,7 @@ EXAMPLES:
                         tab_paths.append(item_path)
                 
                 if not tab_paths:
-                    print(f"No premium tabs found in: {premium_dir}")
+                    print(f"Error: No premium tabs found in directory: {premium_dir}")
                     return 1
                 
                 # Use batch installation with deferred operations
@@ -1026,7 +1029,7 @@ EXAMPLES:
             show_installed = args.installed or args.all or (not args.available)
             
             if show_available:
-                print("=== AVAILABLE PREMIUM TABS (ready to install) ===")
+                print("=== AVAILABLE PREMIUM TABS ===")
                 premium_dir = "/var/www/homeserver/premium"
                 if os.path.exists(premium_dir):
                     available_tabs = []
@@ -1055,7 +1058,7 @@ EXAMPLES:
                     
                     if available_tabs:
                         for tab in available_tabs:
-                            print(f"  📁 {tab['folder']}")
+                            print(f"  [DIR] {tab['folder']}")
                             print(f"     Name: {tab['name']}")
                             print(f"     Version: {tab['version']}")
                             if tab['description']:
@@ -1071,7 +1074,7 @@ EXAMPLES:
                 installed_tabs = installer.get_installed_premium_tabs()
                 if installed_tabs:
                     for tab in installed_tabs:
-                        print(f"  ✅ {tab['name']} (v{tab['version']})")
+                        print(f"  [INSTALLED] {tab['name']} (v{tab['version']})")
                         if tab.get('install_time'):
                             print(f"     Installed: {tab['install_time']}")
                         print()
@@ -1081,7 +1084,7 @@ EXAMPLES:
             return 0
             
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Fatal error: {e}")
         if args.debug:
             import traceback
             traceback.print_exc()

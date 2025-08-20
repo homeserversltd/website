@@ -217,24 +217,14 @@ def get_tab_status_list() -> Dict[str, Any]:
         # Extract detailed conflict information from validation output
         conflict_details = _parse_validation_output(validate_stdout, validate_stderr)
         
-        # 3. For each uninstalled tab, check individual conflicts with core system
-        tabs = []
-        for tab in available_tabs:
-            if not tab["installed"]:
-                # Validate individual tab
-                tab_validate_success, tab_validate_stdout, tab_validate_stderr = execute_command([
-                    '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'validate', tab['name']
-                ])
-                
-                # Parse validation output for detailed conflict information
-                if tab_validate_stdout or tab_validate_stderr:
-                    tab_conflicts = _parse_validation_output(tab_validate_stdout, tab_validate_stderr)
-                    if tab_conflicts:
-                        tab["conflicts"] = tab_conflicts
-                
-                tabs.append(tab)
-            else:
-                tabs.append(tab)
+        # 3. Use the already parsed tabs from the list command
+        tabs = available_tabs
+        
+        # Set conflict flags based on the overall validation result
+        if has_cross_tab_conflicts:
+            for tab in tabs:
+                if not tab["installed"]:
+                    tab["hasConflicts"] = True
         
         # Calculate summary statistics for frontend
         installed_tabs = [tab for tab in tabs if tab["installed"]]
@@ -249,6 +239,8 @@ def get_tab_status_list() -> Dict[str, Any]:
             "canInstallAll": len(available_tabs) > 0 and not has_cross_tab_conflicts,
             "canUninstallAll": len(installed_tabs) > 0
         }
+        
+        write_to_log('premium', f'Summary data: {summary}', 'info')
         
         write_to_log('premium', f'Returning {len(tabs)} tabs in final result', 'info')
         return {

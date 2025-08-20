@@ -236,10 +236,25 @@ def get_tab_status_list() -> Dict[str, Any]:
             else:
                 tabs.append(tab)
         
+        # Calculate summary statistics for frontend
+        installed_tabs = [tab for tab in tabs if tab["installed"]]
+        available_tabs = [tab for tab in tabs if not tab["installed"]]
+        tabs_with_conflicts = [tab for tab in tabs if tab.get("hasConflicts", False)]
+        
+        summary = {
+            "totalTabs": len(tabs),
+            "installedTabs": len(installed_tabs),
+            "availableTabs": len(available_tabs),
+            "hasAnyConflicts": has_cross_tab_conflicts or len(tabs_with_conflicts) > 0,
+            "canInstallAll": len(available_tabs) > 0 and not has_cross_tab_conflicts,
+            "canUninstallAll": len(installed_tabs) > 0
+        }
+        
         write_to_log('premium', f'Returning {len(tabs)} tabs in final result', 'info')
         return {
             "success": True,
             "tabs": tabs,
+            "summary": summary,
             "has_cross_tab_conflicts": has_cross_tab_conflicts,
             "cross_tab_conflicts": conflict_details
         }

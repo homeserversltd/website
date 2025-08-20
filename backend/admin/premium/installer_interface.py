@@ -193,7 +193,7 @@ def get_tab_status_list() -> Dict[str, Any]:
     # Use full path to premium directory for CLI commands
     try:
         success, stdout, stderr = execute_command([
-            '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'list', '--all'
+            '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'list', '--all', PREMIUM_DIR
         ])
         
         if not success:
@@ -206,8 +206,9 @@ def get_tab_status_list() -> Dict[str, Any]:
         available_tabs = _parse_tab_list(stdout)
         
         # 2. Check for cross-tab conflicts using validate --all
+        # Use full path to premium directory for validation
         validate_success, validate_stdout, validate_stderr = execute_command([
-            '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'validate', '--all'
+            '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'validate', '--all', PREMIUM_DIR
         ])
         
         has_cross_tab_conflicts = not validate_success

@@ -304,10 +304,10 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 continue
             
             # Parse folder entries ([DIR] for available, [INSTALLED] for installed)
-            if line.startswith('  [DIR]') or line.startswith('  [INSTALLED]'):
+            if line.startswith('[DIR]') or line.startswith('[INSTALLED]'):
                 write_to_log('premium', f'Found tab entry at line {i}: {line}', 'debug')
                 # Extract folder name (remove indicator and leading spaces)
-                folder_name = line.replace('  [DIR]', '').replace('  [INSTALLED]', '').strip()
+                folder_name = line.replace('[DIR]', '').replace('[INSTALLED]', '').strip()
                 
                 # Remove version info if present (e.g., "testTab (v1.0.4)" -> "testTab")
                 if ' (' in folder_name:
@@ -332,25 +332,23 @@ def _parse_tab_list(stdout: str) -> List[Dict[str, Any]]:
                 continue
             
             # Parse tab details (Name, Version, Description, Installed time)
-            if line.startswith('     ') and tabs:  # Indented detail line
-                detail_line = line.strip()
-                if ':' in detail_line:
-                    key, value = detail_line.split(':', 1)
-                    key = key.strip()
-                    value = value.strip()
-                    
-                    current_tab = tabs[-1]  # Get the last added tab
-                    
-                    if key == 'Name':
-                        current_tab['displayName'] = value
-                    elif key == 'Version':
-                        current_tab['version'] = value
-                    elif key == 'Description':
-                        current_tab['description'] = value
-                    elif key == 'Installed':
-                        current_tab['installTime'] = value
-                    
-                    write_to_log('premium', f'Updated tab detail: {key} = {value}', 'debug')
+            if ':' in line and tabs:  # Detail lines contain colons
+                key, value = line.split(':', 1)
+                key = key.strip()
+                value = value.strip()
+                
+                current_tab = tabs[-1]  # Get the last added tab
+                
+                if key == 'Name':
+                    current_tab['displayName'] = value
+                elif key == 'Version':
+                    current_tab['version'] = value
+                elif key == 'Description':
+                    current_tab['description'] = value
+                elif key == 'Installed':
+                    current_tab['installTime'] = value
+                
+                write_to_log('premium', f'Updated tab detail: {key} = {value}', 'debug')
         
         write_to_log('premium', f'Before post-processing: {len(tabs)} tabs', 'debug')
         

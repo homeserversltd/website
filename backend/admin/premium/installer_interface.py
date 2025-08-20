@@ -187,19 +187,14 @@ def get_tab_status_list() -> Dict[str, Any]:
     Returns:
         Dict with tabs list, summary, and success status
     """
+    write_to_log('premium', 'Getting tab status list', 'info')
+    
+    # 1. Get all tabs using installer.py list --all
+    # Use full path to premium directory for CLI commands
     try:
-        write_to_log('premium', 'Getting tab status list', 'info')
-        
-        # 1. Get all tabs using installer.py list --all
         success, stdout, stderr = execute_command([
             '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'list', '--all'
         ])
-        
-        # DEBUG: Log what we're actually getting back from CLI
-        write_to_log('premium', f'CLI command stdout length: {len(stdout) if stdout else 0}', 'info')
-        write_to_log('premium', f'CLI command stderr length: {len(stderr) if stderr else 0}', 'info')
-        write_to_log('premium', f'CLI command stdout: {repr(stdout)}', 'info')
-        write_to_log('premium', f'CLI command stderr: {repr(stderr)}', 'info')
         
         if not success:
             return {
@@ -208,18 +203,12 @@ def get_tab_status_list() -> Dict[str, Any]:
             }
         
         # Parse the tab list
-        tabs = _parse_tab_list(stdout)
+        available_tabs = _parse_tab_list(stdout)
         
         # 2. Check for cross-tab conflicts using validate --all
         validate_success, validate_stdout, validate_stderr = execute_command([
             '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'validate', '--all'
         ])
-        
-        # DEBUG: Log validation command output
-        write_to_log('premium', f'Validation command stdout length: {len(validate_stdout) if validate_stdout else 0}', 'info')
-        write_to_log('premium', f'Validation command stderr length: {len(validate_stderr) if validate_stderr else 0}', 'info')
-        write_to_log('premium', f'Validation command stdout: {repr(validate_stdout)}', 'info')
-        write_to_log('premium', f'Validation command stderr: {repr(validate_stderr)}', 'info')
         
         has_cross_tab_conflicts = not validate_success
         
@@ -227,54 +216,35 @@ def get_tab_status_list() -> Dict[str, Any]:
         conflict_details = _parse_validation_output(validate_stdout, validate_stderr)
         
         # 3. For each uninstalled tab, check individual conflicts with core system
-        for tab in tabs:
+        tabs = []
+        for tab in available_tabs:
             if not tab["installed"]:
-                # Check individual tab conflicts with core system
-                # New CLI expects just the tab name, not the full path
-                check_success, check_stdout, check_stderr = execute_command([
+                # Validate individual tab
+                tab_validate_success, tab_validate_stdout, tab_validate_stderr = execute_command([
                     '/usr/bin/sudo', '/usr/bin/python3', INSTALLER_PATH, 'validate', tab['name']
                 ])
                 
-                tab["conflictsWithCore"] = not check_success
-                tab["hasConflicts"] = tab["conflictsWithCore"]
+                # Parse validation output for detailed conflict information
+                if tab_validate_stdout or tab_validate_stderr:
+                    tab_conflicts = _parse_validation_output(tab_validate_stdout, tab_validate_stderr)
+                    if tab_conflicts:
+                        tab["conflicts"] = tab_conflicts
                 
-                # Add detailed conflict information if available
-                if not check_success:
-                    tab["conflictDetails"] = _parse_validation_output(check_stdout, check_stderr)
-                else:
-                    tab["conflictDetails"] = None
+                tabs.append(tab)
             else:
-                # Installed tabs don't have conflicts (they're already resolved)
-                tab["conflictsWithCore"] = False
-                tab["hasConflicts"] = False
-                tab["conflictDetails"] = None
-        
-        # 4. Generate summary with enhanced conflict information
-        installed_count = sum(1 for tab in tabs if tab["installed"])
-        available_count = len(tabs) - installed_count
-        
-        summary = {
-            "totalTabs": len(tabs),
-            "installedTabs": installed_count,
-            "availableTabs": available_count,
-            "hasAnyConflicts": has_cross_tab_conflicts,
-            "canInstallAll": not has_cross_tab_conflicts and available_count > 0,
-            "canUninstallAll": installed_count > 0,
-            "conflictDetails": conflict_details if has_cross_tab_conflicts else None
-        }
+                tabs.append(tab)
         
         return {
             "success": True,
             "tabs": tabs,
-            "summary": summary,
-            "error": None
+            "has_cross_tab_conflicts": has_cross_tab_conflicts,
+            "cross_tab_conflicts": conflict_details
         }
         
     except Exception as e:
-        write_to_log('premium', f'Exception in get_tab_status_list: {str(e)}', 'error')
         return {
             "success": False,
-            "error": f"Internal error: {str(e)}"
+            "error": f"Error getting tab status: {str(e)}"
         }
 
 

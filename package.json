@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "start": "react-scripts start",
-        "build": "react-scripts build",
+        "build": "GENERATE_SOURCEMAP=false CI=true react-scripts build",
         "eject": "react-scripts eject"
     },
     "dependencies": {

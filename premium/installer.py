@@ -296,7 +296,8 @@ class PremiumInstaller:
                     for file_key, target_path in permissions_files.items():
                         # Source path is the same as target path relative to tab root
                         source_path = target_path
-                        target = os.path.join("/etc/sudoers.d", target_path)
+                        # Extract just the filename for permissions files to avoid nested directories
+                        target = os.path.join("/etc/sudoers.d", os.path.basename(target_path))
                         
                         # Create FileOperation object
                         operation = FileOperation(

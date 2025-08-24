@@ -93,8 +93,8 @@
               "services": ["gogs"],
               "type": "systemd",
               "port": 3000,
-              "localURL": "https://git.home.arpa/git/",
-              "remoteURL": "https://home.tail13aff.ts.net/git/"
+              "localURL": "https://git.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/"
             },
             {
               "name": "Navidrome",
@@ -186,7 +186,7 @@
     "global": {
       "root": "sda",
       "version": {
-        "version": "0.9.59",
+        "version": "0.9.60",
         "releaseDate": "08-20-2025",
         "generation": 1,
         "buildId": "695fe2a",
@@ -275,16 +275,6 @@
                       "permissions": "775",
                       "paths": [
                           "/mnt/nas/books"
-                      ],
-                      "recursive": true,
-                      "includeIncludedPermissions": true
-                  },
-                  "Gogs": {
-                      "user": "git",
-                      "group": "git",
-                      "permissions": "775",
-                      "paths": [
-                          "/mnt/nas/git"
                       ],
                       "recursive": true,
                       "includeIncludedPermissions": true

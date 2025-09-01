@@ -355,7 +355,7 @@ export function useTailscaleStatus() {
     updateActivity();
     setPendingTailnet(tailnet);
     try {
-      await withConfigLoading(api.post(API_ENDPOINTS.status.tailscale.updateTailnet, { tailnet }));
+      await withConfigLoading(api.post(API_ENDPOINTS.status.tailscale.updateTailnet, { tailnetName: tailnet }));
       toast.success('Tailscale config update initiated. Please wait for status change.');
     } catch (error: any) {
       console.error('Failed to update Tailscale config:', error);

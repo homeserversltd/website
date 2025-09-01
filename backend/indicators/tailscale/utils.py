@@ -417,11 +417,11 @@ def update_homeserver_config(name: str) -> Tuple[bool, str]:
 
         for i, origin in enumerate(cors_origins):
             if '.ts.net' in origin:
-                cors_origins[i] = f"https://server.{name}.ts.net"
+                cors_origins[i] = f"https://home.{name}.ts.net"
                 updated_cors = True
 
         if not updated_cors:
-            cors_origins.append(f"https://server.{name}.ts.net")
+            cors_origins.append(f"https://home.{name}.ts.net")
 
         # Ensure config structure exists
         if 'global' not in config:
@@ -434,7 +434,7 @@ def update_homeserver_config(name: str) -> Tuple[bool, str]:
         portals = config.get('tabs', {}).get('portals', {}).get('data', {}).get('portals', [])
         for portal in portals:
             if 'remoteURL' in portal and '.ts.net' in portal['remoteURL']:
-                portal['remoteURL'] = f"https://server.{name}.ts.net{portal['remoteURL'].split('.ts.net')[-1]}"
+                portal['remoteURL'] = f"https://home.{name}.ts.net{portal['remoteURL'].split('.ts.net')[-1]}"
 
         current_app.logger.info("[TAIL] Writing updated configuration to temp file")
         # Write to temp file first for atomic update

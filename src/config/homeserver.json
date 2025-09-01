@@ -55,10 +55,10 @@
               "name": "Transmission",
               "description": "BitTorrent client",
               "services": ["transmissionPIA"],
-              "type": "script",
+              "type": "systemd",
               "port": 9091,
               "localURL": "https://transmission.home.arpa",
-              "remoteURL": "N/A"
+              "remoteURL": "https://home.tail13aff.ts.net/transmission/"
             },
             {
               "name": "Piwigo",
@@ -186,11 +186,11 @@
     "global": {
       "root": "sda",
       "version": {
-        "version": "0.9.60",
-        "releaseDate": "08-20-2025",
+        "version": "0.9.62",
+        "releaseDate": "09-01-2025",
         "generation": 1,
-        "buildId": "695fe2a",
-        "lastUpdated": "08-20-2025"
+        "buildId": "f5e4da466c",
+        "lastUpdated": "09-01-2025"
       },
       "theme": {
         "name": "dark"

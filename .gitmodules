@@ -4,3 +4,6 @@
 [submodule "premium/conflictTab"]
 	path = premium/conflictTab
 	url = git@github.com:homeserversltd/conflictTab.git
+[submodule "premium/backupTab"]
+	path = premium/backupTab
+	url = git@github.com:homeserversltd/backupTab.git

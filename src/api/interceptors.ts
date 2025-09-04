@@ -2,6 +2,7 @@ import { useAuth } from './auth';
 import { useToast } from '../hooks/useToast';
 import { socketClient } from '../components/WebSocket/client';
 import { useStore } from '../store';
+import { fallbackManager } from '../utils/fallbackManager';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -98,6 +99,14 @@ export const responseInterceptor = async (response: Response): Promise<Response>
 
     const error = new ApiError(response.status, errorMessage, errorDetails);
     
+    // Check for specific error conditions that should trigger fallback mode
+    if (shouldTriggerFallback(response.status, errorMessage, errorDetails, response.url)) {
+      console.warn(`[API Interceptor] Triggering fallback mode due to 405 error on updates/apply route`);
+      if (!fallbackManager.isActive()) {
+        fallbackManager.activateFallback('updates_apply_405_error');
+      }
+    }
+    
     // Call global error handler if available
     if (globalErrorHandler) {
       globalErrorHandler(error);
@@ -111,4 +120,17 @@ export const responseInterceptor = async (response: Response): Promise<Response>
 
 export const isOfflineApiError = (error: any): error is ApiError => {
   return error instanceof ApiError && error.status === 0 && error.message === 'Offline';
+};
+
+/**
+ * Determines if an API error should trigger fallback mode
+ * Only triggers for 405 errors on the specific updates/apply route
+ */
+const shouldTriggerFallback = (status: number, message: string, details?: string, url?: string): boolean => {
+  // Only trigger fallback for 405 errors on the specific updates/apply route
+  if (status === 405 && url && url.includes('/api/admin/updates/apply')) {
+    return true;
+  }
+  
+  return false;
 }; 

@@ -766,8 +766,8 @@ class PackageManager:
         for package_type, packages in self.installation_state.installed_packages.items():
             try:
                 if package_type == "pip" and packages:
-                    self.logger.info(f"Uninstalling Python packages: {', '.join(packages)}")
-                    self._run_command([f"{self.venv_path}/bin/pip", "uninstall", "-y"] + packages)
+                    # Use the safe uninstall method that protects core dependencies
+                    self.uninstall_python_packages(packages)
                 elif package_type == "npm" and packages:
                     self.logger.info(f"Uninstalling NPM packages: {', '.join(packages)}")
                     self._run_command(["npm", "uninstall"] + packages, 
@@ -845,17 +845,61 @@ class PackageManager:
         
         return python_valid and npm_valid
     
+    def _get_core_system_dependencies(self) -> List[str]:
+        """Get list of core system Python dependencies from main requirements.txt."""
+        core_requirements_file = os.path.join(os.path.dirname(self.package_json_path), "requirements.txt")
+        core_dependencies = []
+        
+        if os.path.exists(core_requirements_file):
+            try:
+                with open(core_requirements_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            # Extract package name (before ==, >=, etc.)
+                            package_name = line.split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].split('!')[0].strip()
+                            if package_name:
+                                core_dependencies.append(package_name.lower())
+            except Exception as e:
+                self.logger.warning(f"Could not read core requirements file: {str(e)}")
+        
+        return core_dependencies
+
     def uninstall_python_packages(self, packages: List[str]) -> bool:
-        """Uninstall specific Python packages."""
+        """Uninstall specific Python packages, but preserve core system dependencies."""
         if not packages:
             self.logger.info("No Python packages to uninstall")
             return True
         
+        # Get core system dependencies to protect them
+        core_dependencies = self._get_core_system_dependencies()
+        
+        # Filter out core system dependencies
+        packages_to_remove = []
+        protected_packages = []
+        
+        for package in packages:
+            package_name_lower = package.lower()
+            if package_name_lower in core_dependencies:
+                protected_packages.append(package)
+                self.logger.info(f"Keeping core system dependency: {package}")
+            else:
+                packages_to_remove.append(package)
+        
+        if protected_packages:
+            self.logger.warning(f"Protected {len(protected_packages)} core system dependencies from removal:")
+            for pkg in protected_packages:
+                self.logger.warning(f"  - {pkg}")
+        
+        if not packages_to_remove:
+            self.logger.info("No packages to uninstall (all were core system dependencies)")
+            return True
+        
         try:
-            self.logger.info(f"Uninstalling Python packages: {', '.join(packages)}")
+            self.logger.info(f"Uninstalling {len(packages_to_remove)} Python packages: {', '.join(packages_to_remove)}")
             self._run_command([
                 f"{self.venv_path}/bin/pip", "uninstall", "-y"
-            ] + packages)
+            ] + packages_to_remove)
             
             self.logger.info("Python packages uninstalled successfully")
             return True

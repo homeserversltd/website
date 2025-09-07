@@ -146,9 +146,12 @@ def _parse_check_output(output: str) -> Dict[str, Any]:
         if "No updates available" in output or "System is up to date" in output:
             result["updates_available"] = False
         # Then check for specific update patterns
-        elif re.search(r"Found \d+ modules? to update", output) or "modules to update" in output:
-            result["updates_available"] = True
-        elif re.search(r"Module \w+ needs update:", output):
+        elif (re.search(r"Found \d+ modules? to update", output) or 
+              "modules to update" in output or
+              "Updates are available" in output or
+              re.search(r"Content updates: \d+ items", output) or
+              re.search(r"Schema updates: \d+ modules", output) or
+              re.search(r"Module \w+ needs update:", output)):
             result["updates_available"] = True
         else:
             # Default to False if no specific update indicators found

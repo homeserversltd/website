@@ -145,26 +145,47 @@ def _parse_check_output(output: str) -> Dict[str, Any]:
         # First check for explicit "no updates" messages
         if "No updates available" in output or "System is up to date" in output:
             result["updates_available"] = False
+            logger.info(f"[UPDATEMAN-UTILS] No updates detected - found 'no updates' message")
         # Then check for specific update patterns
         elif (re.search(r"Found \d+ modules? to update", output) or 
               "modules to update" in output or
               "Updates are available" in output or
               re.search(r"Content updates: \d+ items", output) or
               re.search(r"Schema updates: \d+ modules", output) or
-              re.search(r"Module \w+ needs update:", output)):
+              re.search(r"Module \w+ needs update:", output) or
+              re.search(r"Update needed:", output) or
+              re.search(r"Content update: \d+\.\d+\.\d+ → \d+\.\d+\.\d+", output)):
             result["updates_available"] = True
+            logger.info(f"[UPDATEMAN-UTILS] Updates detected in output")
         else:
             # Default to False if no specific update indicators found
             result["updates_available"] = False
+            logger.warning(f"[UPDATEMAN-UTILS] No update patterns matched in output")
         
         # Extract version information if present
-        version_pattern = r"Version:\s*([^\s]+)"
-        matches = re.findall(version_pattern, output)
-        if len(matches) >= 2:
-            result["current_version"] = matches[0]
-            result["latest_version"] = matches[1]
-        elif len(matches) == 1:
-            result["current_version"] = matches[0]
+        # Look for version patterns in various formats
+        version_patterns = [
+            r"Version:\s*([^\s]+)",
+            r"Local version:\s*([^\s]+)",
+            r"Repository version:\s*([^\s]+)",
+            r"Content update:\s*([^\s]+)\s*→\s*([^\s]+)"
+        ]
+        
+        for pattern in version_patterns:
+            matches = re.findall(pattern, output)
+            if matches:
+                if isinstance(matches[0], tuple):
+                    # Pattern with two groups (current → latest)
+                    result["current_version"] = matches[0][0]
+                    result["latest_version"] = matches[0][1]
+                    break
+                elif len(matches) >= 2:
+                    result["current_version"] = matches[0]
+                    result["latest_version"] = matches[1]
+                    break
+                elif len(matches) == 1:
+                    result["current_version"] = matches[0]
+                    break
         
         return result
     except Exception as e:

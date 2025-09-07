@@ -152,7 +152,7 @@ class Config:
         'hiddenTabText': '#A0AEC0'
     }
     # Samba admin user for password sync
-    SAMBA_ADMIN_USER = 'admin'
+    SAMBA_ADMIN_USER = 'owner'
 
 class DevelopmentConfig(Config):
     """Development configuration."""

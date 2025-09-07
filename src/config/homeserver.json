@@ -186,7 +186,7 @@
     "global": {
       "root": "sda",
       "version": {
-        "version": "0.9.72",
+        "version": "0.9.73",
         "releaseDate": "09-07-2025",
         "generation": 1,
         "buildId": "37f74ff9cb",

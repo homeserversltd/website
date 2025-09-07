@@ -450,8 +450,8 @@ def update_admin_password():
         
         write_to_log('admin', 'Service suite key updated successfully', 'info')
         
-        # Update the system admin user password
-        current_app.logger.info("[PWMAN] Updating system admin user password")
+        # Update the system owner user password
+        current_app.logger.info("[PWMAN] Updating system owner user password")
         
         # Create a temporary file in ramdisk with the password change command
         temp_file = '/mnt/ramdisk/pwd_change.txt'
@@ -461,7 +461,7 @@ def update_admin_password():
                 os.unlink(temp_file)
                 
             with open(temp_file, 'w') as f:
-                f.write(f"admin:{new_password}")
+                f.write(f"owner:{new_password}")
             os.chmod(temp_file, 0o600)  # Secure the file
             
             # Log the command we're about to run (without the password)
@@ -514,7 +514,7 @@ def update_admin_password():
             error = str(e)
 
         if not user_pwd_success:
-            current_app.logger.error(f"[PWMAN] Admin user password update failed: {error}")
+            current_app.logger.error(f"[PWMAN] Owner user password update failed: {error}")
             
             # Attempt to roll back the service suite key change using non-interactive mode
             current_app.logger.warning("[PWMAN] Rolling back service suite key change")
@@ -531,7 +531,7 @@ def update_admin_password():
                 current_app.logger.error(f"[PWMAN] Service suite key rollback failed: {rollback_error}")
                 return jsonify({
                     'success': False,
-                    'error': 'Critical error: Failed to update admin user password AND failed to roll back service suite key',
+                    'error': 'Critical error: Failed to update owner user password AND failed to roll back service suite key',
                     'details': {
                         'passwordUpdated': False,
                         'serviceKeyUpdated': True,
@@ -541,7 +541,7 @@ def update_admin_password():
             
             return jsonify({
                 'success': False,
-                'error': 'Failed to update admin user password, service suite key has been rolled back',
+                'error': 'Failed to update owner user password, service suite key has been rolled back',
                 'details': {
                     'passwordUpdated': False,
                     'serviceKeyUpdated': False,
@@ -565,7 +565,7 @@ def update_admin_password():
                     'details': smbpwd_proc.stderr
                 }), 500
             else:
-                current_app.logger.info("[PWMAN] Samba password updated successfully for admin user")
+                current_app.logger.info("[PWMAN] Samba password updated successfully for owner user")
         except Exception as e:
             current_app.logger.error(f"[PWMAN] Exception updating Samba password: {str(e)}")
             return jsonify({

@@ -36,17 +36,9 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({ onClose 
   const api = useApi();
   const toast = useToast();
 
-  // Password validation
-  // Check if password contains only allowed special characters: "-._~"
-  const isSpecialCharValid = (password: string) => /[-._~]/.test(password);
-  
-  // Password validation functions - current password only needs to exist
+  // Password validation - simplified to only require non-empty passwords
   const isOldPasswordValid = oldPassword.length >= 1;
-  const isNewPasswordValid = newPassword.length >= 8 && 
-                            /[A-Z]/.test(newPassword) && 
-                            /[a-z]/.test(newPassword) && 
-                            /[0-9]/.test(newPassword) && 
-                            isSpecialCharValid(newPassword);
+  const isNewPasswordValid = newPassword.length >= 1;
   const doPasswordsMatch = newPassword === confirmPassword;
   
   // Validation for current UI state
@@ -62,7 +54,7 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({ onClose 
     // Validate all fields
     const errors = {
       oldPassword: isOldPasswordValid ? '' : 'Please enter your current admin password',
-      newPassword: isNewPasswordValid ? '' : 'Password must meet all requirements below',
+      newPassword: isNewPasswordValid ? '' : 'Please enter a new password',
       confirmPassword: doPasswordsMatch ? '' : 'Passwords do not match'
     };
     
@@ -159,16 +151,6 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({ onClose 
           disabled={isLoading}
           autoComplete="new-password"
         />
-        <div className="password-requirements">
-          New password must:
-          <ul>
-            <li className={newPassword.length >= 8 ? 'valid' : 'invalid'}>Be at least 8 characters long</li>
-            <li className={/[A-Z]/.test(newPassword) ? 'valid' : 'invalid'}>Include uppercase letters</li>
-            <li className={/[a-z]/.test(newPassword) ? 'valid' : 'invalid'}>Include lowercase letters</li>
-            <li className={/[0-9]/.test(newPassword) ? 'valid' : 'invalid'}>Include numbers</li>
-            <li className={isSpecialCharValid(newPassword) ? 'valid' : 'invalid'}>Include special characters (only: - . _ ~)</li>
-          </ul>
-        </div>
       </div>
 
       <div className="form-group">
@@ -183,13 +165,11 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({ onClose 
         />
 
         {/* Password validation indicator - always present to reserve space */}
-        <div className={`password-validation-indicator ${newPassword && confirmPassword ? (doPasswordsMatch && isNewPasswordValid ? 'valid' : 'invalid') : ''}`}>
+        <div className={`password-validation-indicator ${newPassword && confirmPassword ? (doPasswordsMatch ? 'valid' : 'invalid') : ''}`}>
           {newPassword && confirmPassword ? (
-            doPasswordsMatch && isNewPasswordValid ? 
-              <span>✓ Password is valid and matches</span> : 
-              doPasswordsMatch ? 
-                <span>✗ Password matches but doesn&apos;t meet requirements</span> :
-                <span>✗ Passwords do not match</span>
+            doPasswordsMatch ? 
+              <span>✓ Passwords match</span> :
+              <span>✗ Passwords do not match</span>
           ) : (
             <span>&nbsp;</span> // Empty space to reserve height
           )}

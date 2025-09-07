@@ -468,9 +468,12 @@ def update_admin_password():
             current_app.logger.info("[PWMAN] Executing chpasswd with sudo")
             
             # Use subprocess directly with the file
+            with open(temp_file, 'r') as f:
+                password_data = f.read()
+            
             result = subprocess.run(
                 ['/usr/bin/sudo', '/usr/sbin/chpasswd'],
-                input=open(temp_file).read(),
+                input=password_data,
                 text=True,
                 capture_output=True,
                 env={"LANG": "C"}  # Force English error messages

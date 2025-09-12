@@ -617,10 +617,8 @@
 }
 
 .vpn-status-modal .credential-group .primary-button {
-  min-width: 120px;
-  min-height: 86px;
-  white-space: pre-line;
   text-align: center;
+  margin: 6px;
 }
 
 .vpn-status-modal .key-exists-message {

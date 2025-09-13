@@ -220,7 +220,12 @@ class DiskMonitor:
             # Collect detailed information for each LUKS device
             encrypted_devices = []
             
+            current_app.logger.info(f"[DISK] Processing LUKS devices: {luks_devices}")
+            current_app.logger.info(f"[DISK] Crypto mappings: {crypto_mappings}")
+            current_app.logger.info(f"[DISK] Existing mappers: {existing_mappers}")
+            
             for device in luks_devices:
+                current_app.logger.info(f"[DISK] Processing LUKS device: {device}")
                 device_info = {
                     "device": device,
                     "is_open": False,

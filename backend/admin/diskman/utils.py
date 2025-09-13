@@ -139,12 +139,23 @@ def ensure_mount_point_exists(mount_point):
     if not os.path.exists(mount_point):
         try:
             current_app.logger.info(f"[DISKMAN] Creating mount point directory: {mount_point}")
-            os.makedirs(mount_point, exist_ok=True)
+            # Use sudo to create mount point directories
+            success, stdout, stderr = execute_command(["/usr/bin/sudo", "/usr/bin/mkdir", "-p", mount_point])
+            if not success:
+                current_app.logger.error(f"[DISKMAN] Failed to create mount point directory: {stderr}")
+                return False, stderr
             return True, ""
         except Exception as e:
             current_app.logger.error(f"[DISKMAN] Failed to create mount point directory: {str(e)}")
             return False, str(e)
-    return True, ""
+    elif os.path.ismount(mount_point):
+        # Directory exists and is already a mount point - this is fine
+        current_app.logger.info(f"[DISKMAN] Mount point {mount_point} already exists and is mounted")
+        return True, ""
+    else:
+        # Directory exists but is not mounted - this is also fine
+        current_app.logger.info(f"[DISKMAN] Mount point directory {mount_point} already exists")
+        return True, ""
 
 def unlock_luks_device(partition_path, mapper_name, password):
     """

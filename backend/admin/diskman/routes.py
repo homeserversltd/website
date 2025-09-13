@@ -207,12 +207,19 @@ def unlock_encrypted_partition():
             
         device = data.get('device')
         manual_password = data.get('manual_password')
+        encrypted_password = data.get('encryptedPassword')
         
         current_app.logger.info(f"[DISKMAN] Received request to unlock device: {device}")
         
         if not device:
             current_app.logger.error("[DISKMAN] Missing required parameter: device")
             return utils.error_response("Missing required parameter: device")
+        
+        # If encrypted password is provided, daisy chain to the admin unlock-with-password route
+        if encrypted_password:
+            current_app.logger.info("[DISKMAN] Encrypted password provided, daisy chaining to admin unlock-with-password route")
+            from backend.admin.routes import unlock_device_with_manual_password
+            return unlock_device_with_manual_password()
         
         # Ensure device name is properly formatted
         device_path, device_name = utils.format_device_path(device)

@@ -243,8 +243,14 @@ class PremiumInstaller:
                         else:
                             # Handle simple string mapping (legacy format)
                             source_path = file_config
-                            # Copy contents directly into the backend directory, not nested
-                            target = os.path.join("/var/www/homeserver/backend", tab_name, os.path.basename(file_config))
+                            # Preserve directory structure when copying from backend/ subdirectories
+                            if source_path.startswith("backend/"):
+                                # Remove "backend/" prefix and preserve the rest of the path
+                                relative_path = source_path[8:]  # Remove "backend/" prefix
+                                target = os.path.join("/var/www/homeserver/backend", tab_name, relative_path)
+                            else:
+                                # For other files, use basename (legacy behavior)
+                                target = os.path.join("/var/www/homeserver/backend", tab_name, os.path.basename(file_config))
                             
                             # Create FileOperation object
                             operation = FileOperation(

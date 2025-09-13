@@ -294,16 +294,13 @@ class FileOperationsManager:
                 self.logger.info(f"Identical file already exists: {target_path}")
                 return True
             else:
-                self.logger.error(f"Different file exists at target: {target_path}")
-                return False
+                self.logger.info(f"Different file exists at target, will overwrite: {target_path}")
+                # Create backup before overwriting
+                operation.backup_path = self.create_backup(target_path)
         
         # Create target directory structure if needed
         if not self.create_directory_structure(target_path):
             return False
-        
-        # Create backup if target exists
-        if os.path.exists(target_path):
-            operation.backup_path = self.create_backup(target_path)
         
         # Copy file
         try:

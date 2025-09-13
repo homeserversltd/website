@@ -840,16 +840,13 @@ def download_root_crt():
 def refresh_root_crt():
     """
     Refresh the HomeServer root CA certificate by generating a new one.
-    This will:
-    1. Generate a new self-signed certificate using sslKey.sh
-    2. Copy the new certificate to the web root
-    3. Restart nginx to use the new certificate
+    This will run sslKey.sh which handles everything: generation, permissions, and nginx restart.
     """
     current_app.logger.info('[CACERT] /api/admin/refresh-root-crt accessed')
     write_to_log('admin', 'Root CA certificate refresh initiated', 'info')
 
     try:
-        # Run sslKey.sh to generate new certificate
+        # Run sslKey.sh - it handles everything (generation, permissions, nginx restart)
         result = subprocess.run(
             ['/usr/bin/sudo', '/usr/local/sbin/sslKey.sh'],
             capture_output=True,
@@ -857,85 +854,27 @@ def refresh_root_crt():
             check=True
         )
         
-        if result.returncode != 0:
-            current_app.logger.error(f"[CACERT] Failed to generate new certificate: {result.stderr}")
-            write_to_log('admin', f'Failed to generate new certificate: {result.stderr}', 'error')
-            return jsonify({
-                'success': False,
-                'error': 'Failed to generate new certificate',
-                'details': result.stderr
-            }), 500
-
-        # Copy the new certificate to web root
-        copy_result = subprocess.run(
-            ['/usr/bin/sudo', '/bin/cp', '/etc/ssl/home.arpa/cert.pem', '/var/www/homeserver/certs/root.crt'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        if copy_result.returncode != 0:
-            current_app.logger.error(f"[CACERT] Failed to copy certificate to web root: {copy_result.stderr}")
-            write_to_log('admin', f'Failed to copy certificate to web root: {copy_result.stderr}', 'error')
-            return jsonify({
-                'success': False,
-                'error': 'Failed to copy certificate to web root',
-                'details': copy_result.stderr
-            }), 500
-
-        # Set proper permissions on the web-accessible certificate
-        chmod_result = subprocess.run(
-            ['/usr/bin/sudo', '/bin/chmod', '644', '/var/www/homeserver/certs/root.crt'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        if chmod_result.returncode != 0:
-            current_app.logger.error(f"[CACERT] Failed to set certificate permissions: {chmod_result.stderr}")
-            write_to_log('admin', f'Failed to set certificate permissions: {chmod_result.stderr}', 'error')
-            return jsonify({
-                'success': False,
-                'error': 'Failed to set certificate permissions',
-                'details': chmod_result.stderr
-            }), 500
-
-        # Restart nginx to use the new certificate
-        nginx_result = subprocess.run(
-            ['/usr/bin/sudo', '/usr/bin/systemctl', 'restart', 'nginx.service'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        if nginx_result.returncode != 0:
-            current_app.logger.error(f"[CACERT] Failed to restart nginx: {nginx_result.stderr}")
-            write_to_log('admin', f'Failed to restart nginx: {nginx_result.stderr}', 'error')
-            return jsonify({
-                'success': False,
-                'error': 'Failed to restart nginx',
-                'details': nginx_result.stderr
-            }), 500
-
+        current_app.logger.info(f"[CACERT] sslKey.sh output: {result.stdout}")
         write_to_log('admin', 'Root CA certificate refreshed successfully', 'info')
         
         return jsonify({
             'success': True,
             'message': 'Root CA certificate refreshed successfully. You will need to clear your browser\'s SSL state and reinstall the new certificate.',
-            'requiresReinstall': True
+            'requiresReinstall': True,
+            'output': result.stdout
         }), 200
 
     except subprocess.CalledProcessError as e:
-        current_app.logger.error(f"[CACERT] Process error while refreshing certificate: {e.stderr}")
-        write_to_log('admin', f'Process error while refreshing certificate: {e.stderr}', 'error')
+        current_app.logger.error(f"[CACERT] sslKey.sh failed: {e.stderr}")
+        write_to_log('admin', f'Certificate refresh failed: {e.stderr}', 'error')
         return jsonify({
             'success': False,
             'error': 'Failed to refresh certificate',
             'details': e.stderr
         }), 500
     except Exception as e:
-        current_app.logger.error(f"[CACERT] Unexpected error while refreshing certificate: {str(e)}")
-        write_to_log('admin', f'Unexpected error while refreshing certificate: {str(e)}', 'error')
+        current_app.logger.error(f"[CACERT] Unexpected error: {str(e)}")
+        write_to_log('admin', f'Unexpected error during certificate refresh: {str(e)}', 'error')
         return jsonify({
             'success': False,
             'error': 'Internal server error',

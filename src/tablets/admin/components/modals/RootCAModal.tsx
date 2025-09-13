@@ -104,14 +104,10 @@ export const RootCAModal: React.FC<RootCAModalProps> = ({ onClose }) => {
 
   const handleConfirmedRefresh = async () => {
     setIsRefreshing(true);
-    
-    // Activate fallback mode with specific reason before initiating refresh
-    fallbackManager.activateFallback('certificate_refresh_in_progress');
-    
-    // Disconnect WebSocket immediately
-    
     // Fire and forget the refresh request - we don't care about the response
     apiHook.post(API_ENDPOINTS.admin.refreshRootCA).catch(() => {/* Do nothing */});
+    // Activate fallback mode with specific reason before initiating refresh
+    fallbackManager.activateFallback('certificate_refresh_in_progress');
     api.ws.disconnect();
 
     // Show the steps immediately

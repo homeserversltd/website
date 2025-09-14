@@ -107,7 +107,7 @@ class PremiumInstaller:
         
         return state
     
-    def install_premium_tab(self, tab_path: str, batch_mode: bool = False) -> bool:
+    def install_premium_tab(self, tab_path: str, batch_mode: bool = False, skip_name_collision_check: bool = False) -> bool:
         """Install a premium tab using modular utilities."""
         # Get category logger for install operations
         category_logger = self._get_category_logger("install")
@@ -140,9 +140,10 @@ class PremiumInstaller:
                 category_logger.error("Package manifest validation failed")
                 return False
             
-            # Check for name collisions
-            if not self.validation_manager.check_name_collision(tab_name):
-                return False
+            # Check for name collisions (skip during reinstall)
+            if not skip_name_collision_check:
+                if not self.validation_manager.check_name_collision(tab_name):
+                    return False
             
             # Check version conflicts
             valid, conflicts = self.version_checker.validate_premium_tab_dependencies(tab_path)
@@ -675,7 +676,7 @@ class PremiumInstaller:
                 
                 if tab_path:
                     category_logger.info(f"Found tab '{tab_name}' in premium directory, installing...")
-                    return self.install_premium_tab(tab_path)
+                    return self.install_premium_tab(tab_path, skip_name_collision_check=True)
                 else:
                     category_logger.error(f"Tab '{tab_name}' not found in premium directory")
                     return False
@@ -712,7 +713,7 @@ class PremiumInstaller:
             
             if tab_path:
                 category_logger.info(f"Found tab '{tab_name}' in premium directory, reinstalling...")
-                if self.install_premium_tab(tab_path):
+                if self.install_premium_tab(tab_path, skip_name_collision_check=True):
                     category_logger.info(f"Premium tab '{tab_name}' reinstalled successfully")
                     return True
                 else:

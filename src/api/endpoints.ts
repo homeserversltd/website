@@ -190,6 +190,7 @@ export type PremiumTabEndpoints = {
   validateAndClone: string;
   install: (tabName: string) => string;
   uninstall: (tabName: string) => string;
+  reinstall: (tabName: string) => string;
   delete: (tabName: string) => string;
   status: string;
   installAll: string;
@@ -406,6 +407,7 @@ export const API_ENDPOINTS: APIEndpoints = {
       validateAndClone: '/admin/premium/validate-and-clone',
       install: (tabName: string) => `/admin/premium/install/${encodeURIComponent(tabName)}`,
       uninstall: (tabName: string) => `/admin/premium/uninstall/${encodeURIComponent(tabName)}`,
+      reinstall: (tabName: string) => `/admin/premium/reinstall/${encodeURIComponent(tabName)}`,
       delete: (tabName: string) => `/admin/premium/delete/${encodeURIComponent(tabName)}`,
       status: '/admin/premium/status',
       installAll: '/admin/premium/install-all',

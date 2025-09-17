@@ -66,6 +66,7 @@ export const PremiumTabModal: React.FC<PremiumTabModalProps> = ({ onClose }) => 
   const [deletingTabs, setDeletingTabs] = useState<Set<string>>(new Set());
   const [installingTabs, setInstallingTabs] = useState<Set<string>>(new Set());
   const [uninstallingTabs, setUninstallingTabs] = useState<Set<string>>(new Set());
+  const [reinstallingTabs, setReinstallingTabs] = useState<Set<string>>(new Set());
   
   // Confirmation state
   const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
@@ -303,6 +304,44 @@ export const PremiumTabModal: React.FC<PremiumTabModalProps> = ({ onClose }) => 
         // Show uninstallation messages immediately
         success(`${tabName} uninstallation initiated! Please refresh your browser in 2-3 minutes to see changes.`, { duration: 10000 });
         info('The uninstallation process is atomic and will revert all changes if any step fails.', { duration: 8000 });
+        
+        // Close modal immediately
+        onClose();
+
+        // No promise handling - truly fire and forget since we're disconnected
+      }
+    });
+  }, [api, success, error, info, showConfirmation]);
+
+  // Handle reinstall single tab
+  const handleReinstallTab = useCallback(async (tabName: string) => {
+    
+    // Use internal confirmation system instead of external confirm
+    showConfirmation({
+      isConfirming: true,
+      title: 'Reinstall Premium Tab',
+      message: `Are you sure you want to reinstall the "${tabName}" premium tab? This will uninstall and then reinstall the tab.`,
+      confirmText: 'Reinstall',
+      confirmAction: async () => {
+
+        // Set reinstalling state for this specific tab
+        setReinstallingTabs(prev => new Set(prev).add(tabName));
+
+        // Fire the API call immediately (truly fire and forget - no response handling)
+        api.post<PremiumTabOperationResponse>(
+          API_ENDPOINTS.premium.reinstall(tabName)
+        ).catch(() => {
+          // Silently ignore errors since we're disconnected and don't want to handle responses
+        });
+        
+        // IMMEDIATELY activate fallback mode and disconnect (after firing request)
+        fallbackManager.activateFallback('premium_tab_reinstallation_in_progress');
+        useStore.getState().disconnect();
+        useStore.getState().exitAdminMode();
+
+        // Show reinstallation messages immediately
+        success(`${tabName} reinstallation initiated! Please refresh your browser in 2-3 minutes to see changes.`, { duration: 10000 });
+        info('The reinstallation process is atomic and will revert all changes if any step fails.', { duration: 8000 });
         
         // Close modal immediately
         onClose();
@@ -966,6 +1005,19 @@ export const PremiumTabModal: React.FC<PremiumTabModalProps> = ({ onClose }) => 
                   <div className="tab-actions">
                     {tab.installed ? (
                       <>
+                        <button
+                          className="premium-tab-btn primary small"
+                          onClick={() => handleReinstallTab(tab.name)}
+                          disabled={reinstallingTabs.has(tab.name)}
+                          title="Reinstall this premium tab"
+                        >
+                          {reinstallingTabs.has(tab.name) ? (
+                            <FontAwesomeIcon icon={faSpinner} spin />
+                          ) : (
+                            <FontAwesomeIcon icon={faSync} />
+                          )}
+                          Reinstall
+                        </button>
                         <button
                           className="premium-tab-btn danger small"
                           onClick={() => handleUninstallTab(tab.name)}

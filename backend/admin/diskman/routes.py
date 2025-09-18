@@ -251,7 +251,22 @@ def unlock_encrypted_partition():
         mapper_name = utils.generate_mapper_name(device_name)
         current_app.logger.info(f"[DISKMAN] Using mapper name: {mapper_name}")
         
-        # If no manual password provided, try with NAS key first
+        # Get LUKS key slot information to determine which slots have keys
+        current_app.logger.info(f"[DISKMAN] Inspecting LUKS key slots for {device_path}")
+        success, key_slots_info, error_message = utils.get_luks_key_slots(device_path)
+        
+        if not success:
+            current_app.logger.error(f"[DISKMAN] Failed to get key slot information: {error_message}")
+            return utils.error_response(f"Failed to inspect key slots: {error_message}", 500)
+        
+        slots_with_keys = key_slots_info.get('slots_with_keys', [])
+        current_app.logger.info(f"[DISKMAN] Found {len(slots_with_keys)} slots with keys: {slots_with_keys}")
+        
+        if not slots_with_keys:
+            current_app.logger.error(f"[DISKMAN] No key slots found for {device_path}")
+            return utils.error_response("No key slots found on this LUKS device", 400)
+        
+        # Get the password to use
         if not manual_password:
             current_app.logger.info(f"[DISKMAN] Attempting unlock with NAS key for {device_path}")
             success, password, error_message = utils.export_nas_key()
@@ -265,31 +280,26 @@ def unlock_encrypted_partition():
                     status_code=422
                 )
             
-            # Try to unlock with NAS key
-            success, error_message = utils.unlock_luks_device(device_path, mapper_name, password)
-            
-            if not success:
-                current_app.logger.warning(f"[DISKMAN] NAS key failed to unlock device: {error_message}")
-                return utils.error_response(
-                    "NAS key failed to unlock device. Please provide manual password.",
-                    needs_manual_password=True,
-                    status_code=422
-                )
+            unlock_method = "nas_key"
         else:
-            # Try with provided manual password
-            current_app.logger.info(f"[DISKMAN] Attempting unlock with manual password for {device_path}")
-            success, error_message = utils.unlock_luks_device(device_path, mapper_name, manual_password)
-            
-            if not success:
-                current_app.logger.error(f"[DISKMAN] Manual password failed to unlock device: {error_message}")
-                return utils.error_response(
-                    "Manual password failed to unlock device. Please try again.",
-                    needs_manual_password=True,
-                    status_code=422
-                )
-            
-            # TODO: Here we could add logic to offer key update to NAS key
-            current_app.logger.info("[DISKMAN] Successfully unlocked with manual password. Key update feature pending implementation.")
+            # Use provided manual password
+            current_app.logger.info(f"[DISKMAN] Using provided manual password for {device_path}")
+            password = manual_password
+            unlock_method = "manual_password"
+        
+        # Try to unlock using only slots that have keys
+        current_app.logger.info(f"[DISKMAN] Attempting smart unlock with password, trying {len(slots_with_keys)} slots: {slots_with_keys}")
+        success, used_slot, error_message = utils.unlock_luks_device_smart(device_path, mapper_name, password, slots_with_keys)
+        
+        if not success:
+            current_app.logger.error(f"[DISKMAN] Smart unlock failed: {error_message}")
+            return utils.error_response(
+                "Failed to unlock device with available key slots. Please try again.",
+                needs_manual_password=True,
+                status_code=422
+            )
+        
+        current_app.logger.info(f"[DISKMAN] Successfully unlocked with {unlock_method} using key slot {used_slot}")
             
         # Create the success response
         mapper_path = f"/dev/mapper/{mapper_name}"
@@ -297,7 +307,13 @@ def unlock_encrypted_partition():
             "device": device_path,
             "mapper": mapper_path,
             "is_open": True,
-            "unlocked_with": "nas_key" if not manual_password else "manual_password"
+            "unlocked_with": unlock_method,
+            "used_key_slot": used_slot,
+            "key_slots": {
+                "slots_with_keys": slots_with_keys,
+                "key_count": len(slots_with_keys),
+                "total_possible_slots": key_slots_info.get('total_possible_slots', 8)
+            }
         }
         
         current_app.logger.info(f"[DISKMAN] Successfully unlocked device {device_path}")

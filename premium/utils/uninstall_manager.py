@@ -528,9 +528,10 @@ class UninstallManager:
             # Handle Python packages from installation data
             python_packages = installation_data["packages"].get("python", [])
             if python_packages:
-                self.logger.info(f"Uninstalling {len(python_packages)} Python packages")
-                if not self.package_manager.uninstall_python_packages(python_packages):
-                    self.logger.warning("Failed to uninstall some Python packages")
+                self.logger.info(f"Preserving {len(python_packages)} Python packages (uninstall disabled per policy)")
+                # DISABLED: Never uninstall Python packages to prevent breaking other components
+                # if not self.package_manager.uninstall_python_packages(python_packages):
+                #     self.logger.warning("Failed to uninstall some Python packages")
             
             # Handle NPM patch from installation data
             npm_patch_file = installation_data["packages"].get("npm_patch")

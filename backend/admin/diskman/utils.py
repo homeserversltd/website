@@ -883,6 +883,169 @@ def write_crontab(entries, user='www-data'):
         current_app.logger.error(f"Exception updating crontab for {user}: {str(e)}")
         return False
 
+def get_luks_key_slots(device_path):
+    """
+    Get information about LUKS key slots for a device.
+    Only returns slots that actually have keys (ENABLED status).
+    
+    Args:
+        device_path (str): Path to the LUKS device
+        
+    Returns:
+        tuple: (success, key_slots_info, error_message)
+            - success (bool): True if successful, False otherwise
+            - key_slots_info (dict): Information about key slots with keys
+            - error_message (str): Error message if failed
+    """
+    try:
+        current_app.logger.info(f"[DISKMAN] Getting LUKS key slots for {device_path}")
+        
+        # Use cryptsetup luksDump to get key slot information
+        success, stdout, stderr = execute_command(
+            ["/usr/bin/sudo", "/usr/sbin/cryptsetup", "luksDump", device_path]
+        )
+        
+        if not success:
+            current_app.logger.error(f"[DISKMAN] Failed to get LUKS key slots: {stderr}")
+            return False, {}, f"Failed to get LUKS key slots: {stderr}"
+        
+        # Parse the output to extract only slots that have keys
+        slots_with_keys = []
+        lines = stdout.split('\n')
+        
+        # Look for the Keyslots section
+        in_keyslots_section = False
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Check if we're entering the Keyslots section
+            if line == 'Keyslots:':
+                in_keyslots_section = True
+                continue
+            
+            # If we're in the keyslots section, look for slot entries
+            if in_keyslots_section:
+                # Check if this line starts a new section (no leading whitespace and contains colon)
+                # But only break if it's not a slot line (which would start with a digit)
+                if ':' in line and not line.startswith(' ') and not line.startswith('\t') and not line[0].isdigit():
+                    # This might be a new section, stop processing keyslots
+                    break
+                    
+                # Look for lines like "  0: luks2" or "  1: luks2"
+                if line and ':' in line and line.strip()[0].isdigit():
+                    parts = line.split(':')
+                    if len(parts) >= 2:
+                        slot_part = parts[0].strip()
+                        status_part = parts[1].strip()
+                        
+                        try:
+                            slot_num = int(slot_part)
+                            
+                            # For LUKS2: if status contains "luks2", it has a key
+                            # For LUKS1: if status is "ENABLED", it has a key
+                            if status_part == 'luks2' or status_part == 'ENABLED':
+                                slots_with_keys.append(slot_num)
+                        except ValueError:
+                            continue
+        
+        # Sort the slots for consistent ordering
+        slots_with_keys.sort()
+        
+        result = {
+            'slots_with_keys': slots_with_keys,
+            'key_count': len(slots_with_keys),
+            'total_possible_slots': 32  # LUKS2 supports up to 32 key slots (0-31)
+        }
+        
+        current_app.logger.info(f"[DISKMAN] Found {len(slots_with_keys)} slots with keys: {slots_with_keys}")
+        return True, result, ""
+        
+    except Exception as e:
+        current_app.logger.error(f"[DISKMAN] Error getting LUKS key slots: {str(e)}")
+        return False, {}, str(e)
+
+def unlock_luks_device_with_slot(partition_path, mapper_name, password, key_slot=None):
+    """
+    Unlock a LUKS encrypted device with a specific key slot.
+    
+    Args:
+        partition_path (str): Path to the encrypted partition
+        mapper_name (str): Mapper name to use
+        password (str): Password for the LUKS device
+        key_slot (int, optional): Specific key slot to try (0-7). If None, tries all slots.
+        
+    Returns:
+        tuple: (success, used_slot, error_message)
+            - success (bool): True if unlock was successful
+            - used_slot (int): The key slot that successfully unlocked the device
+            - error_message (str): Error message if unlock failed
+    """
+    current_app.logger.info(f"[DISKMAN] Unlocking {partition_path} with mapper {mapper_name}, key slot: {key_slot}")
+    
+    # Use cryptsetup open with specific key slot if provided
+    if key_slot is not None:
+        success, stdout, stderr = execute_command(
+            ["/usr/bin/sudo", "/usr/sbin/cryptsetup", "open", "--key-slot", str(key_slot), partition_path, mapper_name],
+            input_data=f"{password}\n"
+        )
+    else:
+        # Try without specifying key slot (default behavior)
+        success, stdout, stderr = execute_command(
+            ["/usr/bin/sudo", "/usr/sbin/cryptsetup", "open", partition_path, mapper_name],
+            input_data=f"{password}\n"
+        )
+    
+    current_app.logger.info(f"[DISKMAN] Open LUKS container result - success: {success}, slot: {key_slot}")
+    
+    if not success:
+        current_app.logger.error(f"[DISKMAN] Failed to unlock encrypted partition with slot {key_slot}: {stderr}")
+        return False, key_slot, stderr
+    
+    # Check if the mapper device exists
+    mapper_path = f"/dev/mapper/{mapper_name}"
+    if not os.path.exists(mapper_path):
+        current_app.logger.error(f"[DISKMAN] Failed to create mapper device {mapper_path}")
+        return False, key_slot, f"Failed to create mapper device {mapper_path}"
+    
+    return True, key_slot, ""
+
+def unlock_luks_device_smart(partition_path, mapper_name, password, slots_with_keys):
+    """
+    Smart unlock of a LUKS encrypted device by trying only slots that have keys.
+    
+    Args:
+        partition_path (str): Path to the encrypted partition
+        mapper_name (str): Mapper name to use
+        password (str): Password to try
+        slots_with_keys (list): List of key slots that actually have keys (e.g., [0, 2, 5])
+        
+    Returns:
+        tuple: (success, used_slot, error_message)
+            - success (bool): True if unlock was successful
+            - used_slot (int): The key slot that successfully unlocked the device
+            - error_message (str): Error message if all slots failed
+    """
+    current_app.logger.info(f"[DISKMAN] Smart unlock for {partition_path} with password, trying {len(slots_with_keys)} slots: {slots_with_keys}")
+    
+    last_error = ""
+    
+    for slot in slots_with_keys:
+        current_app.logger.info(f"[DISKMAN] Trying key slot {slot} for {partition_path}")
+        
+        success, used_slot, error_message = unlock_luks_device_with_slot(partition_path, mapper_name, password, slot)
+        
+        if success:
+            current_app.logger.info(f"[DISKMAN] Successfully unlocked with key slot {used_slot}")
+            return True, used_slot, ""
+        else:
+            current_app.logger.warning(f"[DISKMAN] Key slot {slot} failed: {error_message}")
+            last_error = error_message
+    
+    # All slots failed
+    current_app.logger.error(f"[DISKMAN] All {len(slots_with_keys)} key slots failed to unlock {partition_path}")
+    return False, -1, f"All key slots failed. Last error: {last_error}"
+
 def error_response(message, status_code=400, details=None, needs_manual_password=False):
     """
     Generate an error response with consistent format.

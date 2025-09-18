@@ -766,8 +766,9 @@ class PackageManager:
         for package_type, packages in self.installation_state.installed_packages.items():
             try:
                 if package_type == "pip" and packages:
-                    # Use the safe uninstall method that protects core dependencies
-                    self.uninstall_python_packages(packages)
+                    # DISABLED: Never uninstall Python packages to prevent breaking other components
+                    self.logger.info(f"Preserving {len(packages)} Python packages during rollback (uninstall disabled per policy)")
+                    # self.uninstall_python_packages(packages)
                 elif package_type == "npm" and packages:
                     self.logger.info(f"Uninstalling NPM packages: {', '.join(packages)}")
                     self._run_command(["npm", "uninstall"] + packages, 

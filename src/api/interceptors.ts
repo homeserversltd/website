@@ -15,7 +15,8 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public message: string,
-    public details?: string
+    public details?: string,
+    public response?: any
   ) {
     super(message);
     this.name = 'ApiError';
@@ -74,10 +75,11 @@ export const responseInterceptor = async (response: Response): Promise<Response>
     const contentType = response.headers.get('content-type');
     let errorMessage: string;
     let errorDetails: string | undefined;
+    let errorData: any = null;
 
     try {
       if (contentType?.includes('application/json')) {
-        const errorData = await response.json();
+        errorData = await response.json();
         errorMessage = errorData.error || errorData.message || 'Unknown error occurred';
         errorDetails = errorData.details;
 
@@ -97,7 +99,7 @@ export const responseInterceptor = async (response: Response): Promise<Response>
       errorMessage = 'Failed to parse error response';
     }
 
-    const error = new ApiError(response.status, errorMessage, errorDetails);
+    const error = new ApiError(response.status, errorMessage, errorDetails, { data: errorData });
     
     // Check for specific error conditions that should trigger fallback mode
     if (shouldTriggerFallback(response.status, errorMessage, errorDetails, response.url)) {

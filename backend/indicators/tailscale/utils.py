@@ -174,8 +174,12 @@ def generate_login_url() -> str:
         current_app.logger.error(f"[TAIL] Error running tailUp script: {str(e)}")
         return ""
 
+# Track if we've already cleared the login URL for the current connection
+_last_connection_state = False
+
 def get_tailscale_status() -> dict:
     """Get Tailscale connection status and IP."""
+    global _last_connection_state
     try:
         interface_exists = os.path.exists('/sys/class/net/tailscale0')
         if not interface_exists:
@@ -251,9 +255,14 @@ def get_tailscale_status() -> dict:
         
         # If connected, clear any stale cached login url
         # Only clear if we have a truly stable connection (interface up + IP + backend running)
-        if connected and interface_up and ip is not None and truly_connected:
+        # AND we haven't already cleared it for this connection state
+        if connected and interface_up and ip is not None and truly_connected and not _last_connection_state:
             current_app.logger.info("[TAIL] Stable connection detected, clearing cached login URL")
             _clear_cached_login_url()
+            _last_connection_state = True
+        elif not connected:
+            # Reset the state when disconnected
+            _last_connection_state = False
 
         # Add login URL if found
         if login_url:

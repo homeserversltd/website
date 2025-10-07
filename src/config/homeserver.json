@@ -186,11 +186,11 @@
     "global": {
       "root": "sda",
       "version": {
-        "version": "0.9.81",
-        "releaseDate": "09-18-2025",
+        "version": "0.9.82",
+        "releaseDate": "10-07-2025",
         "generation": 1,
         "buildId": "d3c813dd8d",
-        "lastUpdated": "09-18-2025"
+        "lastUpdated": "10-07-2025"
       },
       "theme": {
         "name": "dark"
@@ -292,7 +292,7 @@
                   "Piwigo": {
                       "user": "piwigo",
                       "group": "piwigo",
-                      "permissions": "775",
+                      "permissions": "777",
                       "paths": [
                           "/mnt/nas/photos"
                       ],
@@ -301,8 +301,8 @@
                   }
               },
               "includedPermissions": {
-                  "user": ["www-data"],
-                  "group": ["www-data"]
+                  "user": ["www-data","owner"],
+                  "group": ["www-data","owner"]
               }
           }
       }

@@ -169,8 +169,8 @@ const PortalsTablet: React.FC = () => {
         </div>
 
         {showAddModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
+          <div className="portal-modal-overlay">
+            <div className="portal-modal-content">
               <AddPortalModal
                 onClose={() => setShowAddModal(false)}
                 onPortalAdded={handlePortalAdded}

@@ -193,8 +193,8 @@
   width: 100%;
 }
 
-/* Modal styles */
-.modal-overlay {
+/* Portal Modal specific styles - renamed to avoid conflicts */
+.portal-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -208,15 +208,41 @@
   padding: 20px;
 }
 
-.modal-content {
+.portal-modal-content {
   padding: 0 0.5rem;
   background: var(--background);
   border-radius: 12px;
   width: 100%;
+  max-width: 600px; /* Set a reasonable max width */
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border);
+}
+
+/* Responsive design for portal modal */
+@media (max-width: 768px) {
+  .portal-modal-overlay {
+    padding: 10px;
+  }
+  
+  .portal-modal-content {
+    max-width: 95vw;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .portal-modal-overlay {
+    padding: 5px;
+    align-items: flex-start;
+    padding-top: 20px;
+  }
+  
+  .portal-modal-content {
+    max-width: 100%;
+    max-height: 95vh;
+  }
 }
 
 /* Add Portal Modal specific styles */

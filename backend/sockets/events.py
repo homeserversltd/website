@@ -308,13 +308,13 @@ def handle_admin_auth(data):
         }, room=sid)
 
 @socketio.on('disconnect')
-def handle_disconnect():
+def handle_disconnect(reason=None):
     """Handle WebSocket disconnections with proper cleanup."""
     try:
         sid = request.sid
         client_ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
         
-        current_app.logger.info(f"Client disconnecting: {sid} from {client_ip}")
+        current_app.logger.info(f"Client disconnecting: {sid} from {client_ip} (reason: {reason})")
         
         # Clean up connection state
         connection_manager.remove_connection(client_ip, sid)

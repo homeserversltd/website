@@ -149,7 +149,7 @@ export const getFlexibleOptionById = (id: string): FlexibleAdditionOption | unde
  * @returns String with password requirements
  */
 export const getPasswordRequirementsMessage = (): string => {
-  return 'Password can only contain alphanumeric characters, underscores, and the following special characters: - . _ ~';
+  return 'Password can contain any characters including letters, numbers, and special symbols.';
 };
 
 /**
@@ -159,8 +159,7 @@ export const getPasswordRequirementsMessage = (): string => {
  */
 export const isPasswordStrong = (password: string): boolean => {
   if (!password) return false;
-  // Check that password only contains allowed characters (alphanumeric, underscore, and - . _ ~)
-  if (!/^[a-zA-Z0-9_.\-~]+$/.test(password)) return false;
-  
-  return true;
+  // Password can now contain any characters - no character restrictions
+  // Only require that it's not empty
+  return password.length > 0;
 }; 

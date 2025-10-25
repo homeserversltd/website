@@ -1,4 +1,4 @@
-.disk-manager {
+.admin-tablet .disk-manager {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px var(--primary), 0 2px 4px var(--border);
@@ -527,7 +527,7 @@
 }
 
 /* Add pulsing animation for the mount button when an unlocked device is selected */
-@keyframes pulse-success {
+@keyframes admin-pulse-success {
   0% {
     box-shadow: 0 0 0 0 var(--success);
   }
@@ -540,7 +540,7 @@
 }
 
 .action-button.mount:not(.disabled) {
-  animation: pulse-success 1.5s infinite;
+  animation: admin-pulse-success 1.5s infinite;
 }
 
 /* Destinations that are already in use should be visually unavailable */
@@ -562,7 +562,7 @@
 .disk-column:last-child .disk-item.available:not(.mounted):not(.disabled) {
   box-shadow: 0 0 10px var(--success);
   border: 2px solid var(--success);
-  animation: pulse-available 2s infinite;
+  animation: admin-pulse-available 2s infinite;
   position: relative;
 }
 
@@ -597,7 +597,7 @@
 }
 
 /* Pulsing animation for available destinations */
-@keyframes pulse-available {
+@keyframes admin-pulse-available {
   0% {
     box-shadow: 0 0 4px var(--success);
   }

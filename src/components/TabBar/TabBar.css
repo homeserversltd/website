@@ -11,16 +11,16 @@
 
 /* Hide tab bar in regular mode when hidden or single tab */
 .tab-bar.hidden {
-  display: none !important;
+  display: none;
 }
 
 nav[data-hidden="true"] .tab-bar {
-  display: none !important;
+  display: none;
 }
 
 /* Force show in admin mode unless explicitly hidden */
 nav[data-admin-mode="true"] .tab-bar:not(.hidden) {
-  display: flex !important;
+  display: flex;
 }
 
 /* Regular mode visibility */
@@ -35,7 +35,7 @@ nav[data-admin-mode] {
 }
 
 nav[data-admin-mode="true"] .tab-bar {
-  display: flex !important;
+  display: flex;
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.3s ease-out, transform 0.3s ease-out;
@@ -44,8 +44,8 @@ nav[data-admin-mode="true"] .tab-bar {
 
 /* Fix: Ensure tabs are completely hidden in regular mode, not just visually hidden */
 nav[data-admin-mode="false"] .tab-bar.hidden {
-  display: none !important;
-  pointer-events: none !important;
+  display: none;
+  pointer-events: none;
 }
 
 nav[data-admin-mode="false"] .tab-bar:not(.hidden) {
@@ -72,7 +72,7 @@ nav[data-admin-mode="false"] .tab-bar:not(.hidden) .tab {
 /* Only hide tabs in regular mode when they should be hidden */
 nav[data-admin-mode="false"] .tab-bar.hidden .tab,
 nav[data-admin-mode="false"] .tab.hidden {
-  display: none !important;
+  display: none;
 }
 
 /* Desktop - allow tabs to wrap to prevent horizontal scrollbar */
@@ -190,11 +190,11 @@ nav[data-admin-mode="false"] .tab.hidden {
 
 /* Regular mode - hidden tabs are not rendered */
 .tab.hidden {
-  display: none !important;
+  display: none;
 }
 /* Admin mode - show all tabs with visual indicators */
 nav[data-admin-mode="true"] .tab {
-  display: grid !important;
+  display: grid;
   justify-items: center;
 }
 
@@ -306,10 +306,10 @@ nav[data-admin-mode="false"] .tab-visibility-column {
 }
 
 .star-button.loading i {
-  animation: spin 1.5s linear infinite;
+  animation: admin-spin 1.5s linear infinite;
 }
 
-@keyframes spin {
+@keyframes admin-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
@@ -320,7 +320,7 @@ nav[data-admin-mode="false"] .tab-visibility-column {
   opacity: 0.5;
 }
 
-@keyframes pulse {
+@keyframes admin-pulse {
   0% { opacity: 0.3; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.1); }
   100% { opacity: 0.3; transform: scale(1); }
@@ -331,13 +331,13 @@ nav[data-admin-mode="false"] .tab-visibility-column {
 }
 
 .tab-bar .tab.admin-visible {
-  display: grid !important;
+  display: grid;
   grid-template-columns: auto 1fr auto;
   opacity: 0.7;
 }
 
 .tab-bar .tab.admin-visible[data-visibility="hidden"] {
-  border-left: 3px solid #ff6b6b;
+  border-left: 3px solid var(--error);
 }
 
 /* Ensure admin mode visibility works well on mobile */

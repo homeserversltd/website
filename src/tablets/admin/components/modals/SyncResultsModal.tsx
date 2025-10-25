@@ -48,12 +48,12 @@ const formatDuration = (seconds: number): string => {
 
 // Complementary colors for progress indicator
 const progressColors = [
-  '#4285F4', // Google Blue
-  '#34A853', // Google Green
-  '#FBBC05', // Google Yellow
-  '#EA4335', // Google Red
-  '#8C44A6', // Purple
-  '#16A2D7', // Cyan
+  'var(--accent)', // Theme accent
+  'var(--success)', // Theme success
+  'var(--warning)', // Theme warning
+  'var(--error)', // Theme error
+  'var(--secondary)', // Theme secondary
+  'var(--primary)', // Theme primary
 ];
 
 const SyncResultsModal: React.FC<SyncResultsModalProps> = ({ jobId, stayOpenOnFallback }) => {

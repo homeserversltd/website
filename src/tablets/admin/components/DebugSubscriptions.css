@@ -6,7 +6,7 @@
 }
 
 .subscription-debug-toggle button {
-  background-color: #0074d9;
+  background-color: var(--accent);
   color: white;
   border: none;
   border-radius: 4px;
@@ -28,7 +28,7 @@
   width: 350px;
   max-height: 500px;
   background-color: rgba(30, 30, 30, 0.95);
-  color: #eee;
+  color: var(--background);
   border-radius: 6px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   z-index: 9999;
@@ -44,8 +44,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background-color: #222;
-  border-bottom: 1px solid #444;
+  background-color: var(--secondary);
+  border-bottom: 1px solid var(--border);
 }
 
 .subscription-debug-header h3 {
@@ -55,7 +55,7 @@
 }
 
 .subscription-debug-header button {
-  background-color: #444;
+  background-color: var(--primary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -66,15 +66,15 @@
 }
 
 .subscription-debug-header button:hover {
-  background-color: #555;
+  background-color: var(--primaryHover);
 }
 
 .subscription-stats {
   display: flex;
   flex-wrap: wrap;
   padding: 8px 12px;
-  background-color: #333;
-  border-bottom: 1px solid #444;
+  background-color: var(--secondary);
+  border-bottom: 1px solid var(--border);
 }
 
 .subscription-stats div {
@@ -94,8 +94,8 @@
 .subscription-tab h4 {
   margin: 0 0 8px 0;
   font-size: 13px;
-  color: #aaa;
-  border-bottom: 1px solid #444;
+  color: var(--secondary);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 4px;
 }
 
@@ -109,21 +109,21 @@
   display: flex;
   justify-content: space-between;
   padding: 4px 8px;
-  background-color: #2a2a2a;
+  background-color: var(--secondary);
   margin-bottom: 4px;
   border-radius: 3px;
 }
 
 .subscription-tab li:hover {
-  background-color: #333;
+  background-color: var(--secondary);
 }
 
 .subscription-event {
   font-weight: bold;
-  color: #7fdbff;
+  color: var(--accent);
 }
 
 .subscription-time {
-  color: #aaa;
+  color: var(--secondary);
   font-size: 11px;
 } 

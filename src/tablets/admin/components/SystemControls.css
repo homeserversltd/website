@@ -402,7 +402,7 @@
   gap: 8px;
   padding: 15px;
   border-radius: 8px;
-  background-color: var(--background);
+  background-color: var(--secondary);
   box-shadow: 0 2px 4px var(--border);
 }
 

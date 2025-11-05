@@ -115,7 +115,8 @@ def get_kea_leases():
             current_app.logger.warning(f'[KeaLeases] Lease file not found at {csv_path}')
             return jsonify({'error': 'Kea leases file not found'}), 404
         
-        leases = []
+        # Use dict keyed by MAC address to automatically deduplicate
+        leases_by_mac = {}
         current_time = int(time.time())
         
         with open(csv_path, 'r') as f:
@@ -126,13 +127,26 @@ def get_kea_leases():
                 state = int(row['state']) if row['state'] else 1
                 
                 if state == 0 and expire_time > current_time:
-                    leases.append({
-                        'hostname': row['hostname'],
-                        'ip': row['address'],
-                        'mac': row['hwaddr']
-                    })
+                    mac = row['hwaddr']
+                    # Keep the lease with the latest expiration time for each MAC
+                    if mac not in leases_by_mac or expire_time > leases_by_mac[mac]['_expire']:
+                        leases_by_mac[mac] = {
+                            'hostname': row['hostname'],
+                            'ip': row['address'],
+                            'mac': mac,
+                            '_expire': expire_time  # Internal field for comparison
+                        }
         
-        current_app.logger.info(f'[KeaLeases] Retrieved {len(leases)} active leases from CSV')
+        # Convert dict to list and remove internal expire field
+        leases = []
+        for lease in leases_by_mac.values():
+            leases.append({
+                'hostname': lease['hostname'],
+                'ip': lease['ip'],
+                'mac': lease['mac']
+            })
+        
+        current_app.logger.info(f'[KeaLeases] Retrieved {len(leases)} unique active leases from CSV')
         return jsonify({'leases': leases}), 200
         
     except Exception as e:

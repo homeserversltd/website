@@ -108,28 +108,21 @@ def get_power_usage():
 @bp.route('/api/kea-leases', methods=['GET'])
 @visibility_required(tab_id='stats', element_id='kea-leases')
 def get_kea_leases():
-    current_app.logger.info('[KeaLeases] Fetching leases from PostgreSQL')
+    current_app.logger.info('[KeaLeases] Fetching leases from PostgreSQL via peer authentication')
     
     try:
-        # Read FAK from skeleton.key
-        try:
-            with open('/root/key/skeleton.key', 'r') as f:
-                password = f.read().strip()
-        except Exception as key_error:
-            current_app.logger.error(f'[KeaLeases] Failed to read skeleton.key: {key_error}')
-            return jsonify({'error': 'Failed to access credentials'}), 500
-        
-        # Connect to KEA database
+        # Connect to KEA database using peer authentication
+        # No password needed - PostgreSQL trusts www-data OS user identity
         try:
             conn = psycopg2.connect(
                 dbname='kea',
                 user='kea',
-                password=password,
                 host='localhost',
                 connect_timeout=5
             )
         except psycopg2.OperationalError as db_error:
             current_app.logger.error(f'[KeaLeases] Database connection failed: {db_error}')
+            current_app.logger.error('[KeaLeases] Ensure PostgreSQL peer authentication is configured for www-data')
             return jsonify({'error': 'Failed to connect to lease database'}), 500
         
         with conn.cursor(cursor_factory=RealDictCursor) as cur:

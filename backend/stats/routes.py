@@ -127,15 +127,15 @@ def get_kea_leases():
             return jsonify({'error': 'Failed to connect to lease database'}), 500
         
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Query active leases
+            # Query active leases (state = 0 means default/active)
+            # Note: address is stored as bigint (integer representation of IP)
             cur.execute("""
                 SELECT 
-                    address::text as ip,
+                    address,
                     encode(hwaddr, 'hex') as mac,
                     hostname
                 FROM lease4
                 WHERE state = 0
-                  AND valid_lifetime > extract(epoch from now()) - expire
                 ORDER BY address
             """)
             
@@ -143,6 +143,10 @@ def get_kea_leases():
             
             leases = []
             for row in rows:
+                # Convert integer IP address to dotted-decimal format
+                ip_int = row['address']
+                ip_formatted = f"{(ip_int >> 24) & 0xFF}.{(ip_int >> 16) & 0xFF}.{(ip_int >> 8) & 0xFF}.{ip_int & 0xFF}"
+                
                 # Format MAC address with colons
                 mac_hex = row['mac'] or ''
                 if mac_hex:
@@ -152,7 +156,7 @@ def get_kea_leases():
                 
                 leases.append({
                     'hostname': row['hostname'] or '',
-                    'ip': row['ip'],
+                    'ip': ip_formatted,
                     'mac': mac_formatted
                 })
             

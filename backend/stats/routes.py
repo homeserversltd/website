@@ -9,6 +9,8 @@ import speedtest
 import subprocess
 import threading
 import csv
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from backend import socketio  # Import socketio instance from backend package
 from typing import Dict, List, Optional
 from collections import defaultdict
@@ -106,56 +108,75 @@ def get_power_usage():
 @bp.route('/api/kea-leases', methods=['GET'])
 @visibility_required(tab_id='stats', element_id='kea-leases')
 def get_kea_leases():
-    file_path = '/var/lib/kea/kea-leases4.csv'
-    current_app.logger.info(f'[KeaLeases] Checking for leases file at {file_path}')
+    current_app.logger.info('[KeaLeases] Fetching leases from PostgreSQL')
     
-    if not os.path.exists(file_path):
-        current_app.logger.error(f'[KeaLeases] File not found: {file_path}')
-        return jsonify({'error': 'Kea leases file not found'}), 404        
     try:
-        with open(file_path, newline='') as csvfile:
-            current_app.logger.info(f'[KeaLeases] Reading leases from {file_path}')
-            reader = csv.DictReader(csvfile)
-            leases = {}
-            row_count = 0
+        # Read FAK from skeleton.key
+        try:
+            with open('/root/key/skeleton.key', 'r') as f:
+                password = f.read().strip()
+        except Exception as key_error:
+            current_app.logger.error(f'[KeaLeases] Failed to read skeleton.key: {key_error}')
+            return jsonify({'error': 'Failed to access credentials'}), 500
+        
+        # Connect to KEA database
+        try:
+            conn = psycopg2.connect(
+                dbname='kea',
+                user='kea',
+                password=password,
+                host='localhost',
+                connect_timeout=5
+            )
+        except psycopg2.OperationalError as db_error:
+            current_app.logger.error(f'[KeaLeases] Database connection failed: {db_error}')
+            return jsonify({'error': 'Failed to connect to lease database'}), 500
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Query active leases
+            cur.execute("""
+                SELECT 
+                    address::text as ip,
+                    encode(hwaddr, 'hex') as mac,
+                    hostname
+                FROM lease4
+                WHERE state = 0
+                  AND valid_lifetime > extract(epoch from now()) - expire
+                ORDER BY address
+            """)
             
-            for row in reader:
-                row_count += 1
-                hostname = row.get('hostname', '').strip()
-                ip = row.get('address', '').strip()
-                mac = row.get('hwaddr', '').strip()
-                
-                if not ip:
-                    current_app.logger.debug(f'[KeaLeases] Skipping row {row_count} - missing IP')
-                    continue
-                    
-                if ip in leases:
-                    current_app.logger.debug(f'[KeaLeases] Duplicate IP {ip} in row {row_count}')
-                    continue
-                    
-                leases[ip] = {
-                    'hostname': hostname,
-                    'ip': ip,
-                    'mac': mac,
-                }
-                
-            unique_leases = list(leases.values())
-            current_app.logger.info(f'[KeaLeases] Parsed {len(unique_leases)} unique leases from {row_count} rows')
+            rows = cur.fetchall()
             
-            # Log first 5 leases for verification
+            leases = []
+            for row in rows:
+                # Format MAC address with colons
+                mac_hex = row['mac'] or ''
+                if mac_hex:
+                    mac_formatted = ':'.join([mac_hex[i:i+2] for i in range(0, len(mac_hex), 2)])
+                else:
+                    mac_formatted = ''
+                
+                leases.append({
+                    'hostname': row['hostname'] or '',
+                    'ip': row['ip'],
+                    'mac': mac_formatted
+                })
+            
+        conn.close()
+        
+        current_app.logger.info(f'[KeaLeases] Retrieved {len(leases)} active leases from PostgreSQL')
+        
+        # Log first 5 leases for verification
+        if leases:
             current_app.logger.debug('[KeaLeases] Sample leases:', extra={
-                'data': unique_leases[:5]
+                'data': leases[:5]
             })
-            
-            current_app.logger.debug('[KeaLeases] Raw row sample:', extra={
-                'data': list(reader)[:3]  # Log first 3 raw rows
-            })
-            
-        return jsonify({'leases': unique_leases}), 200
+        
+        return jsonify({'leases': leases}), 200
         
     except Exception as e:
-        current_app.logger.error(f'[KeaLeases] Error reading file: {str(e)}', exc_info=True)
-        return jsonify({'error': 'Internal server error reading leases file'}), 500
+        current_app.logger.error(f'[KeaLeases] Error: {str(e)}', exc_info=True)
+        return jsonify({'error': 'Failed to retrieve leases from database'}), 500
 
 @bp.route('/api/network/notes', methods=['GET', 'PUT'])
 @visibility_required(tab_id='stats', element_id='kea-leases')

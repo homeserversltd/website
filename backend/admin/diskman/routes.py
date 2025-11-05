@@ -17,6 +17,38 @@ from backend.monitors.sync import SyncMonitor
 # Get logger
 logger = logging.getLogger('homeserver')
 
+def _is_external_mount(path: str) -> bool:
+    """Check if path is on an external mount (not root filesystem)."""
+    try:
+        # Get mount info for the path
+        result = subprocess.run(['findmnt', '-n', '-o', 'SOURCE,TARGET', path],
+                              capture_output=True, text=True, timeout=10)
+
+        if result.returncode != 0:
+            logger.warning(f"Could not determine mount for {path}: {result.stderr}")
+            return False
+
+        lines = result.stdout.strip().split('\n')
+        if not lines:
+            return False
+
+        # Check if this is mounted on something other than root
+        for line in lines:
+            parts = line.split()
+            if len(parts) >= 2:
+                mount_source, mount_target = parts[0], parts[1]
+                # If mount target is / or root filesystem, this is not external
+                if mount_target == '/' or mount_source.startswith('/dev/sda'):
+                    logger.warning(f"Path {path} is on root filesystem mount: {mount_source} -> {mount_target}")
+                    return False
+
+        # If we get here, it's likely an external mount
+        return True
+
+    except Exception as e:
+        logger.error(f"Error checking mount for {path}: {e}")
+        return False
+
 @bp.route('/api/admin/diskman/nas-compatible', methods=['GET'])
 @admin_required
 def get_nas_compatible_devices():
@@ -1071,6 +1103,13 @@ def sync_nas_to_backup():
             return jsonify({"status": "error", "message": "NAS drive is not mounted"}), 400
         if not os.path.exists(destination) or not os.path.ismount(destination):
             return jsonify({"status": "error", "message": "NAS Backup drive is not mounted"}), 400
+
+        # CRITICAL SAFETY CHECK: Ensure nas_backup is on external mount, not root filesystem
+        if not _is_external_mount('/mnt/nas_backup'):
+            return jsonify({
+                "status": "error",
+                "message": "CRITICAL SAFETY VIOLATION: /mnt/nas_backup must be on an external drive, not the root filesystem. Refusing to start sync job."
+            }), 400
         # Start the sync job using SyncMonitor
         monitor = SyncMonitor()
         result = monitor.start_sync(source, destination)
@@ -1094,8 +1133,8 @@ def get_sync_schedule():
         # Read crontab for root (since we need root privileges for rsync)
         crontab_entries = utils.read_crontab(user='root')
         
-        # Define pattern for our sync entry
-        pattern = re.compile(r'^(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+.*rsync.*\/mnt\/nas\/.*\/mnt\/nas_backup\/')
+        # Define pattern for our sync entry (matches both old rsync commands and new safe-nas-sync.sh)
+        pattern = re.compile(r'^(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+.*(rsync.*\/mnt\/nas\/.*\/mnt\/nas_backup\/|safe-nas-sync\.sh)')
         
         # Look for our sync entry
         schedule = None
@@ -1171,8 +1210,8 @@ def update_sync_schedule():
         # Read current crontab
         crontab_entries = utils.read_crontab(user='root')
         
-        # Define pattern for our sync entry to find and remove existing entry
-        pattern = re.compile(r'.*rsync.*\/mnt\/nas\/.*\/mnt\/nas_backup\/')
+        # Define pattern for our sync entry to find and remove existing entry (matches both old rsync and new safe-nas-sync.sh)
+        pattern = re.compile(r'.*(rsync.*\/mnt\/nas\/.*\/mnt\/nas_backup\/|safe-nas-sync\.sh)')
         new_entries = [entry for entry in crontab_entries if not pattern.match(entry)]
         
         # Create new entry if enabled
@@ -1190,7 +1229,14 @@ def update_sync_schedule():
                     'status': 'error',
                     'message': 'Invalid time values: hour must be 0-23, minute must be 0-59'
                 }), 400
-                
+
+            # CRITICAL SAFETY CHECK: Ensure nas_backup is on external mount, not root filesystem
+            if not _is_external_mount('/mnt/nas_backup'):
+                return jsonify({
+                    'status': 'error',
+                    'message': 'CRITICAL SAFETY VIOLATION: /mnt/nas_backup must be on an external drive, not the root filesystem. Refusing to create sync job.'
+                }), 400
+
             # Build crontab entry
             minute = schedule['minute']
             hour = schedule['hour']
@@ -1215,8 +1261,8 @@ def update_sync_schedule():
                     'message': f'Unsupported frequency: {schedule["frequency"]}'
                 }), 400
             
-            # Command to run (rsync with same options as manual sync)
-            command = '/usr/bin/rsync -av --stats --exclude=lost+found /mnt/nas/ /mnt/nas_backup/ >> /var/log/homeserver/auto-sync.log 2>&1'
+            # Command to run (safe wrapper script that validates mounts before rsync)
+            command = '/usr/local/sbin/safe-nas-sync.sh'
             
             # Create entry
             crontab_entry = f"{minute} {hour} {day_of_month} {month} {day_of_week} {command}"

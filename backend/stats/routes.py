@@ -9,8 +9,6 @@ import speedtest
 import subprocess
 import threading
 import csv
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from backend import socketio  # Import socketio instance from backend package
 from typing import Dict, List, Optional
 from collections import defaultdict
@@ -108,73 +106,38 @@ def get_power_usage():
 @bp.route('/api/kea-leases', methods=['GET'])
 @visibility_required(tab_id='stats', element_id='kea-leases')
 def get_kea_leases():
-    current_app.logger.info('[KeaLeases] Fetching leases from PostgreSQL via peer authentication')
+    current_app.logger.info('[KeaLeases] Fetching leases from CSV file in ramdisk')
+    
+    csv_path = '/mnt/ramdisk/kea-leases4.csv'
     
     try:
-        # Connect to KEA database using peer authentication via Unix socket
-        # No password needed - PostgreSQL trusts www-data OS user identity
-        # Note: Connects as www-data user (matches OS user for peer auth)
-        # Note: No 'host' parameter - uses Unix socket for peer auth
-        try:
-            conn = psycopg2.connect(
-                dbname='kea',
-                user='www-data',
-                connect_timeout=5
-            )
-        except psycopg2.OperationalError as db_error:
-            current_app.logger.error(f'[KeaLeases] Database connection failed: {db_error}')
-            current_app.logger.error('[KeaLeases] Ensure PostgreSQL peer authentication is configured for www-data')
-            return jsonify({'error': 'Failed to connect to lease database'}), 500
+        if not os.path.exists(csv_path):
+            current_app.logger.warning(f'[KeaLeases] Lease file not found at {csv_path}')
+            return jsonify({'error': 'Kea leases file not found'}), 404
         
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Query active leases (state = 0 means default/active)
-            # Note: address is stored as bigint (integer representation of IP)
-            cur.execute("""
-                SELECT 
-                    address,
-                    encode(hwaddr, 'hex') as mac,
-                    hostname
-                FROM lease4
-                WHERE state = 0
-                ORDER BY address
-            """)
-            
-            rows = cur.fetchall()
-            
-            leases = []
-            for row in rows:
-                # Convert integer IP address to dotted-decimal format
-                ip_int = row['address']
-                ip_formatted = f"{(ip_int >> 24) & 0xFF}.{(ip_int >> 16) & 0xFF}.{(ip_int >> 8) & 0xFF}.{ip_int & 0xFF}"
+        leases = []
+        current_time = int(time.time())
+        
+        with open(csv_path, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # Only include active leases (state=0 and not expired)
+                expire_time = int(row['expire']) if row['expire'] else 0
+                state = int(row['state']) if row['state'] else 1
                 
-                # Format MAC address with colons
-                mac_hex = row['mac'] or ''
-                if mac_hex:
-                    mac_formatted = ':'.join([mac_hex[i:i+2] for i in range(0, len(mac_hex), 2)])
-                else:
-                    mac_formatted = ''
-                
-                leases.append({
-                    'hostname': row['hostname'] or '',
-                    'ip': ip_formatted,
-                    'mac': mac_formatted
-                })
-            
-        conn.close()
+                if state == 0 and expire_time > current_time:
+                    leases.append({
+                        'hostname': row['hostname'],
+                        'ip': row['address'],
+                        'mac': row['hwaddr']
+                    })
         
-        current_app.logger.info(f'[KeaLeases] Retrieved {len(leases)} active leases from PostgreSQL')
-        
-        # Log first 5 leases for verification
-        if leases:
-            current_app.logger.debug('[KeaLeases] Sample leases:', extra={
-                'data': leases[:5]
-            })
-        
+        current_app.logger.info(f'[KeaLeases] Retrieved {len(leases)} active leases from CSV')
         return jsonify({'leases': leases}), 200
         
     except Exception as e:
-        current_app.logger.error(f'[KeaLeases] Error: {str(e)}', exc_info=True)
-        return jsonify({'error': 'Failed to retrieve leases from database'}), 500
+        current_app.logger.error(f'[KeaLeases] Error reading CSV: {str(e)}', exc_info=True)
+        return jsonify({'error': 'Failed to read lease file'}), 500
 
 @bp.route('/api/network/notes', methods=['GET', 'PUT'])
 @visibility_required(tab_id='stats', element_id='kea-leases')

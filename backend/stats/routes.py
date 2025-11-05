@@ -111,13 +111,14 @@ def get_kea_leases():
     current_app.logger.info('[KeaLeases] Fetching leases from PostgreSQL via peer authentication')
     
     try:
-        # Connect to KEA database using peer authentication
+        # Connect to KEA database using peer authentication via Unix socket
         # No password needed - PostgreSQL trusts www-data OS user identity
+        # Note: Connects as www-data user (matches OS user for peer auth)
+        # Note: No 'host' parameter - uses Unix socket for peer auth
         try:
             conn = psycopg2.connect(
                 dbname='kea',
-                user='kea',
-                host='localhost',
+                user='www-data',
                 connect_timeout=5
             )
         except psycopg2.OperationalError as db_error:

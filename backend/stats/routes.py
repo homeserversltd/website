@@ -106,9 +106,8 @@ def get_power_usage():
 @bp.route('/api/kea-leases', methods=['GET'])
 @visibility_required(tab_id='stats', element_id='kea-leases')
 def get_kea_leases():
-    current_app.logger.info('[KeaLeases] Fetching leases from CSV file in ramdisk')
-    
-    csv_path = '/mnt/ramdisk/kea-leases4.csv'
+    csv_path = '/var/lib/kea/kea-leases4.csv'
+    current_app.logger.info(f'[KeaLeases] Fetching leases from {csv_path}')
     
     try:
         if not os.path.exists(csv_path):

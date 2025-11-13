@@ -21,29 +21,48 @@ def _is_external_mount(path: str) -> bool:
     """Check if path is on an external mount (not root filesystem)."""
     try:
         # Get mount info for the path
-        result = subprocess.run(['findmnt', '-n', '-o', 'SOURCE,TARGET', path],
+        result = subprocess.run(['/usr/bin/findmnt', '-n', '-o', 'SOURCE,TARGET', path],
                               capture_output=True, text=True, timeout=10)
 
         if result.returncode != 0:
             logger.warning(f"Could not determine mount for {path}: {result.stderr}")
             return False
 
-        lines = result.stdout.strip().split('\n')
+        lines = [line for line in result.stdout.strip().split('\n') if line.strip()]
         if not lines:
             return False
-
-        # Check if this is mounted on something other than root
+        
+        found_target = False
         for line in lines:
             parts = line.split()
             if len(parts) >= 2:
                 mount_source, mount_target = parts[0], parts[1]
-                # If mount target is / or root filesystem, this is not external
-                if mount_target == '/' or mount_source.startswith('/dev/sda'):
-                    logger.warning(f"Path {path} is on root filesystem mount: {mount_source} -> {mount_target}")
+                
+                # Only evaluate entries that correspond to the requested path
+                if mount_target != path:
+                    continue
+                
+                found_target = True
+                
+                # Treat root filesystem as non-external
+                if mount_target == '/':
+                    logger.warning(f"Path {path} resolves to root filesystem mount: {mount_source} -> {mount_target}")
                     return False
-
-        # If we get here, it's likely an external mount
-        return True
+                
+                # Treat system drive (/dev/sda*) as non-external
+                if mount_source.startswith('/dev/sda'):
+                    logger.warning(f"Path {path} is on system drive mount: {mount_source} -> {mount_target}")
+                    return False
+                
+                # Found the mount and it passes safety checks
+                logger.info(f"Path {path} verified on external mount: {mount_source}")
+                return True
+        
+        if not found_target:
+            logger.warning(f"Could not locate mount entry for path {path} in findmnt output: {lines}")
+            return False
+        
+        return False
 
     except Exception as e:
         logger.error(f"Error checking mount for {path}: {e}")

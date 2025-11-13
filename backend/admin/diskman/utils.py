@@ -2,7 +2,7 @@ import os
 import subprocess
 import json
 from flask import current_app, jsonify
-from backend.utils.utils import execute_command, error_response, success_response, get_config
+from backend.utils.utils import execute_command, error_response, success_response, get_config, write_to_log
 from backend.monitors.disk import DiskMonitor
 
 def format_device_path(device):
@@ -349,7 +349,9 @@ def execute_mount_script(mount_device, mountpoint, mapper=None, operation="mount
     if mapper:
         cmd.append(mapper)
         
-    current_app.logger.info(f"[DISKMAN] Executing command: {' '.join(cmd)}")
+    command_str = ' '.join(cmd)
+    current_app.logger.info(f"[DISKMAN] Executing command: {command_str}")
+    write_to_log('admin', f'mountDrive {operation} started: {command_str}', 'info')
     
     try:
         result = subprocess.run(
@@ -375,15 +377,22 @@ def execute_mount_script(mount_device, mountpoint, mapper=None, operation="mount
                 current_app.logger.error(line.strip())
                 
         if result.returncode == 0:
+            write_to_log('admin', f'mountDrive {operation} success for {mount_device} -> {mountpoint}', 'info')
             return True, all_output, ""
         else:
             # Join all output lines for the error message
             error_msg = "\n".join(all_output) if all_output else "Unknown error occurred"
             current_app.logger.error(f"[DISKMAN] {operation.capitalize()} operation failed: {error_msg}")
+            # Limit the amount of log noise to last 20 lines
+            summary_lines = all_output[-20:] if len(all_output) > 20 else all_output
+            write_to_log('admin', f'mountDrive {operation} failed for {mount_device} -> {mountpoint}: {error_msg}', 'error')
+            if summary_lines:
+                write_to_log('admin', f'mountDrive {operation} output tail ({len(summary_lines)} lines): {" | ".join(summary_lines)}', 'error')
             return False, all_output, error_msg
             
     except Exception as script_error:
         current_app.logger.error(f"[DISKMAN] Error executing mountDrive.sh: {str(script_error)}")
+        write_to_log('admin', f'mountDrive {operation} raised exception for {mount_device} -> {mountpoint}: {script_error}', 'error')
         return False, [], str(script_error)
 
 def find_target_device_in_block_devices(device_name, block_devices):

@@ -164,6 +164,7 @@
   color: var(--text);
   pointer-events: auto;
   z-index: 20;
+  padding: 6px;
 }
 
 .form-group .error-text {

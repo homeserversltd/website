@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "start": "react-scripts start",
-        "build": "GENERATE_SOURCEMAP=false CI=true react-scripts build",
+        "build": "GENERATE_SOURCEMAP=false CI=true react-scripts build && (if [ -f premium/utils/post_build_tab_restore.py ]; then python3 premium/utils/post_build_tab_restore.py; else echo \"[post-build-tabs] premium utils not present, skipping\"; fi)",
         "eject": "react-scripts eject"
     },
     "dependencies": {

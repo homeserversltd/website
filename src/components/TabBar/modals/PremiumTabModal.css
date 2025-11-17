@@ -1035,7 +1035,7 @@
 }
 
 .git-branch {
-  color: var(--accent);
+  color: var(--background);
   font-weight: 500;
 }
 

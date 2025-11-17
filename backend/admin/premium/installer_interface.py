@@ -249,8 +249,9 @@ def get_tab_status_list() -> Dict[str, Any]:
                         tabs_with_individual_conflicts.add(current_validating_tab)
         
         # Set conflict flags only for tabs that actually have individual conflicts
+        # IMPORTANT: Don't flag conflicts for installed tabs - they're already working
         for tab in tabs:
-            if tab['name'] in tabs_with_individual_conflicts:
+            if tab['name'] in tabs_with_individual_conflicts and not tab.get('installed', False):
                 tab["hasConflicts"] = True
                 tab["conflictsWithCore"] = True  # Individual tab conflicts are with core system
         

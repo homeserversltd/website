@@ -251,9 +251,21 @@ def get_tab_status_list() -> Dict[str, Any]:
         # Set conflict flags only for tabs that actually have individual conflicts
         # IMPORTANT: Don't flag conflicts for installed tabs - they're already working
         for tab in tabs:
-            if tab['name'] in tabs_with_individual_conflicts and not tab.get('installed', False):
-                tab["hasConflicts"] = True
-                tab["conflictsWithCore"] = True  # Individual tab conflicts are with core system
+            if tab['name'] in tabs_with_individual_conflicts:
+                # Only set conflicts for non-installed tabs
+                if not tab.get('installed', False):
+                    tab["hasConflicts"] = True
+                    tab["conflictsWithCore"] = True  # Individual tab conflicts are with core system
+                else:
+                    # Explicitly clear conflicts for installed tabs (they're already working)
+                    tab["hasConflicts"] = False
+                    tab["conflictsWithCore"] = False
+        
+        # Additional safety: explicitly clear any conflict flags for all installed tabs
+        for tab in tabs:
+            if tab.get('installed', False):
+                tab["hasConflicts"] = False
+                tab["conflictsWithCore"] = False
         
         # Calculate summary statistics for frontend
         installed_tabs = [tab for tab in tabs if tab["installed"]]

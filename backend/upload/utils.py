@@ -6,11 +6,37 @@ from flask import current_app
 from backend.utils.utils import validate_upload_path, write_to_log
 import json
 
+def get_raw_upload_blacklist() -> list:
+    """Fetch the raw upload blacklist from homeserver.json without normalization.
+    
+    Returns the blacklist exactly as stored in the config file.
+    This is used for display/editing purposes.
+    """
+    try:
+        with open(current_app.config['HOMESERVER_CONFIG']) as f:
+            config = json.load(f)
+            
+        raw_blacklist = config.get('tabs', {}).get('upload', {}).get('data', {}).get('blacklist', [])
+        
+        # Normalize entries (remove trailing slashes) but don't add variations
+        normalized_blacklist = []
+        for entry in raw_blacklist:
+            # Remove trailing slashes for consistency
+            normalized_entry = entry.rstrip('/')
+            if normalized_entry:  # Only add non-empty entries
+                normalized_blacklist.append(normalized_entry)
+        
+        return normalized_blacklist
+    except Exception as e:
+        current_app.logger.error(f"[UPLOAD] Error loading raw blacklist: {str(e)}")
+        return []
+
 def get_upload_blacklist() -> list:
     """Fetch the upload blacklist from homeserver.json.
     
     Returns a normalized list of blacklist entries, handling both
     absolute paths, relative paths, and name-based patterns.
+    This is used for filtering purposes and includes variations.
     """
     try:
         with open(current_app.config['HOMESERVER_CONFIG']) as f:

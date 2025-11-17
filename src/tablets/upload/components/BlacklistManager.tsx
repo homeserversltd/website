@@ -43,6 +43,15 @@ export const BlacklistManager: React.FC<BlacklistManagerProps> = ({
     }
   }, [isOpen, isInitialized, loadBlacklist, withLoading]);
 
+  // Reset initialization state when modal closes to ensure fresh data on reopen
+  useEffect(() => {
+    if (!isOpen) {
+      setIsInitialized(false);
+      setBlacklist([]);
+      setNewEntry('');
+    }
+  }, [isOpen]);
+
   const handleRemove = useCallback((index: number) => {
     setBlacklist(prev => prev.filter((_, i) => i !== index));
   }, []);
@@ -76,13 +85,21 @@ export const BlacklistManager: React.FC<BlacklistManagerProps> = ({
       try {
         console.log('[directory] Sending blacklist update to API');
         
-        await api.put(API_ENDPOINTS.upload.blacklistUpdate, { blacklist });
+        const response = await api.put<{ success: boolean; blacklist: string[] }>(
+          API_ENDPOINTS.upload.blacklistUpdate, 
+          { blacklist }
+        );
         console.log('[directory] Blacklist update successful');
+        
+        // Update local state with normalized blacklist from server
+        if (response.blacklist) {
+          setBlacklist(response.blacklist);
+        }
         
         try {
           await api.post(API_ENDPOINTS.system.log, {
             tablet: 'upload',
-            message: `Blacklist updated: ${blacklist.join(', ')}`,
+            message: `Blacklist updated: ${response.blacklist?.join(', ') || blacklist.join(', ')}`,
             level: 'info'
           });
         } catch (logError) {

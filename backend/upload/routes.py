@@ -10,7 +10,7 @@ from typing import Tuple
 from flask import current_app, jsonify, request
 from . import bp
 from backend.utils.utils import validate_upload_path, write_to_log, safe_write_config, is_using_factory_config, factory_mode_error
-from .utils import get_upload_blacklist, add_user_to_group, make_directory_writable, check_disk_space
+from .utils import get_upload_blacklist, get_raw_upload_blacklist, add_user_to_group, make_directory_writable, check_disk_space
 from backend.auth.decorators import admin_required
 
 @bp.route('/api/files/browse', methods=['GET'])
@@ -551,9 +551,10 @@ def handle_default_directory():
 @bp.route('/api/upload/blacklist/list', methods=['GET'])
 @admin_required
 def get_blacklist():
-    """Get the current upload blacklist."""
+    """Get the current upload blacklist (raw, without normalization)."""
     try:
-        blacklist = get_upload_blacklist()
+        # Use raw blacklist for display/editing to avoid duplicates
+        blacklist = get_raw_upload_blacklist()
         return jsonify({'blacklist': blacklist}), 200
             
     except Exception as e:
@@ -573,6 +574,18 @@ def update_blacklist():
         if not isinstance(data.get('blacklist'), list):
             return jsonify({'error': 'Invalid blacklist format'}), 400
             
+        # Normalize and deduplicate blacklist entries
+        normalized_blacklist = []
+        seen = set()
+        for entry in data['blacklist']:
+            if not isinstance(entry, str):
+                continue
+            # Remove trailing slashes and whitespace
+            normalized_entry = entry.strip().rstrip('/')
+            if normalized_entry and normalized_entry not in seen:
+                normalized_blacklist.append(normalized_entry)
+                seen.add(normalized_entry)
+            
         # Read current config
         with open(current_app.config['HOMESERVER_CONFIG']) as f:
             config = json.load(f)
@@ -585,8 +598,8 @@ def update_blacklist():
         if 'data' not in config['tabs']['upload']:
             config['tabs']['upload']['data'] = {}
             
-        # Update blacklist
-        config['tabs']['upload']['data']['blacklist'] = data['blacklist']
+        # Update blacklist with normalized, deduplicated entries
+        config['tabs']['upload']['data']['blacklist'] = normalized_blacklist
         
         # Use safe write function
         def write_operation():
@@ -596,10 +609,10 @@ def update_blacklist():
         if not safe_write_config(write_operation):
             return jsonify({'error': 'Failed to update configuration'}), 500
             
-        write_to_log('upload', f'Updated blacklist: {data["blacklist"]}', 'info')
+        write_to_log('upload', f'Updated blacklist: {normalized_blacklist}', 'info')
         return jsonify({
             'success': True,
-            'blacklist': data['blacklist']
+            'blacklist': normalized_blacklist
         }), 200
             
     except Exception as e:

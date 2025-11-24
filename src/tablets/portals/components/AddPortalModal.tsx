@@ -13,7 +13,7 @@ interface PortalFormData {
   name: string;
   description: string;
   services: string;
-  type: 'systemd' | 'script';
+  type: 'systemd' | 'script' | 'link';
   port: string;
   localURL: string;
 }
@@ -44,13 +44,16 @@ export const AddPortalModal: React.FC<AddPortalModalProps> = ({ onClose, onPorta
       newErrors.description = 'Description is required';
     }
 
-    if (!formData.services.trim()) {
-      newErrors.services = 'At least one service is required';
-    }
+    // Services and port are only required for non-link types
+    if (formData.type !== 'link') {
+      if (!formData.services.trim()) {
+        newErrors.services = 'At least one service is required';
+      }
 
-    const portNum = parseInt(formData.port);
-    if (!formData.port || isNaN(portNum) || portNum <= 0 || portNum > 65535) {
-      newErrors.port = 'Port must be a valid number between 1 and 65535';
+      const portNum = parseInt(formData.port);
+      if (!formData.port || isNaN(portNum) || portNum <= 0 || portNum > 65535) {
+        newErrors.port = 'Port must be a valid number between 1 and 65535';
+      }
     }
 
     if (!formData.localURL.trim()) {
@@ -71,16 +74,22 @@ export const AddPortalModal: React.FC<AddPortalModalProps> = ({ onClose, onPorta
     }
 
     try {
-      const services = formData.services.split(',').map(s => s.trim()).filter(s => s);
+      const services = formData.type === 'link' 
+        ? [] 
+        : formData.services.split(',').map(s => s.trim()).filter(s => s);
       
-      const portalData = {
+      const portalData: any = {
         name: formData.name.trim(),
         description: formData.description.trim(),
         services,
         type: formData.type,
-        port: parseInt(formData.port),
         localURL: formData.localURL.trim()
       };
+      
+      // Only include port if not link type
+      if (formData.type !== 'link') {
+        portalData.port = parseInt(formData.port);
+      }
 
       await withLoading(api.post(API_ENDPOINTS.portals.create, portalData));
       
@@ -141,48 +150,53 @@ export const AddPortalModal: React.FC<AddPortalModalProps> = ({ onClose, onPorta
         </div>
 
         <div className="form-group">
-          <label htmlFor="portal-services">Services *</label>
-          <input
-            id="portal-services"
-            type="text"
-            value={formData.services}
-            onChange={(e) => handleChange('services', e.target.value)}
-            placeholder="e.g., myapp, myapp-worker (comma-separated)"
-            className={errors.services ? 'error' : ''}
-          />
-          {errors.services && <span className="error-text">{errors.services}</span>}
-          <small className="help-text">Enter service names separated by commas</small>
-        </div>
-
-        <div className="form-group">
           <label htmlFor="portal-type">Service Type</label>
           <select
             id="portal-type"
             value={formData.type}
-            onChange={(e) => handleChange('type', e.target.value as 'systemd' | 'script')}
+            onChange={(e) => handleChange('type', e.target.value as 'systemd' | 'script' | 'link')}
           >
             <option value="systemd">Systemd Service</option>
             <option value="script">Script-managed Service</option>
+            <option value="link">Link Only</option>
           </select>
           <small className="help-text">
-            Systemd services can be controlled directly. Script-managed services require system restart.
+            Systemd services can be controlled directly. Script-managed services require system restart. Link-only portals are simple links without service management.
           </small>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="portal-port">Port *</label>
-          <input
-            id="portal-port"
-            type="number"
-            min="1"
-            max="65535"
-            value={formData.port}
-            onChange={(e) => handleChange('port', e.target.value)}
-            placeholder="e.g., 8080"
-            className={errors.port ? 'error' : ''}
-          />
-          {errors.port && <span className="error-text">{errors.port}</span>}
-        </div>
+        {formData.type !== 'link' && (
+          <>
+            <div className="form-group">
+              <label htmlFor="portal-services">Services *</label>
+              <input
+                id="portal-services"
+                type="text"
+                value={formData.services}
+                onChange={(e) => handleChange('services', e.target.value)}
+                placeholder="e.g., myapp, myapp-worker (comma-separated)"
+                className={errors.services ? 'error' : ''}
+              />
+              {errors.services && <span className="error-text">{errors.services}</span>}
+              <small className="help-text">Enter service names separated by commas</small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="portal-port">Port *</label>
+              <input
+                id="portal-port"
+                type="number"
+                min="1"
+                max="65535"
+                value={formData.port}
+                onChange={(e) => handleChange('port', e.target.value)}
+                placeholder="e.g., 8080"
+                className={errors.port ? 'error' : ''}
+              />
+              {errors.port && <span className="error-text">{errors.port}</span>}
+            </div>
+          </>
+        )}
 
         <div className="form-group">
           <label htmlFor="portal-local-url">Local URL *</label>

@@ -28,15 +28,53 @@ const isRemoteAccess = () => {
 const constructDynamicRemoteUrl = (service: PortalService): string => {
   const hostname = window.location.hostname;
   
+  // For link-only portals, use the localURL directly if it's a full URL
+  if (service.type === 'link') {
+    // If localURL is already a full URL (external link), return it as-is
+    if (service.localURL.startsWith('http://') || service.localURL.startsWith('https://')) {
+      // Check if it's an external URL (not home.arpa or ts.net)
+      if (!service.localURL.includes('.home.arpa') && !service.localURL.includes('.ts.net')) {
+        return service.localURL; // External link, return as-is
+      }
+      // It's a local URL, extract path and reconstruct
+      try {
+        const url = new URL(service.localURL);
+        if (hostname.includes('.ts.net')) {
+          const tailnetMatch = hostname.match(/home\.([^.]+)\.ts\.net/);
+          if (tailnetMatch) {
+            const tailnetName = tailnetMatch[1];
+            return `https://home.${tailnetName}.ts.net${url.pathname}${url.search}${url.hash}`;
+          }
+        }
+      } catch (e) {
+        // If URL parsing fails, fall through to return localURL
+      }
+    }
+    // For local URLs without full protocol, construct from current hostname
+    if (hostname.includes('.ts.net')) {
+      const tailnetMatch = hostname.match(/home\.([^.]+)\.ts\.net/);
+      if (tailnetMatch) {
+        const tailnetName = tailnetMatch[1];
+        // Extract path from localURL (remove protocol and domain)
+        const path = service.localURL.replace(/^https?:\/\/[^\/]+/, '');
+        return `https://home.${tailnetName}.ts.net${path}`;
+      }
+    }
+    // Fallback to localURL if we can't construct remote URL
+    return service.localURL;
+  }
+  
   // Check if accessing via home.*.ts.net pattern
   if (hostname.includes('.ts.net')) {
     // Extract the tailnet name from current hostname
     const tailnetMatch = hostname.match(/home\.([^.]+)\.ts\.net/);
     if (tailnetMatch) {
       const tailnetName = tailnetMatch[1];
-      // Apply "1" prefix to port number
-      const remotePort = `1${service.port}`;
-      return `https://home.${tailnetName}.ts.net:${remotePort}/`;
+      // Apply "1" prefix to port number (only if port exists)
+      if (service.port) {
+        const remotePort = `1${service.port}`;
+        return `https://home.${tailnetName}.ts.net:${remotePort}/`;
+      }
     }
   }
   
@@ -118,6 +156,11 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 
   const renderAdminControls = (): JSX.Element | null => {
     if (!isAdmin) return null;
+
+    // Link-only portals don't show admin controls
+    if (service.type === 'link') {
+      return null;
+    }
 
     // Determine if service is script-managed
     const isScriptManaged = service.type === 'script';

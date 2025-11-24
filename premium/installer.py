@@ -135,7 +135,8 @@ class PremiumInstaller:
                 return False
             
             # Validate package manifest
-            valid, manifests = self.validation_manager.validate_package_manifest(tab_path)
+            # Skip installed check in batch mode (post-build restoration scenario)
+            valid, manifests = self.validation_manager.validate_package_manifest(tab_path, skip_installed_check=batch_mode)
             if not valid:
                 category_logger.error("Package manifest validation failed")
                 return False

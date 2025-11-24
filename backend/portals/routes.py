@@ -46,8 +46,11 @@ def add_portal():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
             
-        # Validate required fields
-        required_fields = ['name', 'description', 'services', 'port', 'localURL']
+        # Get portal type (default to 'systemd' for backward compatibility)
+        portal_type = data.get('type', 'systemd')
+        
+        # Validate required fields (port and services are optional for 'link' type)
+        required_fields = ['name', 'description', 'localURL']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
@@ -58,12 +61,18 @@ def add_portal():
             
         if not isinstance(data['description'], str):
             return jsonify({'error': 'Description must be a string'}), 400
+        
+        # Services and port are only required for non-link types
+        if portal_type != 'link':
+            if 'services' not in data:
+                return jsonify({'error': 'Missing required field: services'}), 400
+            if not isinstance(data['services'], list) or not data['services']:
+                return jsonify({'error': 'Services must be a non-empty list'}), 400
             
-        if not isinstance(data['services'], list) or not data['services']:
-            return jsonify({'error': 'Services must be a non-empty list'}), 400
-            
-        if not isinstance(data['port'], int) or data['port'] <= 0 or data['port'] > 65535:
-            return jsonify({'error': 'Port must be a valid integer between 1 and 65535'}), 400
+            if 'port' not in data:
+                return jsonify({'error': 'Missing required field: port'}), 400
+            if not isinstance(data['port'], int) or data['port'] <= 0 or data['port'] > 65535:
+                return jsonify({'error': 'Port must be a valid integer between 1 and 65535'}), 400
             
         if not isinstance(data['localURL'], str) or not data['localURL'].strip():
             return jsonify({'error': 'Local URL must be a non-empty string'}), 400
@@ -88,19 +97,23 @@ def add_portal():
         if any(portal.get('name') == data['name'] for portal in portals):
             return jsonify({'error': f'Portal with name "{data["name"]}" already exists'}), 400
             
-        # Check if port is already in use
-        if any(portal.get('port') == data['port'] for portal in portals):
-            return jsonify({'error': f'Port {data["port"]} is already in use by another portal'}), 400
+        # Check if port is already in use (only for non-link types)
+        if portal_type != 'link' and 'port' in data:
+            if any(portal.get('port') == data['port'] for portal in portals):
+                return jsonify({'error': f'Port {data["port"]} is already in use by another portal'}), 400
             
         # Create new portal object
         new_portal = {
             'name': data['name'].strip(),
             'description': data['description'].strip(),
-            'services': data['services'],
-            'type': data.get('type', 'systemd'),  # Default to systemd
-            'port': data['port'],
+            'services': data.get('services', []),  # Empty array for link type
+            'type': portal_type,
             'localURL': data['localURL'].strip(),
         }
+        
+        # Only include port if not link type
+        if portal_type != 'link' and 'port' in data:
+            new_portal['port'] = data['port']
         
         # Add the new portal to the list
         portals.append(new_portal)

@@ -4,8 +4,8 @@ export interface PortalService {
     remoteURL?: string; // Optional - being phased out for dynamic calculation
     description: string;
     services: string[];
-    type?: 'systemd' | 'script';
-    port: number;
+    type?: 'systemd' | 'script' | 'link';
+    port?: number; // Optional for 'link' type
     visibility?: boolean;
     status?: string;
     responseTime?: number;

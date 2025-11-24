@@ -269,8 +269,14 @@ class ValidationManager:
         self.logger.warning(f"Unknown package flag (allowed but logged): {flag}")
         return True
     
-    def validate_package_manifest(self, tab_path: str) -> Tuple[bool, Dict[str, Any]]:
-        """Validate complete package manifest and return parsed data."""
+    def validate_package_manifest(self, tab_path: str, skip_installed_check: bool = False) -> Tuple[bool, Dict[str, Any]]:
+        """Validate complete package manifest and return parsed data.
+        
+        Args:
+            tab_path: Path to the premium tab directory
+            skip_installed_check: If True, skip checking if tab is already installed
+                                 (useful for post-build restoration)
+        """
         self.logger.debug(f"Validating package manifest for {tab_path}")
         
         # Check root index.json
@@ -335,7 +341,8 @@ class ValidationManager:
                 return False, {}
         
         # CRITICAL: Validate that directory contains ONLY files listed in manifest
-        if not self.validate_complete_file_manifest(tab_path, all_files):
+        # Pass tab_name to check installed location
+        if not self.validate_complete_file_manifest(tab_path, all_files, tab_name=root_name, skip_installed_check=skip_installed_check):
             return False, {}
 
         self.logger.debug("Package manifest validation successful")
@@ -360,13 +367,19 @@ class ValidationManager:
         self.logger.info("No name collisions detected")
         return True
     
-    def validate_complete_file_manifest(self, tab_path: str, manifest_files: List[str]) -> bool:
+    def validate_complete_file_manifest(self, tab_path: str, manifest_files: List[str], tab_name: Optional[str] = None, skip_installed_check: bool = False) -> bool:
         """Validate that directory contains ONLY files listed in manifest (no extras).
         
         This is a critical security check to ensure no undeclared files exist
         that could bypass validation and pose security risks.
         
-        Special handling for __pycache__ files which indicate an already installed tab.
+        Checks for already installed tabs by examining the installed backend location.
+        
+        Args:
+            tab_path: Path to the premium tab directory
+            manifest_files: List of files declared in the manifest
+            tab_name: Name of the tab (from manifest, not folder name)
+            skip_installed_check: If True, skip checking if tab is already installed
         """
         self.logger.debug(f"Validating complete file manifest for {tab_path}")
         
@@ -386,9 +399,43 @@ class ValidationManager:
             except Exception:
                 return False
         
-        # Get all actual files in the directory
+        # Check if tab is already installed by examining installed backend location
+        # Primary check: backend directory existence (per README.md - check /backend itself)
+        # Skip this check if we're restoring an already-installed tab (post-build scenario)
+        if tab_name and not skip_installed_check:
+            installed_backend_path = os.path.join("/var/www/homeserver/backend", tab_name)
+            if os.path.exists(installed_backend_path) and os.path.isdir(installed_backend_path):
+                # Check if directory has any content (including __pycache__)
+                try:
+                    backend_contents = os.listdir(installed_backend_path)
+                    if backend_contents:
+                        # Directory exists and has content - tab is installed
+                        self.logger.error(f"TAB ALREADY INSTALLED: Premium tab '{tab_name}' is already installed")
+                        self.logger.error(f"Found installed backend directory: {installed_backend_path}")
+                        self.logger.error(f"To reinstall this tab, first uninstall it using:")
+                        self.logger.error(f"  sudo python3 installer.py uninstall {tab_name}")
+                        return False
+                except OSError:
+                    # If we can't read it, check fallback
+                    pass
+            
+            # Fallback check: __pycache__ files in installed backend location
+            # This catches cases where directory might have been partially cleaned
+            installed_backend_pycache = os.path.join(installed_backend_path, "__pycache__")
+            if os.path.exists(installed_backend_pycache):
+                try:
+                    pycache_contents = os.listdir(installed_backend_pycache)
+                    if pycache_contents:
+                        self.logger.error(f"TAB ALREADY INSTALLED: Premium tab '{tab_name}' is already installed")
+                        self.logger.error(f"Found __pycache__ files in installed backend location: {installed_backend_pycache}")
+                        self.logger.error(f"To reinstall this tab, first uninstall it using:")
+                        self.logger.error(f"  sudo python3 installer.py uninstall {tab_name}")
+                        return False
+                except OSError:
+                    pass  # If we can't read it, continue with validation
+        
+        # Get all actual files in the source directory
         actual_files = []
-        pycache_files = []
         
         try:
             for root, dirs, files in os.walk(tab_path):
@@ -406,29 +453,14 @@ class ValidationManager:
                     if file == "index.json" and root == tab_path:
                         continue  # Skip root index.json only
                     
-                    # Separate __pycache__ files for special handling
+                    # Skip __pycache__ files in source directory (they're not evidence of installation)
                     if "__pycache__" in file_path:
-                        pycache_files.append(file_path)
-                    else:
-                        actual_files.append(file_path)
+                        continue
+                    
+                    actual_files.append(file_path)
         
         except Exception as e:
             self.logger.error(f"Error scanning directory {tab_path}: {str(e)}")
-            return False
-        
-        # Check for __pycache__ files first - indicates already installed tab
-        if pycache_files:
-            tab_name = os.path.basename(tab_path)
-            self.logger.error(f"TAB ALREADY INSTALLED: Premium tab '{tab_name}' is already installed")
-            self.logger.error(f"Found {len(pycache_files)} __pycache__ files indicating active installation:")
-            
-            tab_path_abs = os.path.abspath(tab_path)
-            for pycache_file in sorted(pycache_files):
-                relative_path = os.path.relpath(pycache_file, tab_path_abs)
-                self.logger.error(f"  - {relative_path}")
-            
-            self.logger.error(f"To reinstall this tab, first uninstall it using:")
-            self.logger.error(f"  sudo python3 installer_refactored.py uninstall {tab_name}")
             return False
         
         # Normalize all paths to absolute paths for comparison

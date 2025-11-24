@@ -209,15 +209,44 @@ class UninstallManager:
             "config_patch": None
         }
         
-        # 1. Check if tab directory exists
+        # 1. Check if frontend tab directory exists
         tab_dir = installation_data["tab_directory"]
-        if not os.path.exists(tab_dir):
-            self.logger.error(f"Tab directory not found: {tab_dir}")
-            return None
+        frontend_exists = os.path.exists(tab_dir)
         
         # 1.5. Check if backend directory exists (new structure)
         backend_dir = installation_data["backend_directory"]
-        if os.path.exists(backend_dir):
+        backend_exists = os.path.exists(backend_dir)
+        
+        # Check for blueprint registration as authoritative source
+        blueprint_registered = False
+        backend_init_path = "/var/www/homeserver/backend/__init__.py"
+        if os.path.exists(backend_init_path):
+            try:
+                with open(backend_init_path, 'r') as f:
+                    content = f.read()
+                    # Check for blueprint registration marker
+                    blueprint_pattern = f'# PREMIUM_TAB_IDENTIFIER: {backend_name}'
+                    if blueprint_pattern in content:
+                        blueprint_registered = True
+                        self.logger.debug(f"Found blueprint registration for: {backend_name}")
+            except Exception as e:
+                self.logger.warning(f"Error checking blueprint registration: {str(e)}")
+        
+        # Only fail if NEITHER directory exists AND no blueprint registration found
+        if not frontend_exists and not backend_exists and not blueprint_registered:
+            self.logger.error(f"Tab directory not found: {tab_dir}")
+            self.logger.error(f"Backend directory not found: {backend_dir}")
+            self.logger.error(f"No blueprint registration found for: {backend_name}")
+            self.logger.error(f"Could not find installation data for tab: {tab_name}")
+            return None
+        
+        # Log what we found
+        if frontend_exists:
+            self.logger.debug(f"Found frontend directory: {tab_dir}")
+        else:
+            self.logger.debug(f"Frontend directory not found: {tab_dir} (partial installation)")
+        
+        if backend_exists:
             self.logger.debug(f"Found backend directory: {backend_dir}")
             # Add all backend files to removal list
             try:
@@ -231,7 +260,10 @@ class UninstallManager:
             except Exception as e:
                 self.logger.error(f"Error scanning backend directory: {str(e)}")
         else:
-            self.logger.debug(f"Backend directory not found: {backend_dir}")
+            self.logger.debug(f"Backend directory not found: {backend_dir} (partial installation)")
+        
+        if blueprint_registered:
+            self.logger.info(f"Found blueprint registration - will clean up during uninstall")
         
         # 2. Find permissions file
         permissions_file = os.path.join(self.sudoers_dir, f"premium_{tab_name}")
@@ -261,7 +293,23 @@ class UninstallManager:
                     self.logger.warning(f"Error reading frontend manifest: {str(e)}")
             else:
                 self.logger.warning(f"Frontend manifest not found, falling back to directory scan")
-                # Fallback to directory scan if manifest not available
+                # Fallback to directory scan if manifest not available (only if directory exists)
+                if frontend_exists:
+                    try:
+                        for root, dirs, files in os.walk(tab_dir):
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                installation_data["files_to_remove"].append(file_path)
+                        
+                        self.logger.debug(f"Found {len(installation_data['files_to_remove'])} files in tab directory (fallback)")
+                    except Exception as e:
+                        self.logger.error(f"Error scanning tab directory: {str(e)}")
+                else:
+                    self.logger.debug(f"Frontend directory does not exist, skipping directory scan")
+        else:
+            self.logger.warning(f"Source directory not found, falling back to directory scan")
+            # Fallback to directory scan if source directory not available (only if directory exists)
+            if frontend_exists:
                 try:
                     for root, dirs, files in os.walk(tab_dir):
                         for file in files:
@@ -271,18 +319,8 @@ class UninstallManager:
                     self.logger.debug(f"Found {len(installation_data['files_to_remove'])} files in tab directory (fallback)")
                 except Exception as e:
                     self.logger.error(f"Error scanning tab directory: {str(e)}")
-        else:
-            self.logger.warning(f"Source directory not found, falling back to directory scan")
-            # Fallback to directory scan if source directory not available
-            try:
-                for root, dirs, files in os.walk(tab_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        installation_data["files_to_remove"].append(file_path)
-                
-                self.logger.debug(f"Found {len(installation_data['files_to_remove'])} files in tab directory (fallback)")
-            except Exception as e:
-                self.logger.error(f"Error scanning tab directory: {str(e)}")
+            else:
+                self.logger.debug(f"Frontend directory does not exist, skipping directory scan")
         
         # 4. Find append operations to revert by reading backend index.json
         if source_directory and os.path.exists(source_directory):
@@ -305,6 +343,25 @@ class UninstallManager:
                 
                 except Exception as e:
                     self.logger.warning(f"Error reading backend manifest: {str(e)}")
+        
+        # 4.5. If blueprint is registered but we don't have source directory, add blueprint cleanup
+        # This handles cases where source directory is missing but blueprint registration exists
+        if blueprint_registered:
+            # Check if we already have this append operation (from source directory)
+            blueprint_append_exists = any(
+                op.get("target") == "/var/www/homeserver/backend/__init__.py" and 
+                op.get("identifier") == backend_name 
+                for op in installation_data["append_operations"]
+            )
+            
+            if not blueprint_append_exists:
+                # Add blueprint cleanup operation
+                installation_data["append_operations"].append({
+                    "target": "/var/www/homeserver/backend/__init__.py",
+                    "identifier": backend_name,
+                    "marker": "PREMIUM TAB BLUEPRINTS"
+                })
+                self.logger.debug(f"Added blueprint cleanup operation for: {backend_name}")
         
         # 5. Discover package installation data from source directory
         if source_directory and os.path.exists(source_directory):

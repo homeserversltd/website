@@ -222,7 +222,18 @@ export const socketClient = {
       
       if (socket) {
         socket.off(event, wrappedCallback);
-        socket.emit('unsubscribe', { type: event });
+        // Always attempt to emit unsubscribe, even if socket.connected is false
+        // The server should handle this gracefully, and it ensures we don't miss unsubscribes
+        // during connection state transitions
+        try {
+          if (String(event) === 'admin_disk_info') {
+            // console.log('[DEBUG_SOCKET_EMIT] Emitting LOW-LEVEL unsubscribe for admin_disk_info to backend (from subscribe return)');
+          }
+          socket.emit('unsubscribe', { type: event });
+        } catch (error) {
+          // If emit fails, still log for debugging but continue with cleanup
+          warn(`[WebSocket] Failed to emit unsubscribe for ${String(event)}:`, error);
+        }
       }
       
       // Remove event listener
@@ -289,11 +300,20 @@ export const socketClient = {
     }
     
     // Emit unsubscribe event to the server
-    if (socket && socket.connected) {
-      if (String(event) === 'admin_disk_info') {
-        // console.log('[DEBUG_SOCKET_EMIT] Emitting LOW-LEVEL unsubscribe for admin_disk_info to backend');
+    // Always attempt to emit, even if socket.connected is false
+    // This ensures we don't miss unsubscribes during connection state transitions
+    if (socket) {
+      try {
+        if (String(event) === 'admin_disk_info') {
+          // console.log('[DEBUG_SOCKET_EMIT] Emitting LOW-LEVEL unsubscribe for admin_disk_info to backend');
+        }
+        // Attempt to emit regardless of connection state
+        // The server should handle this gracefully, and socket.io may queue it if disconnected
+        socket.emit('unsubscribe', { type: event });
+      } catch (error) {
+        // If emit fails, log for debugging but continue with cleanup
+        warn(`[WebSocket] Failed to emit unsubscribe for ${String(event)}:`, error);
       }
-      socket.emit('unsubscribe', { type: event });
     }
     
     // Remove from all tracking collections

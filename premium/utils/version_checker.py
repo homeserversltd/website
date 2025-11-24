@@ -736,7 +736,8 @@ class SemanticVersionChecker:
     def validate_complete_manifest(self, tab_path: str) -> Tuple[bool, List[str]]:
         """Validate that premium tab contains only files declared in root index.json.
         
-        Special handling for __pycache__ files which indicate an already installed tab.
+        Checks installed backend location to detect if tab is already installed.
+        Ignores __pycache__ files in source directory (development artifacts).
         """
         errors = []
         
@@ -769,9 +770,43 @@ class SemanticVersionChecker:
             
             collect_files(root_manifest.get("files", {}))
             
-            # Get all actual files in directory
+            # Check if tab is already installed by examining installed backend location
+            # Use tab name from manifest (not folder name) for consistency
+            tab_name = root_manifest.get("name", os.path.basename(tab_path))
+            installed_backend_path = os.path.join("/var/www/homeserver/backend", tab_name)
+            
+            if os.path.exists(installed_backend_path) and os.path.isdir(installed_backend_path):
+                # Check if directory has any content (including __pycache__)
+                try:
+                    backend_contents = os.listdir(installed_backend_path)
+                    if backend_contents:
+                        # Directory exists and has content - tab is installed
+                        errors.append(f"TAB ALREADY INSTALLED: Premium tab '{tab_name}' is already installed")
+                        errors.append(f"Found installed backend directory: {installed_backend_path}")
+                        errors.append(f"To reinstall this tab, first uninstall it using:")
+                        errors.append(f"  sudo python3 installer.py uninstall {tab_name}")
+                        return False, errors
+                except OSError:
+                    # If we can't read it, check fallback
+                    pass
+            
+            # Fallback check: __pycache__ files in installed backend location
+            # This catches cases where directory might have been partially cleaned
+            installed_backend_pycache = os.path.join(installed_backend_path, "__pycache__")
+            if os.path.exists(installed_backend_pycache):
+                try:
+                    pycache_contents = os.listdir(installed_backend_pycache)
+                    if pycache_contents:
+                        errors.append(f"TAB ALREADY INSTALLED: Premium tab '{tab_name}' is already installed")
+                        errors.append(f"Found __pycache__ files in installed backend location: {installed_backend_pycache}")
+                        errors.append(f"To reinstall this tab, first uninstall it using:")
+                        errors.append(f"  sudo python3 installer.py uninstall {tab_name}")
+                        return False, errors
+                except OSError:
+                    pass  # If we can't read it, continue with validation
+            
+            # Get all actual files in directory (excluding __pycache__ in source directory)
             actual_files = []
-            pycache_files = []
             
             for root, dirs, files in os.walk(tab_path):
                 # Skip hidden directories
@@ -787,26 +822,11 @@ class SemanticVersionChecker:
                     if file == "index.json" and root == tab_path:
                         continue  # Skip root index.json only
                     
-                    # Separate __pycache__ files for special handling
+                    # Skip __pycache__ files in source directory (they're development artifacts, not installation evidence)
                     if "__pycache__" in file_path:
-                        pycache_files.append(file_path)
-                    else:
-                        actual_files.append(file_path)
-            
-            # Check for __pycache__ files first - indicates already installed tab
-            if pycache_files:
-                tab_name = os.path.basename(tab_path)
-                errors.append(f"TAB ALREADY INSTALLED: Premium tab '{tab_name}' is already installed")
-                errors.append(f"Found {len(pycache_files)} __pycache__ files indicating active installation:")
-                
-                tab_path_abs = os.path.abspath(tab_path)
-                for pycache_file in sorted(pycache_files):
-                    relative_path = os.path.relpath(pycache_file, tab_path_abs)
-                    errors.append(f"  - {relative_path}")
-                
-                errors.append(f"To reinstall this tab, first uninstall it using:")
-                errors.append(f"  sudo python3 installer_refactored.py uninstall {tab_name}")
-                return False, errors
+                        continue
+                    
+                    actual_files.append(file_path)
             
             # Normalize all paths to absolute paths for comparison
             tab_path_abs = os.path.abspath(tab_path)
@@ -1005,8 +1025,8 @@ class SemanticVersionChecker:
             if already_installed_tabs:
                 report += f"⚠️  {len(already_installed_tabs)} tabs are already installed:\n"
                 for tab_name in already_installed_tabs:
-                    report += f"  • {tab_name}: Already installed (found __pycache__ files)\n"
-                    report += f"    To reinstall: sudo python3 installer_refactored.py uninstall {tab_name}\n"
+                    report += f"  • {tab_name}: Already installed (found in backend directory)\n"
+                    report += f"    To reinstall: sudo python3 installer.py uninstall {tab_name}\n"
                 report += "\n"
             
             if other_manifest_errors > 0:

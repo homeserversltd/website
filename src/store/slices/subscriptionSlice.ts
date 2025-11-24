@@ -277,6 +277,19 @@ export const createSubscriptionSlice: StateCreator<StoreWithBroadcast, [], [], S
         subscription.socketUnsubscribe(); // This emits to network, calls socket.off(), etc.
       } catch (error) {
         logger.error(`Error during stored socketUnsubscribe for ${subscriptionId} (event: ${subscription.event}):`, error);
+        // Fallback: Try direct unsubscribe as a safety net
+        try {
+          socketClient.unsubscribe(subscription.event);
+        } catch (fallbackError) {
+          logger.error(`Error during fallback unsubscribe for ${subscriptionId} (event: ${subscription.event}):`, fallbackError);
+        }
+      }
+    } else {
+      // If no stored unsubscribe function, try direct unsubscribe as fallback
+      try {
+        socketClient.unsubscribe(subscription.event);
+      } catch (error) {
+        logger.error(`Error during direct unsubscribe for ${subscriptionId} (event: ${subscription.event}):`, error);
       }
     }
     

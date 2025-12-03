@@ -7,3 +7,6 @@
 [submodule "premium/backupTab"]
 	path = premium/backupTab
 	url = git@github.com:homeserversltd/backupTab.git
+[submodule "premium/miner"]
+	path = premium/miner
+	url = git@home.arpa:owner/miner.git

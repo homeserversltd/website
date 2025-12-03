@@ -7,7 +7,7 @@ Ever wanted to own your entire digital life instead of renting it from Big Tech?
 Think of HOMESERVER as the ultimate DIY project for digital freedom. Instead of paying monthly fees to companies that spy on you, you run everything yourself. It's not a consumer gadget - it's enterprise-grade infrastructure that happens to fit in your living room.
 
 ### The Freedom Package
-- **14+ Services in One Box**: Media servers, file storage, password managers, git hosting, and more
+- **10 Services in One Box**: Media servers, file storage, password managers, git hosting, and more
 - **Complete Network Control**: Your own firewall, DNS, and VPN - no more ISP snooping
 - **Real-time Monitoring**: Watch your system's heartbeat, power usage, and network status live
 - **Admin Controls**: Full system management through a sleek web interface

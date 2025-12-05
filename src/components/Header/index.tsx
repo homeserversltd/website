@@ -388,7 +388,7 @@ export const Header: React.FC = () => {
             )}
             {wrapPinTooltip(
               <button 
-                className="pin-button"
+                className="change-admin-pin-button"
                 onClick={handlePinChange}
                 disabled={isLoading}
               >

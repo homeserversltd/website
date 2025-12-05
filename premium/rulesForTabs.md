@@ -194,9 +194,15 @@ These packages are blocked for security:
 
 ### Sudo Permissions (permissions/*.sudoers)
 ```sudoers
-# Format: user/group ALL=(ALL) command
 www-data ALL=(ALL) NOPASSWD: /usr/local/bin/tabCommand
+www-data ALL=(root) NOPASSWD: /usr/bin/another-command
 ```
+
+**CRITICAL: No Comments Allowed**
+- Sudoers files must contain ONLY rule lines
+- Comments (lines starting with `#`) are NOT allowed and will cause syntax errors
+- Each line must be a valid sudoers rule
+- Format: `user ALL=(target_user) NOPASSWD: command`
 
 ## Installation Process
 

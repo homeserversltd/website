@@ -206,14 +206,14 @@ def handle_admin_auth(data):
     Handle admin WebSocket authentication using encrypted credentials.
     """
     sid = request.sid
-    current_app.logger.error(f"ADMIN AUTH ATTEMPT: SID={sid}, data={data}")
+    current_app.logger.debug(f"ADMIN AUTH ATTEMPT: SID={sid}, data={data}")
     
     try:
         # Log all active connections for debugging
-        current_app.logger.error(f"ADMIN AUTH: Active connections by IP: {dict(connection_manager.connections_per_ip)}")
-        current_app.logger.error(f"ADMIN AUTH: Connection timestamps: {list(socket_auth_manager.connection_timestamps.keys())}")
-        current_app.logger.error(f"ADMIN AUTH: Admin sessions before auth: {list(socket_auth_manager.admin_sessions.keys())}")
-        current_app.logger.error(f"ADMIN AUTH: socket_auth_manager instance ID: {id(socket_auth_manager)}")
+        current_app.logger.debug(f"ADMIN AUTH: Active connections by IP: {dict(connection_manager.connections_per_ip)}")
+        current_app.logger.debug(f"ADMIN AUTH: Connection timestamps: {list(socket_auth_manager.connection_timestamps.keys())}")
+        current_app.logger.debug(f"ADMIN AUTH: Admin sessions before auth: {list(socket_auth_manager.admin_sessions.keys())}")
+        current_app.logger.debug(f"ADMIN AUTH: socket_auth_manager instance ID: {id(socket_auth_manager)}")
         
         # Extract authentication parameters
         encrypted_payload = data.get('encrypted_payload')
@@ -222,7 +222,7 @@ def handle_admin_auth(data):
         
         # Validate parameters
         if not encrypted_payload:
-            current_app.logger.error("ADMIN AUTH: Missing encrypted_payload parameter")
+            current_app.logger.warning("ADMIN AUTH: Missing encrypted_payload parameter")
             socketio.emit('admin_auth_response', {
                 "status": "error",
                 "message": "Missing encrypted_payload parameter"
@@ -230,7 +230,7 @@ def handle_admin_auth(data):
             return
             
         if not client_timestamp:
-            current_app.logger.error("ADMIN AUTH: Missing timestamp parameter")
+            current_app.logger.warning("ADMIN AUTH: Missing timestamp parameter")
             socketio.emit('admin_auth_response', {
                 "status": "error",
                 "message": "Missing timestamp parameter"
@@ -238,7 +238,7 @@ def handle_admin_auth(data):
             return
             
         if not nonce:
-            current_app.logger.error("ADMIN AUTH: Missing nonce parameter")
+            current_app.logger.warning("ADMIN AUTH: Missing nonce parameter")
             socketio.emit('admin_auth_response', {
                 "status": "error",
                 "message": "Missing nonce parameter"
@@ -246,22 +246,22 @@ def handle_admin_auth(data):
             return
         
         # Log authentication attempt details
-        current_app.logger.error(f"ADMIN AUTH: Parameters validated for SID: {sid}")
-        current_app.logger.error(f"ADMIN AUTH: encrypted_payload length: {len(encrypted_payload)}")
-        current_app.logger.error(f"ADMIN AUTH: client_timestamp: {client_timestamp}")
-        current_app.logger.error(f"ADMIN AUTH: nonce length: {len(nonce)}")
+        current_app.logger.debug(f"ADMIN AUTH: Parameters validated for SID: {sid}")
+        current_app.logger.debug(f"ADMIN AUTH: encrypted_payload length: {len(encrypted_payload)}")
+        current_app.logger.debug(f"ADMIN AUTH: client_timestamp: {client_timestamp}")
+        current_app.logger.debug(f"ADMIN AUTH: nonce length: {len(nonce)}")
         
         # Check if connection timestamp exists
         if sid not in socket_auth_manager.connection_timestamps:
-            current_app.logger.error(f"ADMIN AUTH: No connection timestamp for SID: {sid}")
+            current_app.logger.warning(f"ADMIN AUTH: No connection timestamp for SID: {sid}")
             socketio.emit('admin_auth_response', {
                 "status": "error",
                 "message": "No connection record found"
             }, room=sid)
             return
             
-        current_app.logger.error(f"ADMIN AUTH: Found connection timestamp for SID: {sid}")
-        current_app.logger.error(f"ADMIN AUTH: Calling socket_auth_manager.authenticate for SID: {sid}")
+        current_app.logger.debug(f"ADMIN AUTH: Found connection timestamp for SID: {sid}")
+        current_app.logger.debug(f"ADMIN AUTH: Calling socket_auth_manager.authenticate for SID: {sid}")
         
         # Attempt authentication
         try:
@@ -272,7 +272,7 @@ def handle_admin_auth(data):
                 nonce
             )
             
-            current_app.logger.error(f"ADMIN AUTH: Authentication completed for SID: {sid}, result: {success}")
+            current_app.logger.debug(f"ADMIN AUTH: Authentication completed for SID: {sid}, result: {success}")
             
         except Exception as auth_error:
             current_app.logger.error(f"ADMIN AUTH: Exception in authenticate method: {str(auth_error)}")
@@ -283,18 +283,18 @@ def handle_admin_auth(data):
             return
         
         # Log admin sessions after authentication attempt
-        current_app.logger.error(f"ADMIN AUTH: Admin sessions after auth: {list(socket_auth_manager.admin_sessions.keys())}")
-        current_app.logger.error(f"ADMIN AUTH: Authentication result for SID {sid}: {success}")
+        current_app.logger.debug(f"ADMIN AUTH: Admin sessions after auth: {list(socket_auth_manager.admin_sessions.keys())}")
+        current_app.logger.debug(f"ADMIN AUTH: Authentication result for SID {sid}: {success}")
         
         # Send response based on authentication result
         if success:
-            current_app.logger.error(f"ADMIN AUTH: Successful for SID: {sid}")
+            current_app.logger.debug(f"ADMIN AUTH: Successful for SID: {sid}")
             socketio.emit('admin_auth_response', {
                 "status": "authenticated",
                 "message": "Admin authentication successful"
             }, room=sid)
         else:
-            current_app.logger.error(f"ADMIN AUTH: Failed for SID: {sid}")
+            current_app.logger.warning(f"ADMIN AUTH: Failed for SID: {sid}")
             socketio.emit('admin_auth_response', {
                 "status": "error",
                 "message": "Authentication failed"
@@ -510,9 +510,11 @@ def log_connection_status(app):
         with app.app_context():
             try:
                 total_connections = len(broadcast_manager.connected_sids)
-                subscription_counts = {
-                    btype: len(subs) for btype, subs in broadcast_manager.subscribers.items()
-                }
+                
+                # Skip logging if no connections
+                if total_connections == 0:
+                    eventlet.sleep(60)
+                    continue
                 
                 connections_by_ip = defaultdict(list)
                 for sid in broadcast_manager.connected_sids:
@@ -523,7 +525,6 @@ def log_connection_status(app):
                 current_app.logger.info(f"""
 Connection Status Report:
 Total Active Connections: {total_connections}
-Subscription Counts by Type: {subscription_counts}
 Connections by IP: {dict(connections_by_ip)}
 """)
                 

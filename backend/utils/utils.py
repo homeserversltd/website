@@ -817,27 +817,33 @@ def get_config() -> Dict:
     """
     Load and parse homeserver.json configuration.
     First tries factoryFallback.sh, then falls back to direct file reads if that fails.
+    Caches the config path to avoid repeated validation calls.
     """
     try:
-        current_app.logger.debug("[CONFIG] Starting config loading process")
-        
-        # Try factoryFallback.sh first
-        current_app.logger.debug("[CONFIG] Attempting to use factoryFallback.sh")
-        result = subprocess.run(['/usr/local/sbin/factoryFallback.sh'], 
-                              capture_output=True, 
-                              text=True)
-        
-        current_app.logger.debug(f"[CONFIG] factoryFallback.sh return code: {result.returncode}")
-        current_app.logger.debug(f"[CONFIG] factoryFallback.sh stdout: {result.stdout.strip()}")
-        if result.stderr:
-            current_app.logger.debug(f"[CONFIG] factoryFallback.sh stderr: {result.stderr.strip()}")
-        
-        if result.returncode == 0:
-            config_path = result.stdout.strip()
-            current_app.logger.debug(f"[CONFIG] Using config path from factoryFallback.sh: {config_path}")
-            current_app.config['HOMESERVER_CONFIG'] = config_path
+        # Check if config path is already cached
+        if 'HOMESERVER_CONFIG' in current_app.config and current_app.config['HOMESERVER_CONFIG']:
+            config_path = current_app.config['HOMESERVER_CONFIG']
+            current_app.logger.debug(f"[CONFIG] Using cached config path: {config_path}")
         else:
-            current_app.logger.warning("[CONFIG] factoryFallback.sh failed, falling back to direct file reads")
+            current_app.logger.debug("[CONFIG] Starting config loading process")
+            
+            # Try factoryFallback.sh first
+            current_app.logger.debug("[CONFIG] Attempting to use factoryFallback.sh")
+            result = subprocess.run(['/usr/local/sbin/factoryFallback.sh'], 
+                                  capture_output=True, 
+                                  text=True)
+            
+            current_app.logger.debug(f"[CONFIG] factoryFallback.sh return code: {result.returncode}")
+            current_app.logger.debug(f"[CONFIG] factoryFallback.sh stdout: {result.stdout.strip()}")
+            if result.stderr:
+                current_app.logger.debug(f"[CONFIG] factoryFallback.sh stderr: {result.stderr.strip()}")
+            
+            if result.returncode == 0:
+                config_path = result.stdout.strip()
+                current_app.logger.debug(f"[CONFIG] Using config path from factoryFallback.sh: {config_path}")
+                current_app.config['HOMESERVER_CONFIG'] = config_path
+            else:
+                current_app.logger.warning("[CONFIG] factoryFallback.sh failed, falling back to direct file reads")
             
             # If factoryFallback fails, try reading files directly
             main_config = '/var/www/homeserver/src/config/homeserver.json'
@@ -931,6 +937,11 @@ def safe_write_config(write_operation: callable) -> bool:
             
         # Execute the write operation
         write_operation()
+        
+        # Clear cached config path to force revalidation on next read
+        if 'HOMESERVER_CONFIG' in current_app.config:
+            del current_app.config['HOMESERVER_CONFIG']
+        
         return True
     except Exception as e:
         current_app.logger.error(f'Error writing to config: {str(e)}')

@@ -14,6 +14,9 @@ class DiskMonitor:
     
     def __init__(self, check_interval: int = 30):
         self.check_interval = check_interval
+        # Cache for cryptsetup status results (mapper_name -> (output, timestamp))
+        self._cryptsetup_cache: Dict[str, tuple] = {}
+        self._cryptsetup_cache_ttl = 30 # Cache for 30 seconds
         
     def _execute_command(self, command: str) -> str:
         """
@@ -47,6 +50,32 @@ class DiskMonitor:
             # Keep exceptions at ERROR level as these are unexpected
             current_app.logger.error(f"Error executing command '{command}': {str(e)}")
             return f"Error: {str(e)}"
+    
+    def _get_cryptsetup_status(self, mapper_name: str) -> str:
+        """
+        Get cryptsetup status for a mapper device with caching.
+        
+        Args:
+            mapper_name: Name of the mapper device (e.g., 'sdb_crypt')
+            
+        Returns:
+            str: cryptsetup status output
+        """
+        current_time = time.time()
+        
+        # Check cache
+        if mapper_name in self._cryptsetup_cache:
+            cached_output, cached_time = self._cryptsetup_cache[mapper_name]
+            if current_time - cached_time < self._cryptsetup_cache_ttl:
+                return cached_output
+        
+        # Cache miss or expired - fetch fresh data
+        status_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/cryptsetup status {mapper_name}")
+        
+        # Cache the result
+        self._cryptsetup_cache[mapper_name] = (status_output, current_time)
+        
+        return status_output
     
     def get_lsblk_output(self) -> str:
         """
@@ -286,7 +315,7 @@ class DiskMonitor:
                     # Get the actual device-mapper relationship using cryptsetup status
                     for mapping in crypto_mappings:
                         if mapping in existing_mappers:
-                            status_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/cryptsetup status {mapping}")
+                            status_output = self._get_cryptsetup_status(mapping)
                             if not status_output.startswith("Error"):
                                 # Look for the device in the status output
                                 for line in status_output.splitlines():
@@ -316,8 +345,8 @@ class DiskMonitor:
                         device_info["mapper_name"] = None
                         continue
                     
-                    # Verify with cryptsetup status
-                    status_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/cryptsetup status {mapper_name}")
+                    # Verify with cryptsetup status (using cached method)
+                    status_output = self._get_cryptsetup_status(mapper_name)
                     
                     if "is inactive" in status_output or "not found" in status_output:
                         current_app.logger.debug(f"[DISK] Verification failed: Mapper {mapper_name} is not active, marking as closed")

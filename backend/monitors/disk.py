@@ -16,7 +16,11 @@ class DiskMonitor:
         self.check_interval = check_interval
         # Cache for cryptsetup status results (mapper_name -> (output, timestamp))
         self._cryptsetup_cache: Dict[str, tuple] = {}
-        self._cryptsetup_cache_ttl = 30 # Cache for 30 seconds
+        self._cryptsetup_cache_ttl = 100  # Cache for 100 seconds
+        # Cache for blkid batch results (device_path -> {'uuid': str, 'type': str})
+        self._blkid_cache: Dict[str, Dict[str, str]] = {}
+        self._blkid_cache_timestamp: float = 0
+        self._blkid_cache_ttl = 30  # Cache for 30 seconds
         
     def _execute_command(self, command: str) -> str:
         """
@@ -77,6 +81,93 @@ class DiskMonitor:
         
         return status_output
     
+    def _get_blkid_info(self) -> Dict[str, Dict[str, str]]:
+        """
+        Get all blkid information in one batch call and parse it.
+        Caches results to avoid repeated calls.
+        
+        Returns:
+            Dict mapping device paths to {'uuid': str, 'type': str}
+        """
+        current_time = time.time()
+        
+        # Check cache
+        if current_time - self._blkid_cache_timestamp < self._blkid_cache_ttl and self._blkid_cache:
+            return self._blkid_cache
+        
+        # Fetch all blkid info at once
+        blkid_output = self._execute_command("/usr/bin/sudo /usr/sbin/blkid")
+        
+        # Parse the output into a dictionary
+        blkid_info = {}
+        
+        if not blkid_output.startswith("Error"):
+            for line in blkid_output.splitlines():
+                if not line.strip():
+                    continue
+                
+                # Parse format: /dev/sda1: UUID="..." TYPE="..." ...
+                parts = line.split(':', 1)
+                if len(parts) != 2:
+                    continue
+                
+                device_path = parts[0].strip()
+                attributes = parts[1].strip()
+                
+                # Extract UUID and TYPE from attributes using regex-like parsing
+                uuid_match = None
+                type_match = None
+                
+                # Parse UUID="..." or UUID=...
+                if 'UUID="' in attributes:
+                    uuid_start = attributes.find('UUID="') + 6
+                    uuid_end = attributes.find('"', uuid_start)
+                    if uuid_end > uuid_start:
+                        uuid_match = attributes[uuid_start:uuid_end]
+                elif 'UUID=' in attributes:
+                    # Handle UUID=value (without quotes or with quotes)
+                    uuid_start = attributes.find('UUID=') + 5
+                    # Find the end - either next space or end of string
+                    uuid_rest = attributes[uuid_start:].strip()
+                    if uuid_rest.startswith('"'):
+                        uuid_end = uuid_rest.find('"', 1)
+                        if uuid_end > 0:
+                            uuid_match = uuid_rest[1:uuid_end]
+                    else:
+                        # No quotes, take until next space
+                        uuid_match = uuid_rest.split()[0].strip('"')
+                
+                # Parse TYPE="..." or TYPE=...
+                if 'TYPE="' in attributes:
+                    type_start = attributes.find('TYPE="') + 6
+                    type_end = attributes.find('"', type_start)
+                    if type_end > type_start:
+                        type_match = attributes[type_start:type_end]
+                elif 'TYPE=' in attributes:
+                    # Handle TYPE=value (without quotes or with quotes)
+                    type_start = attributes.find('TYPE=') + 5
+                    # Find the end - either next space or end of string
+                    type_rest = attributes[type_start:].strip()
+                    if type_rest.startswith('"'):
+                        type_end = type_rest.find('"', 1)
+                        if type_end > 0:
+                            type_match = type_rest[1:type_end]
+                    else:
+                        # No quotes, take until next space
+                        type_match = type_rest.split()[0].strip('"')
+                
+                # Store info even if only one field is present
+                blkid_info[device_path] = {
+                    'uuid': uuid_match,
+                    'type': type_match.lower() if type_match else None
+                }
+        
+        # Update cache
+        self._blkid_cache = blkid_info
+        self._blkid_cache_timestamp = current_time
+        
+        return blkid_info
+    
     def get_lsblk_output(self) -> str:
         """
         Get formatted output from lsblk showing block devices.
@@ -111,6 +202,7 @@ class DiskMonitor:
     def _add_mount_info_to_device(self, device: Dict):
         """
         Add mount point information to a device dictionary.
+        lsblk -a -J already includes mountpoint in the JSON, so we just normalize it.
         
         Args:
             device: The device dictionary from lsblk
@@ -124,12 +216,21 @@ class DiskMonitor:
                     self._add_mount_info_to_device(child)
             return
         
-        device_path = f"/dev/{device['name']}"
-        mount_output = self._execute_command(f"/usr/bin/sudo /usr/bin/lsblk -n -o MOUNTPOINT {device_path}")
+        # lsblk -a -J already includes mountpoint in the JSON output
+        # Handle both 'mountpoint' (single) and 'mountpoints' (array) fields
+        mountpoint = device.get('mountpoint')
+        mountpoints = device.get('mountpoints')
         
-        if not mount_output.startswith("Error"):
-            mount_point = mount_output.strip()
-            device['mountpoint'] = mount_point if mount_point else None
+        # Normalize to single mountpoint value
+        if mountpoint:
+            device['mountpoint'] = mountpoint if mountpoint else None
+        elif mountpoints:
+            # If mountpoints is an array, use the first non-null value
+            if isinstance(mountpoints, list):
+                valid_mountpoint = next((mp for mp in mountpoints if mp), None)
+                device['mountpoint'] = valid_mountpoint
+            else:
+                device['mountpoint'] = mountpoints if mountpoints else None
         else:
             device['mountpoint'] = None
         
@@ -140,11 +241,14 @@ class DiskMonitor:
     
     def _add_uuid_info(self, lsblk_data: Dict):
         """
-        Add UUID information to devices using blkid.
+        Add UUID information to devices using cached blkid batch data.
         
         Args:
             lsblk_data: The full lsblk JSON data
         """
+        # Get all blkid info in one batch call
+        blkid_info = self._get_blkid_info()
+        
         if 'blockdevices' in lsblk_data:
             for device in lsblk_data['blockdevices']:
                 # Skip loop devices - they don't have UUIDs and aren't relevant for disk management
@@ -152,24 +256,22 @@ class DiskMonitor:
                     device['uuid'] = None
                     continue
                 
-                # Add UUID for the device
+                # Look up UUID from batch blkid data
                 device_path = f"/dev/{device['name']}"
-                uuid_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s UUID {device_path}")
-                if not uuid_output.startswith("Error") and uuid_output.strip():
-                    device['uuid'] = uuid_output.strip()
-                else:
-                    device['uuid'] = None
+                device_info = blkid_info.get(device_path, {})
+                device['uuid'] = device_info.get('uuid')
                 
                 # Process children recursively
                 if 'children' in device:
-                    self._add_uuid_to_children(device['children'])
+                    self._add_uuid_to_children(device['children'], blkid_info)
     
-    def _add_uuid_to_children(self, children):
+    def _add_uuid_to_children(self, children, blkid_info: Dict[str, Dict[str, str]]):
         """
-        Recursively add UUID information to child devices using blkid.
+        Recursively add UUID information to child devices using cached blkid batch data.
         
         Args:
             children: List of child devices
+            blkid_info: Pre-fetched blkid information dictionary
         """
         for child in children:
             # Skip loop devices - they don't have UUIDs and aren't relevant for disk management
@@ -177,20 +279,17 @@ class DiskMonitor:
                 child['uuid'] = None
                 # Still process children in case there are nested devices
                 if 'children' in child:
-                    self._add_uuid_to_children(child['children'])
+                    self._add_uuid_to_children(child['children'], blkid_info)
                 continue
             
-            # Add UUID for the child device
+            # Look up UUID from batch blkid data
             device_path = f"/dev/{child['name']}"
-            uuid_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s UUID {device_path}")
-            if not uuid_output.startswith("Error") and uuid_output.strip():
-                child['uuid'] = uuid_output.strip()
-            else:
-                child['uuid'] = None
+            device_info = blkid_info.get(device_path, {})
+            child['uuid'] = device_info.get('uuid')
             
             # Recursively handle grandchildren
             if 'children' in child:
-                self._add_uuid_to_children(child['children'])
+                self._add_uuid_to_children(child['children'], blkid_info)
     
     def get_disk_usage(self) -> Dict[str, Any]:
         """
@@ -226,14 +325,19 @@ class DiskMonitor:
             Dict: Information about encrypted devices
         """
         try:
-            # Get LUKS devices
-            luks_devices_output = self._execute_command("/usr/bin/sudo /usr/sbin/blkid -t TYPE=crypto_LUKS -o device")
+            # Get all blkid info in one batch call (includes LUKS devices)
+            blkid_info = self._get_blkid_info()
             
-            if not luks_devices_output or luks_devices_output.startswith("Error"):
+            # Extract LUKS devices from batch blkid data
+            luks_devices = []
+            for device_path, device_info in blkid_info.items():
+                if device_info.get('type') == 'crypto_luks':
+                    luks_devices.append(device_path)
+            
+            if not luks_devices:
                 # current_app.logger.debug("[DISK] No LUKS devices found")
                 return {"encrypted_devices": []}
                 
-            luks_devices = luks_devices_output.splitlines()
             # current_app.logger.debug(f"[DISK] Found LUKS devices: {luks_devices}")
             
             # Get active crypto mappings
@@ -288,10 +392,9 @@ class DiskMonitor:
                     "type": "LUKS"
                 }
                 
-                # Get UUID
-                uuid_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s UUID {device}")
-                if not uuid_output.startswith("Error"):
-                    device_info["uuid"] = uuid_output
+                # Get UUID from batch blkid data
+                device_blkid = blkid_info.get(device, {})
+                device_info["uuid"] = device_blkid.get('uuid')
                 
                 # Get device basename for matching
                 device_basename = device.split("/")[-1]
@@ -388,6 +491,9 @@ class DiskMonitor:
                 "tracefs", "fusectl", "fuse.gvfsd-fuse", "udev"
             }
             
+            # Get all blkid info in one batch call
+            blkid_info = self._get_blkid_info()
+            
             # Get list of encrypted devices and their mappers
             encrypted_devices = encryption_info.get("encrypted_devices", [])
             encrypted_device_paths = [dev.get("device") for dev in encrypted_devices]
@@ -416,16 +522,15 @@ class DiskMonitor:
                 if not filesystem.startswith("/dev/"):
                     continue
                     
-                # Get filesystem type using blkid
-                fstype_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s TYPE {filesystem}")
-                if not fstype_output.startswith("Error") and fstype_output.strip():
-                    fstype = fstype_output.strip().lower()
-                    if fstype in nas_compatible_filesystems:
-                        mounted_fs_devices.append({
-                            "device": filesystem,
-                            "fstype": fstype,
-                            "mountpoint": entry.get("mounted")
-                        })
+                # Get filesystem type from batch blkid data
+                fs_blkid = blkid_info.get(filesystem, {})
+                fstype = fs_blkid.get('type')
+                if fstype and fstype in nas_compatible_filesystems:
+                    mounted_fs_devices.append({
+                        "device": filesystem,
+                        "fstype": fstype,
+                        "mountpoint": entry.get("mounted")
+                    })
             
             current_app.logger.debug(f"[DISK] Found mounted NAS-compatible filesystems: {mounted_fs_devices}")
             
@@ -465,17 +570,16 @@ class DiskMonitor:
                 # Check if device is directly formatted (no encryption)
                 device_info = next((dev for dev in mounted_fs_devices if dev["device"] == device_path), None)
                 
-                # If device is not mounted, check its filesystem type directly
+                # If device is not mounted, check its filesystem type from batch blkid data
                 if not device_info:
-                    fstype_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s TYPE {device_path}")
-                    if not fstype_output.startswith("Error") and fstype_output.strip():
-                        fstype = fstype_output.strip().lower()
-                        if fstype in nas_compatible_filesystems:
-                            device_info = {
-                                "device": device_path,
-                                "fstype": fstype,
-                                "mountpoint": None
-                            }
+                    device_blkid = blkid_info.get(device_path, {})
+                    fstype = device_blkid.get('type')
+                    if fstype and fstype in nas_compatible_filesystems:
+                        device_info = {
+                            "device": device_path,
+                            "fstype": fstype,
+                            "mountpoint": None
+                        }
                 
                 if device_info:
                     # Get space usage information if device is mounted
@@ -512,11 +616,10 @@ class DiskMonitor:
                             filesystem = mapper_info["fstype"]
                             mountpoint = mapper_info["mountpoint"]
                     
-                    # If not mounted or no filesystem found, check the mapper device directly
+                    # If not mounted or no filesystem found, check the mapper device from batch blkid data
                     if mapper_path and not filesystem:
-                        fstype_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s TYPE {mapper_path}")
-                        if not fstype_output.startswith("Error") and fstype_output.strip():
-                            filesystem = fstype_output.strip().lower()
+                        mapper_blkid = blkid_info.get(mapper_path, {})
+                        filesystem = mapper_blkid.get('type')
                     
                     # If still no filesystem found and the mapper exists, try lsblk
                     if mapper_path and not filesystem:
@@ -565,11 +668,10 @@ class DiskMonitor:
                                 filesystem = mapper_info["fstype"]
                                 mountpoint = mapper_info["mountpoint"]
                             
-                            # If not mounted, check filesystem directly
+                            # If not mounted, check filesystem from batch blkid data
                             if not filesystem:
-                                fstype_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s TYPE {mapper_path}")
-                                if not fstype_output.startswith("Error") and fstype_output.strip():
-                                    filesystem = fstype_output.strip().lower()
+                                mapper_blkid = blkid_info.get(mapper_path, {})
+                                filesystem = mapper_blkid.get('type')
                             
                             # If still no filesystem found, try lsblk
                             if not filesystem:

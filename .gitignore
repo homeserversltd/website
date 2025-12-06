@@ -4,3 +4,4 @@ build/*
 build/**
 package-lock.json
 package-lock.json
+premium/miner

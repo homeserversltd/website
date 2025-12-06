@@ -150,6 +150,8 @@ def set_starred_tab():
         # Notify clients via WebSocket
         socketio.emit('starred_tab_updated', {'tabId': tab_id})
         
+        current_app.logger.info(f"[USER ACTION] Tab starred: {tab_id}")
+        
         return jsonify({'success': True, 'starredTab': tab_id}), 200
             
     except FileNotFoundError:
@@ -200,6 +202,9 @@ def update_tab_visibility():
             
         # Notify clients via WebSocket
         socketio.emit('visibility_updated', {'tabId': tab_id, 'visibility': visibility})
+        
+        action = "shown" if visibility else "hidden"
+        current_app.logger.info(f"[USER ACTION] Tab {action}: {tab_id}")
         
         return jsonify({
             'success': True,

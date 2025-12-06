@@ -104,6 +104,7 @@ def validate_pin():
             register_admin_token(session_token)
             
             write_to_log('admin', 'Admin PIN validated successfully - entering admin mode', 'info')
+            current_app.logger.info("[USER ACTION] Admin mode entered successfully")
             return jsonify({
                 'success': True,
                 'token': session_token,

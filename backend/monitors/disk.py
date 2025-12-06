@@ -36,12 +36,15 @@ class DiskMonitor:
             stdout, stderr = process.communicate()
             
             if process.returncode != 0:
-                current_app.logger.error(f"Command '{command}' failed: {stderr}")
+                # Downgrade to DEBUG - many commands (like blkid on devices without UUIDs) 
+                # are expected to fail and are handled gracefully by the calling code
+                current_app.logger.debug(f"Command '{command}' failed (expected for some devices): {stderr}")
                 return f"Error executing '{command}': {stderr}"
                 
             return stdout.strip()
             
         except Exception as e:
+            # Keep exceptions at ERROR level as these are unexpected
             current_app.logger.error(f"Error executing command '{command}': {str(e)}")
             return f"Error: {str(e)}"
     
@@ -83,6 +86,15 @@ class DiskMonitor:
         Args:
             device: The device dictionary from lsblk
         """
+        # Skip loop devices - they're not relevant for disk management
+        if device.get('name', '').startswith('loop'):
+            device['mountpoint'] = None
+            # Still process children in case there are nested devices
+            if 'children' in device:
+                for child in device['children']:
+                    self._add_mount_info_to_device(child)
+            return
+        
         device_path = f"/dev/{device['name']}"
         mount_output = self._execute_command(f"/usr/bin/sudo /usr/bin/lsblk -n -o MOUNTPOINT {device_path}")
         
@@ -106,6 +118,11 @@ class DiskMonitor:
         """
         if 'blockdevices' in lsblk_data:
             for device in lsblk_data['blockdevices']:
+                # Skip loop devices - they don't have UUIDs and aren't relevant for disk management
+                if device.get('name', '').startswith('loop'):
+                    device['uuid'] = None
+                    continue
+                
                 # Add UUID for the device
                 device_path = f"/dev/{device['name']}"
                 uuid_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s UUID {device_path}")
@@ -126,6 +143,14 @@ class DiskMonitor:
             children: List of child devices
         """
         for child in children:
+            # Skip loop devices - they don't have UUIDs and aren't relevant for disk management
+            if child.get('name', '').startswith('loop'):
+                child['uuid'] = None
+                # Still process children in case there are nested devices
+                if 'children' in child:
+                    self._add_uuid_to_children(child['children'])
+                continue
+            
             # Add UUID for the child device
             device_path = f"/dev/{child['name']}"
             uuid_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/blkid -o value -s UUID {device_path}")
@@ -220,12 +245,12 @@ class DiskMonitor:
             # Collect detailed information for each LUKS device
             encrypted_devices = []
             
-            current_app.logger.info(f"[DISK] Processing LUKS devices: {luks_devices}")
-            current_app.logger.info(f"[DISK] Crypto mappings: {crypto_mappings}")
-            current_app.logger.info(f"[DISK] Existing mappers: {existing_mappers}")
+            current_app.logger.debug(f"[DISK] Processing LUKS devices: {luks_devices}")
+            current_app.logger.debug(f"[DISK] Crypto mappings: {crypto_mappings}")
+            current_app.logger.debug(f"[DISK] Existing mappers: {existing_mappers}")
             
             for device in luks_devices:
-                current_app.logger.info(f"[DISK] Processing LUKS device: {device}")
+                current_app.logger.debug(f"[DISK] Processing LUKS device: {device}")
                 device_info = {
                     "device": device,
                     "is_open": False,
@@ -251,7 +276,7 @@ class DiskMonitor:
                         if mapping in existing_mappers:
                             device_info["is_open"] = True
                             device_info["mapper_name"] = mapping
-                            current_app.logger.info(f"[DISK] Found open LUKS device (direct match): {device} -> {mapping}")
+                            current_app.logger.debug(f"[DISK] Found open LUKS device (direct match): {device} -> {mapping}")
                             break
                     
                     # Remove partial match check as it's too permissive
@@ -268,7 +293,7 @@ class DiskMonitor:
                                     if "device:" in line.lower() and device in line:
                                         device_info["is_open"] = True
                                         device_info["mapper_name"] = mapping
-                                        current_app.logger.info(f"[DISK] Found open LUKS device (via cryptsetup): {device} -> {mapping}")
+                                        current_app.logger.debug(f"[DISK] Found open LUKS device (via cryptsetup): {device} -> {mapping}")
                                         break
                         if device_info["is_open"]:
                             break
@@ -279,14 +304,14 @@ class DiskMonitor:
                     
                     # If mapper_name is "No", the device is not actually open
                     if mapper_name == "No":
-                        current_app.logger.info(f"[DISK] Mapper name is 'No', marking device as closed: {device}")
+                        current_app.logger.debug(f"[DISK] Mapper name is 'No', marking device as closed: {device}")
                         device_info["is_open"] = False
                         device_info["mapper_name"] = None
                         continue
                     
                     # Check if the mapper device actually exists in /dev/mapper/
                     if mapper_name not in existing_mappers:
-                        current_app.logger.info(f"[DISK] Mapper {mapper_name} not found in /dev/mapper/, marking as closed")
+                        current_app.logger.debug(f"[DISK] Mapper {mapper_name} not found in /dev/mapper/, marking as closed")
                         device_info["is_open"] = False
                         device_info["mapper_name"] = None
                         continue
@@ -295,11 +320,11 @@ class DiskMonitor:
                     status_output = self._execute_command(f"/usr/bin/sudo /usr/sbin/cryptsetup status {mapper_name}")
                     
                     if "is inactive" in status_output or "not found" in status_output:
-                        current_app.logger.info(f"[DISK] Verification failed: Mapper {mapper_name} is not active, marking as closed")
+                        current_app.logger.debug(f"[DISK] Verification failed: Mapper {mapper_name} is not active, marking as closed")
                         device_info["is_open"] = False
                         device_info["mapper_name"] = None
                     else:
-                        current_app.logger.info(f"[DISK] Verification succeeded: Mapper {mapper_name} is active")
+                        current_app.logger.debug(f"[DISK] Verification succeeded: Mapper {mapper_name} is active")
                 
                 encrypted_devices.append(device_info)
             
@@ -341,8 +366,8 @@ class DiskMonitor:
                                  for dev in encrypted_devices 
                                  if dev.get("is_open") and dev.get("mapper_name")}
             
-            current_app.logger.info(f"[DISK] Found encrypted devices: {encrypted_device_paths}")
-            current_app.logger.info(f"[DISK] Mapper mapping: {encrypted_to_mapper}")
+            current_app.logger.debug(f"[DISK] Found encrypted devices: {encrypted_device_paths}")
+            current_app.logger.debug(f"[DISK] Mapper mapping: {encrypted_to_mapper}")
             
             # Get list of all devices with NAS-compatible filesystems from disk usage
             disk_usage = disk_usage_data.get("disk_usage", [])
@@ -373,7 +398,7 @@ class DiskMonitor:
                             "mountpoint": entry.get("mounted")
                         })
             
-            current_app.logger.info(f"[DISK] Found mounted NAS-compatible filesystems: {mounted_fs_devices}")
+            current_app.logger.debug(f"[DISK] Found mounted NAS-compatible filesystems: {mounted_fs_devices}")
             
             # Identify system drives
             system_drives = set()
@@ -393,10 +418,10 @@ class DiskMonitor:
                         for mountpoint in mountpoints:
                             if mountpoint in system_mount_points:
                                 system_drives.add(device_name)
-                                current_app.logger.info(f"[DISK] Excluding system drive {device_name} (contains {mountpoint})")
+                                current_app.logger.debug(f"[DISK] Excluding system drive {device_name} (contains {mountpoint})")
                                 break
             
-            current_app.logger.info(f"[DISK] System drives to exclude: {system_drives}")
+            current_app.logger.debug(f"[DISK] System drives to exclude: {system_drives}")
             
             # Process each device
             for device in block_devices.get("blockdevices", []):
@@ -442,7 +467,7 @@ class DiskMonitor:
                         **space_usage  # Include space usage information
                     }
                     nas_compatible_devices.append(nas_compatible)
-                    current_app.logger.info(f"[DISK] Added direct-formatted device: {device_name}")
+                    current_app.logger.debug(f"[DISK] Added direct-formatted device: {device_name}")
                     continue
                 
                 # Check if device is encrypted
@@ -490,7 +515,7 @@ class DiskMonitor:
                             **space_usage  # Include space usage information
                         }
                         nas_compatible_devices.append(nas_compatible)
-                        current_app.logger.info(f"[DISK] Added encrypted device: {device_name} with filesystem {filesystem}")
+                        current_app.logger.debug(f"[DISK] Added encrypted device: {device_name} with filesystem {filesystem}")
                 
                 # Check children (partitions and mappers)
                 if "children" in device:
@@ -551,7 +576,7 @@ class DiskMonitor:
                                     **space_usage  # Include space usage information
                                 }
                                 nas_compatible_devices.append(nas_compatible)
-                                current_app.logger.info(f"[DISK] Added encrypted device from mapper: {child_name} with filesystem {filesystem}")
+                                current_app.logger.debug(f"[DISK] Added encrypted device from mapper: {child_name} with filesystem {filesystem}")
                             continue
                         
                         # Check if partition is encrypted
@@ -598,7 +623,7 @@ class DiskMonitor:
                                         **space_usage  # Include space usage information
                                     }
                                     nas_compatible_devices.append(nas_compatible)
-                                    current_app.logger.info(f"[DISK] Added encrypted partition: {child_name} with filesystem {filesystem}")
+                                    current_app.logger.debug(f"[DISK] Added encrypted partition: {child_name} with filesystem {filesystem}")
         
             return nas_compatible_devices
             
@@ -674,7 +699,7 @@ class DiskMonitor:
                         if mountpoint in system_critical_paths:
                             # This parent device has a partition mounted to a system-critical path
                             devices_with_system_partitions.add(device.get('name', ''))
-                            current_app.logger.info(f"[DISK] Filtering system drive: {device.get('name', '')} (contains {mountpoint})")
+                            current_app.logger.debug(f"[DISK] Filtering system drive: {device.get('name', '')} (contains {mountpoint})")
                             break
         
         # Second pass: filter devices
@@ -803,7 +828,7 @@ class DiskMonitor:
                 }
             
             # ADDED: Log final result from check_disks
-            current_app.logger.info(f"[DISK] Final result from check_disks: Type={type(result)}, Keys={list(result.keys()) if isinstance(result, dict) else 'N/A'}, ErrorKeyPresent={'error' in result if isinstance(result, dict) else 'N/A'}")
+            current_app.logger.debug(f"[DISK] Final result from check_disks: Type={type(result)}, Keys={list(result.keys()) if isinstance(result, dict) else 'N/A'}, ErrorKeyPresent={'error' in result if isinstance(result, dict) else 'N/A'}")
             return result
             
         except Exception as e:
@@ -813,7 +838,7 @@ class DiskMonitor:
                 "error": str(e),
                 "timestamp": int(time.time())
             }
-            current_app.logger.info(f"[DISK] Error result from check_disks: Type={type(error_result)}, Keys={list(error_result.keys())}, ErrorKeyPresent={'error' in error_result}")
+            current_app.logger.debug(f"[DISK] Error result from check_disks: Type={type(error_result)}, Keys={list(error_result.keys())}, ErrorKeyPresent={'error' in error_result}")
             return error_result
             
     def broadcast_disk_info(self) -> Dict[str, Any]:
@@ -837,8 +862,8 @@ class DiskMonitor:
         Returns:
             Dict with space usage information (size, used, available, use_percent)
         """
-        current_app.logger.info(f"[DISK] _get_device_space_usage called for device_path: {device_path}")
-        current_app.logger.info(f"[DISK] Available disk_usage_items: {[item.get('filesystem') for item in disk_usage_items]}")
+        current_app.logger.debug(f"[DISK] _get_device_space_usage called for device_path: {device_path}")
+        current_app.logger.debug(f"[DISK] Available disk_usage_items: {[item.get('filesystem') for item in disk_usage_items]}")
         
         # Find the disk usage entry for this device
         for item in disk_usage_items:
@@ -849,10 +874,10 @@ class DiskMonitor:
                     "available_space": item.get("avail", "Unknown"),
                     "use_percent": item.get("use%", "Unknown")
                 }
-                current_app.logger.info(f"[DISK] Found space usage for {device_path}: {space_info}")
+                current_app.logger.debug(f"[DISK] Found space usage for {device_path}: {space_info}")
                 return space_info
         
-        current_app.logger.info(f"[DISK] No space usage found for {device_path}, returning Unknown values")
+        current_app.logger.debug(f"[DISK] No space usage found for {device_path}, returning Unknown values")
         return {
             "total_size": "Unknown",
             "used_space": "Unknown",

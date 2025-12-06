@@ -344,15 +344,15 @@ def generic_broadcaster(broadcast_type, app):
                                 # Conditional detailed logging for specific broadcast types (e.g., admin_disk_info)
                                 # This logging uses the 'actual_should_broadcast_decision' and does NOT re-call should_broadcast.
                                 if broadcast_type == 'admin_disk_info': 
-                                    current_app.logger.info(f"[BROADCAST] ADMIN_DISK_INFO PRE-EMIT CHECK for SID {sid}")
-                                    current_app.logger.info(f"[BROADCAST] ADMIN_DISK_INFO Data to send: {str(data_to_send)[:200]}...")
-                                    current_app.logger.info(f"[BROADCAST] ADMIN_DISK_INFO Result of should_broadcast for SID {sid}: {actual_should_broadcast_decision}")
+                                    current_app.logger.debug(f"[BROADCAST] ADMIN_DISK_INFO PRE-EMIT CHECK for SID {sid}")
+                                    current_app.logger.debug(f"[BROADCAST] ADMIN_DISK_INFO Data to send: {str(data_to_send)[:200]}...")
+                                    current_app.logger.debug(f"[BROADCAST] ADMIN_DISK_INFO Result of should_broadcast for SID {sid}: {actual_should_broadcast_decision}")
                                 # Add other 'elif broadcast_type == ...' blocks here if other types need similar specific logging.
 
                                 # Main emission logic based on the single stored decision
                                 if actual_should_broadcast_decision:
                                     if broadcast_type == 'admin_disk_info': 
-                                        current_app.logger.info(f"[BROADCAST] ADMIN_DISK_INFO EMITTING to SID {sid} with data: {str(data_to_send)[:200]}...")
+                                        current_app.logger.debug(f"[BROADCAST] ADMIN_DISK_INFO EMITTING to SID {sid} with data: {str(data_to_send)[:200]}...")
                                     # Add 'elif broadcast_type == ...' for specific EMIT logs for other types if needed.
                                     
                                     socketio.server.emit(broadcast_type, data_to_send, room=sid)
@@ -360,7 +360,7 @@ def generic_broadcaster(broadcast_type, app):
                                 else:
                                     # Conditional "no changes" logging
                                     if broadcast_type == 'admin_disk_info':
-                                        current_app.logger.info(f"[BROADCAST] ADMIN_DISK_INFO No changes, not emitting to SID {sid}")
+                                        current_app.logger.debug(f"[BROADCAST] ADMIN_DISK_INFO No changes, not emitting to SID {sid}")
                                     # Add 'elif broadcast_type == ...' for specific "no changes" logs if needed.
                                     # Or a general debug log:
                                     # current_app.logger.debug(f"[{broadcast_type}] No significant changes or SID already initialized with this data, not emitting to SID {sid}")

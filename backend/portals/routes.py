@@ -227,11 +227,11 @@ def delete_portal(portal_name):
 def get_factory_portals():
     """Get factory portal names for comparison."""
     try:
-        current_app.logger.info("[FACTORY] Starting factory portals request")
+        current_app.logger.debug("[FACTORY] Starting factory portals request")
         
         # Get the factory config path (hardcoded to system-wide factory file)
         factory_config_path = '/etc/homeserver.factory'
-        current_app.logger.info(f"[FACTORY] Using factory config path: {factory_config_path}")
+        current_app.logger.debug(f"[FACTORY] Using factory config path: {factory_config_path}")
         
         # Check if file exists
         import os
@@ -242,26 +242,26 @@ def get_factory_portals():
                 'factoryPortals': []
             }), 200
         
-        current_app.logger.info(f"[FACTORY] Factory config file exists, attempting to read")
+        current_app.logger.debug(f"[FACTORY] Factory config file exists, attempting to read")
         
         # Read and parse the factory config
         with open(factory_config_path) as f:
             factory_config = json.load(f)
             
-        current_app.logger.info(f"[FACTORY] Successfully loaded factory config, keys: {list(factory_config.keys())}")
+        current_app.logger.debug(f"[FACTORY] Successfully loaded factory config, keys: {list(factory_config.keys())}")
         
         # Navigate to portals section
         tabs = factory_config.get('tabs', {})
-        current_app.logger.info(f"[FACTORY] Tabs section keys: {list(tabs.keys())}")
+        current_app.logger.debug(f"[FACTORY] Tabs section keys: {list(tabs.keys())}")
         
         portals_tab = tabs.get('portals', {})
-        current_app.logger.info(f"[FACTORY] Portals tab keys: {list(portals_tab.keys())}")
+        current_app.logger.debug(f"[FACTORY] Portals tab keys: {list(portals_tab.keys())}")
         
         portals_data = portals_tab.get('data', {})
-        current_app.logger.info(f"[FACTORY] Portals data keys: {list(portals_data.keys())}")
+        current_app.logger.debug(f"[FACTORY] Portals data keys: {list(portals_data.keys())}")
         
         factory_portals = portals_data.get('portals', [])
-        current_app.logger.info(f"[FACTORY] Found {len(factory_portals)} factory portals")
+        current_app.logger.debug(f"[FACTORY] Found {len(factory_portals)} factory portals")
         
         # Extract portal names
         factory_portal_names = []
@@ -269,11 +269,11 @@ def get_factory_portals():
             portal_name = portal.get('name')
             if portal_name:
                 factory_portal_names.append(portal_name)
-                current_app.logger.info(f"[FACTORY] Portal {i+1}: {portal_name}")
+                current_app.logger.debug(f"[FACTORY] Portal {i+1}: {portal_name}")
             else:
                 current_app.logger.warning(f"[FACTORY] Portal {i+1} has no name: {portal}")
         
-        current_app.logger.info(f"[FACTORY] Returning {len(factory_portal_names)} factory portal names: {factory_portal_names}")
+        current_app.logger.debug(f"[FACTORY] Returning {len(factory_portal_names)} factory portal names: {factory_portal_names}")
         
         return jsonify({
             'success': True,

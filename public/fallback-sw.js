@@ -22,6 +22,12 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
     
+    // Don't intercept external requests (CDN, etc.) - let browser handle them natively
+    // This prevents service worker errors when external resources fail offline
+    if (url.origin !== self.location.origin) {
+        return; // Let the request go through normally without service worker intervention
+    }
+    
     // Don't intercept API requests - let them fail naturally for server detection
     if (url.pathname.startsWith('/api/')) {
         return; // Let the request go through normally without service worker intervention

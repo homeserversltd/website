@@ -16,3 +16,6 @@
 [submodule "premium/youtube"]
 	path = premium/youtube
 	url = git@github.com:homeserversltd/youtube.git
+[submodule "premium/nasLinker"]
+	path = premium/nasLinker
+	url = git@github.com:homeserversltd/linkerTab.git

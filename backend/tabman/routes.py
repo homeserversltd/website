@@ -158,8 +158,18 @@ def set_starred_tab():
         return jsonify({'error': 'Configuration file not found'}), 404
     except json.JSONDecodeError:
         return jsonify({'error': 'Invalid configuration file'}), 500
+    except KeyError as e:
+        # Specifically catch KeyError for HOMESERVER_CONFIG to provide better error message
+        if str(e) == "'HOMESERVER_CONFIG'":
+            current_app.logger.error(f'Error setting starred tab: Config path not initialized. Error: {str(e)}')
+            current_app.logger.exception('Full traceback:')
+        else:
+            current_app.logger.error(f'Error setting starred tab: Missing key {str(e)}')
+            current_app.logger.exception('Full traceback:')
+        return jsonify({'error': 'Internal server error'}), 500
     except Exception as e:
         current_app.logger.error(f'Error setting starred tab: {str(e)}')
+        current_app.logger.exception('Full traceback:')
         return jsonify({'error': 'Internal server error'}), 500
 
 @bp.route('/api/tabs/visibility', methods=['POST'])

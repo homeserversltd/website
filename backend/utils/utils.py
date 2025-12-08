@@ -929,6 +929,9 @@ def safe_write_config(write_operation: callable) -> bool:
                 json.dump(data, f)
         success = safe_write_config(my_write)
     """
+    # Store config path before deletion to ensure it can be reinitialized
+    config_path = current_app.config.get('HOMESERVER_CONFIG')
+    
     try:
         # Check if we're in factory config mode
         if is_using_factory_config():
@@ -939,12 +942,21 @@ def safe_write_config(write_operation: callable) -> bool:
         write_operation()
         
         # Clear cached config path to force revalidation on next read
+        # But immediately reinitialize it to prevent KeyError in subsequent code
         if 'HOMESERVER_CONFIG' in current_app.config:
             del current_app.config['HOMESERVER_CONFIG']
+        
+        # Reinitialize config path immediately to prevent KeyError
+        # This maintains the "force revalidation" intent while ensuring the key always exists
+        if config_path:
+            current_app.config['HOMESERVER_CONFIG'] = config_path
         
         return True
     except Exception as e:
         current_app.logger.error(f'Error writing to config: {str(e)}')
+        # Ensure config path is restored even on error to prevent KeyError cascades
+        if 'HOMESERVER_CONFIG' not in current_app.config and config_path:
+            current_app.config['HOMESERVER_CONFIG'] = config_path
         return False
 
 def update_config(config: Dict) -> bool:

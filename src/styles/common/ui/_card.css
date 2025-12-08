@@ -1,0 +1,104 @@
+/* UI Card Component Styles */
+
+.ui-card {
+  position: relative;
+  background: var(--background);
+  border-radius: var(--border-radius, 8px);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Card Variants */
+.ui-card--clickable {
+  cursor: pointer;
+}
+
+.ui-card--clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary);
+}
+
+.ui-card--clickable:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ui-card--active {
+  border-color: var(--success);
+  background-color: color-mix(in srgb, var(--success) 5%, transparent);
+}
+
+.ui-card--inactive {
+  opacity: 0.7;
+  border-color: var(--border);
+}
+
+.ui-card--error {
+  border-color: var(--error);
+  background-color: color-mix(in srgb, var(--error) 5%, transparent);
+}
+
+/* Card Sections */
+.ui-card__header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.ui-card__body {
+  padding: 1.25rem;
+  flex: 1;
+  color: var(--text);
+}
+
+.ui-card__footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  background-color: color-mix(in srgb, var(--background) 50%, var(--primary));
+}
+
+/* Card without explicit sections */
+.ui-card > :not(.ui-card__header):not(.ui-card__body):not(.ui-card__footer) {
+  padding: 1.25rem;
+}
+
+/* Card with only body content */
+.ui-card:not(:has(.ui-card__header)):not(:has(.ui-card__footer)) {
+  padding: 1.25rem;
+}
+
+/* 3D Depth Effect */
+.ui-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  border-radius: inherit;
+  z-index: -1;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.ui-card--clickable:hover::before {
+  transform: translateZ(4px);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .ui-card__header,
+  .ui-card__body,
+  .ui-card__footer {
+    padding: 1rem;
+  }
+}

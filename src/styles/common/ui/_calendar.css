@@ -1,0 +1,165 @@
+/* UI Calendar Component Styles */
+
+.ui-calendar-container {
+  display: inline-block;
+}
+
+.ui-calendar-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 6px);
+  background-color: var(--background);
+  color: var(--text);
+  cursor: pointer;
+  min-width: 140px;
+  transition: all 0.2s ease;
+}
+
+.ui-calendar-input:hover:not(.ui-calendar-input--disabled) {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.ui-calendar-input--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ui-calendar-display {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.ui-calendar-icon {
+  font-size: 16px;
+  margin-left: 8px;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* Size Variants */
+.ui-calendar-container--small .ui-calendar-input {
+  padding: 0.5rem 0.625rem;
+  min-width: 120px;
+}
+
+.ui-calendar-container--small .ui-calendar-display {
+  font-size: 12px;
+}
+
+.ui-calendar-container--small .ui-calendar-icon {
+  font-size: 14px;
+}
+
+.ui-calendar-container--medium .ui-calendar-input {
+  padding: 0.625rem 0.75rem;
+  min-width: 140px;
+}
+
+.ui-calendar-container--large .ui-calendar-input {
+  padding: 0.75rem 1rem;
+  min-width: 160px;
+}
+
+.ui-calendar-container--large .ui-calendar-display {
+  font-size: 16px;
+}
+
+.ui-calendar-container--large .ui-calendar-icon {
+  font-size: 18px;
+}
+
+/* Calendar Modal Content Styles */
+.ui-calendar-modal-content {
+  padding: 0;
+  min-width: 320px;
+  max-width: 400px;
+}
+
+.ui-calendar-body {
+  padding: 16px;
+}
+
+/* Weekly Selector Styles */
+.ui-calendar-weekly-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.ui-calendar-day-of-week-btn {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--text);
+  border-radius: var(--border-radius, 6px);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.ui-calendar-day-of-week-btn:hover {
+  background: var(--primaryHover);
+  border-color: var(--primary);
+}
+
+.ui-calendar-day-of-week-btn.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Monthly Calendar Styles */
+.ui-calendar-monthly {
+  width: 100%;
+}
+
+.ui-calendar-month {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+/* Date Grid Styles */
+.ui-calendar-date-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.ui-calendar-date-btn {
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--text);
+  border-radius: var(--border-radius, 6px);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-calendar-date-btn:hover {
+  background: var(--primaryHover);
+  border-color: var(--primary);
+  color: white;
+}
+
+.ui-calendar-date-btn.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}

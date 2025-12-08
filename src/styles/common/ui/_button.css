@@ -1,0 +1,171 @@
+/* UI Button Component Styles */
+/* Uses CSS variables from theme system */
+
+.ui-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--border-radius, 6px);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+  font-family: inherit;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  min-width: 100px;
+}
+
+/* Button Variants */
+.ui-button--primary {
+  background-color: var(--primary);
+}
+
+.ui-button--secondary {
+  background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.ui-button--danger {
+  background-color: var(--error);
+  color: white;
+}
+
+.ui-button--warning {
+  background-color: var(--warning);
+  color: white;
+}
+
+.ui-button--success {
+  background-color: var(--success);
+  color: white;
+}
+
+/* Button Sizes */
+.ui-button--small {
+  padding: 6px 12px;
+  font-size: 12px;
+  min-width: 80px;
+}
+
+.ui-button--medium {
+  padding: 8px 16px;
+  font-size: 14px;
+  min-width: 100px;
+}
+
+.ui-button--large {
+  padding: 12px 24px;
+  font-size: 16px;
+  min-width: 120px;
+}
+
+/* Hover States - Never same as background, use theme hover colors */
+.ui-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ui-button--primary:hover:not(:disabled) {
+  background-color: var(--primaryHover);
+}
+
+.ui-button--secondary:hover:not(:disabled) {
+  background-color: var(--primaryHover);
+  /* Ensure it's distinct from background */
+  border: 1px solid var(--primary);
+}
+
+.ui-button--danger:hover:not(:disabled) {
+  /* Use lighter/darker variant that's distinct from error */
+  background-color: color-mix(in srgb, var(--error) 85%, white);
+}
+
+.ui-button--warning:hover:not(:disabled) {
+  /* Use lighter/darker variant that's distinct from warning */
+  background-color: color-mix(in srgb, var(--warning) 85%, white);
+}
+
+.ui-button--success:hover:not(:disabled) {
+  /* Use lighter/darker variant that's distinct from success */
+  background-color: color-mix(in srgb, var(--success) 85%, white);
+}
+
+/* Active States */
+.ui-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Disabled States */
+.ui-button:disabled {
+  background-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.ui-button--danger:disabled,
+.ui-button--warning:disabled,
+.ui-button--success:disabled {
+  opacity: 0.5;
+}
+
+/* Loading State */
+.ui-button--loading {
+  pointer-events: none;
+  position: relative;
+  color: transparent;
+}
+
+.ui-button--loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ui-button-spin 0.6s linear infinite;
+}
+
+@keyframes ui-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Icon Positioning */
+.ui-button__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ui-button__icon--left {
+  order: -1;
+}
+
+.ui-button__icon--right {
+  order: 1;
+}
+
+/* Full Width Variant */
+.ui-button--full-width {
+  width: 100%;
+}

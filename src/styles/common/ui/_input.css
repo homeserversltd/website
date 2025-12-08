@@ -1,0 +1,108 @@
+/* UI Input Component Styles */
+
+.ui-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.ui-input-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.ui-input-label--required::after {
+  content: ' *';
+  color: var(--error);
+}
+
+/* Input Element */
+.ui-input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 6px);
+  background-color: var(--background);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.ui-input::placeholder {
+  color: color-mix(in srgb, var(--text) 50%, transparent);
+  opacity: 1;
+}
+
+.ui-input:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.ui-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+/* Input Sizes */
+.ui-input--small {
+  padding: 0.5rem 0.625rem;
+  font-size: 12px;
+}
+
+.ui-input--medium {
+  padding: 0.625rem 0.75rem;
+  font-size: 14px;
+}
+
+.ui-input--large {
+  padding: 0.75rem 1rem;
+  font-size: 16px;
+}
+
+/* Error State */
+.ui-input--error {
+  border-color: var(--error);
+}
+
+.ui-input--error:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--error) 20%, transparent);
+}
+
+/* Disabled State */
+.ui-input:disabled {
+  background-color: color-mix(in srgb, var(--background) 50%, var(--primary));
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Error Message */
+.ui-input-error {
+  font-size: 12px;
+  color: var(--error);
+  margin-top: -0.25rem;
+  line-height: 1.4;
+}
+
+/* Input with Icon Support (for future enhancement) */
+.ui-input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ui-input-with-icon .ui-input {
+  padding-left: 2.5rem;
+}
+
+.ui-input-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: color-mix(in srgb, var(--text) 60%, transparent);
+  pointer-events: none;
+}

@@ -14,6 +14,8 @@ export { EditableField } from './EditableField';
 export { Calendar } from './Calendar';
 export { TimePicker } from './TimePicker';
 export { RowInfoTile } from './RowInfoTile';
+export { Slider } from './Slider';
+export { TextBox } from './TextBox';
 
 // Types
 export type {
@@ -37,5 +39,8 @@ export type {
   CalendarProps,
   TimePickerProps,
   RowInfoTileProps,
+  SliderProps,
+  TextBoxProps,
+  TextBoxVariant,
   BadgeVariant,
 } from './types';

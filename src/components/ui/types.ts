@@ -178,3 +178,34 @@ export interface RowInfoTileProps extends BaseComponentProps {
   // Styling
   variant?: 'default' | 'selected' | 'active' | 'error';
 }
+
+export interface SliderProps extends BaseComponentProps {
+  min?: number;
+  max?: number;
+  value: number;
+  onChange: (value: number) => void;
+  onRelease?: (value: number) => void;
+  step?: number;
+  leftLabel?: string;
+  rightLabel?: string;
+  size?: ComponentSize;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}
+
+export type TextBoxVariant = 'plain' | 'log' | 'code' | 'terminal';
+
+export interface TextBoxProps extends BaseComponentProps {
+  variant?: TextBoxVariant;
+  size?: ComponentSize;
+  value?: string;
+  header?: React.ReactNode;
+  actions?: React.ReactNode;
+  monospace?: boolean;
+  scrollable?: boolean;
+  autoScroll?: boolean;
+  maxHeight?: string;
+  placeholder?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}

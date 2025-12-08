@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileInputProps } from './types';
+import { FileInputProps, ButtonSize } from './types';
 import { Button } from './Button';
 import '../../styles/common/ui/_file-input.css';
 
@@ -34,6 +34,13 @@ export const FileInput: React.FC<FileInputProps> = ({
     }
   };
 
+  // Map ComponentSize to ButtonSize (xs -> small, xl -> large)
+  const getButtonSize = (componentSize: typeof size): ButtonSize => {
+    if (componentSize === 'xs') return 'small';
+    if (componentSize === 'xl') return 'large';
+    return componentSize as ButtonSize;
+  };
+
   const displayValue = selectedFiles.length > 0
     ? selectedFiles.map(f => f.name).join(', ')
     : displayText;
@@ -56,7 +63,7 @@ export const FileInput: React.FC<FileInputProps> = ({
         />
         <Button
           variant="primary"
-          size={size}
+          size={getButtonSize(size)}
           onClick={handleButtonClick}
           disabled={disabled}
           className="ui-file-input__button"

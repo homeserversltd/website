@@ -2,7 +2,7 @@
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'success';
 export type ButtonSize = 'small' | 'medium' | 'large';
-export type ComponentSize = 'small' | 'medium' | 'large';
+export type ComponentSize = 'xs' | 'small' | 'medium' | 'large' | 'xl';
 
 export interface BaseComponentProps {
   className?: string;
@@ -66,6 +66,7 @@ export interface InputProps extends BaseComponentProps {
   name?: string;
   id?: string;
   required?: boolean;
+  readOnly?: boolean;
 }
 
 export interface CardProps extends BaseComponentProps {

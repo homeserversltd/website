@@ -13,6 +13,7 @@ export const Input: React.FC<InputProps> = ({
   size = 'medium',
   variant = 'default',
   disabled = false,
+  readOnly = false,
   className = '',
   name,
   id,
@@ -54,6 +55,7 @@ export const Input: React.FC<InputProps> = ({
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
+        readOnly={readOnly}
         required={required}
         className={inputClasses}
         aria-label={ariaLabel || label}

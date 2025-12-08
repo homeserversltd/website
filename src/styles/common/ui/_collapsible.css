@@ -18,7 +18,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1.125rem;
   background: color-mix(in srgb, var(--background) 50%, var(--border));
   cursor: pointer;
   user-select: none;
@@ -63,7 +63,7 @@
 }
 
 .ui-collapsible__content {
-  padding: 1.25rem;
+  padding: 1.125rem;
   background: var(--background);
   border-top: 1px solid var(--border);
   animation: slideDown 0.3s ease;
@@ -81,8 +81,24 @@
 }
 
 /* Size Variants */
+.ui-collapsible--xs .ui-collapsible__header {
+  padding: 0.5rem 0.75rem;
+}
+
+.ui-collapsible--xs .ui-collapsible__title {
+  font-size: 0.75rem;
+}
+
+.ui-collapsible--xs .ui-collapsible__content {
+  padding: 0.75rem;
+}
+
+.ui-collapsible--xs .ui-collapsible__icon {
+  font-size: 1rem;
+}
+
 .ui-collapsible--small .ui-collapsible__header {
-  padding: 0.75rem 1rem;
+  padding: 0.675rem 0.9rem;
 }
 
 .ui-collapsible--small .ui-collapsible__title {
@@ -90,11 +106,31 @@
 }
 
 .ui-collapsible--small .ui-collapsible__content {
-  padding: 1rem;
+  padding: 0.9rem;
+}
+
+.ui-collapsible--small .ui-collapsible__icon {
+  font-size: 1.1rem;
+}
+
+.ui-collapsible--medium .ui-collapsible__header {
+  padding: 0.9rem 1.125rem;
+}
+
+.ui-collapsible--medium .ui-collapsible__title {
+  font-size: 1rem;
+}
+
+.ui-collapsible--medium .ui-collapsible__content {
+  padding: 1.125rem;
+}
+
+.ui-collapsible--medium .ui-collapsible__icon {
+  font-size: 1.2rem;
 }
 
 .ui-collapsible--large .ui-collapsible__header {
-  padding: 1.25rem 1.5rem;
+  padding: 1.125rem 1.35rem;
 }
 
 .ui-collapsible--large .ui-collapsible__title {
@@ -102,7 +138,27 @@
 }
 
 .ui-collapsible--large .ui-collapsible__content {
-  padding: 1.5rem;
+  padding: 1.35rem;
+}
+
+.ui-collapsible--large .ui-collapsible__icon {
+  font-size: 1.3rem;
+}
+
+.ui-collapsible--xl .ui-collapsible__header {
+  padding: 1.35rem 1.575rem;
+}
+
+.ui-collapsible--xl .ui-collapsible__title {
+  font-size: 1.25rem;
+}
+
+.ui-collapsible--xl .ui-collapsible__content {
+  padding: 1.575rem;
+}
+
+.ui-collapsible--xl .ui-collapsible__icon {
+  font-size: 1.4rem;
 }
 
 /* Variant Styles */
@@ -142,7 +198,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1.125rem;
   background: color-mix(in srgb, var(--background) 50%, var(--border));
   cursor: pointer;
   user-select: none;
@@ -155,7 +211,7 @@
 }
 
 .section-content {
-  padding: 1.25rem;
+  padding: 1.125rem;
   background: var(--background);
   border-top: 1px solid var(--border);
   animation: slideDown 0.3s ease;

@@ -17,6 +17,7 @@ export const Tab: React.FC<TabProps> = ({
   onStarClick,
   adminMode = false,
   adminOnly = false,
+  depth = 0,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
 }) => {
@@ -44,6 +45,7 @@ export const Tab: React.FC<TabProps> = ({
 
   const showVisibilityToggle = adminMode && !adminOnly;
   const showStarButton = visible && !adminOnly;
+  const hasBothIcons = showVisibilityToggle && showStarButton;
 
   return (
     <div
@@ -62,6 +64,8 @@ export const Tab: React.FC<TabProps> = ({
       aria-selected={active}
       data-visibility={visible ? 'visible' : 'hidden'}
       data-starred={starred}
+      data-has-both-icons={hasBothIcons}
+      data-depth={depth}
     >
       {/* Visibility toggle column */}
       {showVisibilityToggle && (

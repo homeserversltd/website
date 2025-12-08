@@ -226,6 +226,8 @@
 /* Admin Only State */
 .ui-tab--admin-only {
   /* Admin-only tabs don't show visibility/star toggles */
+  /* Placeholder for future admin-only specific styling */
+  position: relative;
 }
 
 /* Tab Sizes */
@@ -244,6 +246,47 @@
   font-size: 16px;
 }
 
+/* Depth indicators - visual hierarchy for nested tabs using pseudo-element */
+.ui-tab[data-depth="1"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--border);
+  border-radius: 6px 0 0 6px;
+}
+
+.ui-tab[data-depth="2"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--border);
+  border-radius: 6px 0 0 6px;
+}
+
+.ui-tab[data-depth="3"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background-color: var(--border);
+  border-radius: 6px 0 0 6px;
+}
+
+/* Active tabs with depth get primary color indicator */
+.ui-tab[data-depth="1"].ui-tab--active::before,
+.ui-tab[data-depth="2"].ui-tab--active::before,
+.ui-tab[data-depth="3"].ui-tab--active::before {
+  background-color: var(--primary);
+}
+
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .ui-tab-group {
@@ -260,6 +303,28 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     grid-template-columns: auto 1fr auto;
+  }
+
+  /* Depth indicators on mobile - same approach, no layout changes */
+  .ui-tab[data-depth="1"]::before {
+    width: 4px;
+  }
+
+  .ui-tab[data-depth="2"]::before {
+    width: 5px;
+  }
+
+  .ui-tab[data-depth="3"]::before {
+    width: 6px;
+  }
+
+  /* Center text when both eye and star icons are present */
+  .ui-tab[data-has-both-icons="true"] .ui-tab__content {
+    justify-self: center;
+  }
+
+  .ui-tab[data-has-both-icons="true"] .ui-tab__label {
+    text-align: center;
   }
 
   .ui-tab--small {

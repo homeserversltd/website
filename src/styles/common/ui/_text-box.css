@@ -76,6 +76,7 @@
 /* Content (textarea or pre) */
 .ui-text-box__content {
   width: 100%;
+  max-width: 100%;
   min-height: 100%;
   margin: 0;
   padding: 1rem;
@@ -209,6 +210,11 @@
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
+  .ui-text-box {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .ui-text-box__header {
     padding: 0.625rem 0.875rem;
     flex-wrap: wrap;
@@ -220,7 +226,20 @@
     margin-top: 0.5rem;
   }
 
+  .ui-text-box__container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .ui-text-box__content {
     padding: 0.875rem;
+    width: 100%;
+    max-width: 100%;
+    /* Force wrapping of long lines on mobile */
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    /* Ensure content respects container width */
+    white-space: pre-wrap;
   }
 }

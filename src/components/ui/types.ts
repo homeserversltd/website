@@ -44,6 +44,8 @@ export interface TabProps extends BaseComponentProps {
   // Admin mode
   adminMode?: boolean;
   adminOnly?: boolean;
+  // Depth level for nested tabs (0 = top level, 1 = second level, 2 = third level, etc.)
+  depth?: number;
 }
 
 export interface TabGroupProps {

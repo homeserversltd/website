@@ -1,0 +1,173 @@
+/* ProgressBar Component Styles */
+
+.ui-progress-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ui-progress-bar__labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text);
+  padding: 0 4px;
+}
+
+.ui-progress-bar__label {
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: -4px;
+}
+
+.ui-progress-bar__label-left,
+.ui-progress-bar__label-right {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.ui-progress-bar__container {
+  width: 100%;
+  height: 24px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ui-progress-bar__fill {
+  height: 100%;
+  background-color: var(--secondary);
+  border-radius: 12px;
+  transition: width 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+}
+
+.ui-progress-bar__text {
+  color: var(--background);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Size Variants */
+.ui-progress-bar--small .ui-progress-bar__container {
+  height: 16px;
+}
+
+.ui-progress-bar--small .ui-progress-bar__text {
+  font-size: 0.75rem;
+}
+
+.ui-progress-bar--small .ui-progress-bar__fill {
+  min-width: 30px;
+}
+
+.ui-progress-bar--large .ui-progress-bar__container {
+  height: 32px;
+}
+
+.ui-progress-bar--large .ui-progress-bar__text {
+  font-size: 1rem;
+}
+
+.ui-progress-bar--large .ui-progress-bar__fill {
+  min-width: 50px;
+}
+
+/* Variant Styles */
+.ui-progress-bar__fill--memory {
+  background-color: var(--secondary);
+}
+
+.ui-progress-bar__fill--swap {
+  background-color: var(--accent);
+}
+
+.ui-progress-bar__fill--process {
+  background-color: var(--primaryHover);
+}
+
+.ui-progress-bar__fill--disk {
+  background-color: var(--secondary);
+}
+
+/* Legacy class names for backward compatibility */
+.memory-bar {
+  width: 100%;
+  height: 24px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.memory-bar-fill {
+  height: 100%;
+  background-color: var(--secondary);
+  border-radius: 12px;
+  transition: width 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+}
+
+.memory-bar-fill-swap {
+  background-color: var(--accent);
+}
+
+.process-bar {
+  width: 100%;
+  height: 24px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.process-bar-fill {
+  height: 100%;
+  background-color: var(--primaryHover);
+  border-radius: 12px;
+  transition: width 0.3s ease-out;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.process-text-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  z-index: 1;
+}
+
+.disk-usage-bar {
+  width: 100%;
+  height: 24px;
+  background-color: var(--hiddenTabBackground);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.disk-usage-fill {
+  height: 100%;
+  background-color: var(--secondary);
+  border-radius: 12px;
+  transition: width 0.3s ease-out;
+  min-width: 40px;
+}

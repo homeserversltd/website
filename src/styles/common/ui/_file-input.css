@@ -1,0 +1,89 @@
+/* FileInput Component Styles */
+
+.ui-file-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ui-file-input__label {
+  font-size: 0.9em;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.ui-file-input__controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ui-file-input__input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ui-file-input__button {
+  flex-shrink: 0;
+}
+
+.ui-file-input__display {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 8px);
+  background-color: var(--background);
+  color: var(--text);
+  font-size: 14px;
+  cursor: default;
+  transition: border-color 0.2s ease;
+}
+
+.ui-file-input__display:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.ui-file-input__display:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--hiddenTabBackground);
+}
+
+/* Size variants */
+.ui-file-input__display--small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.ui-file-input__display--medium {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.ui-file-input__display--large {
+  padding: 12px 16px;
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  .ui-file-input__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .ui-file-input__button {
+    width: 100%;
+  }
+  
+  .ui-file-input__display {
+    width: 100%;
+    min-width: unset;
+  }
+}

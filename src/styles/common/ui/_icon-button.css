@@ -1,0 +1,99 @@
+/* IconButton Component Styles */
+
+.ui-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background-color: var(--primary);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+/* Size variants */
+.ui-icon-button--small {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  padding: 4px;
+}
+
+.ui-icon-button--medium {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+  padding: 6px;
+}
+
+.ui-icon-button--large {
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+  padding: 8px;
+}
+
+/* Shape variants */
+.ui-icon-button--square {
+  border-radius: var(--border-radius, 8px);
+}
+
+.ui-icon-button--circle {
+  border-radius: 50%;
+}
+
+/* Variant styles */
+.ui-icon-button--default {
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.ui-icon-button--primary {
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.ui-icon-button--secondary {
+  background-color: var(--hiddenTabBackground);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Hover states */
+.ui-icon-button:hover:not(:disabled) {
+  background-color: var(--primaryHover);
+  border-color: var(--border);
+  transform: scale(1.05);
+}
+
+.ui-icon-button--secondary:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: var(--primary);
+}
+
+/* Active state */
+.ui-icon-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Focus state */
+.ui-icon-button:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+.ui-icon-button--disabled,
+.ui-icon-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--hiddenTabBackground);
+  border-color: var(--border);
+}
+
+.ui-icon-button--disabled:hover,
+.ui-icon-button:disabled:hover {
+  transform: none;
+  background-color: var(--hiddenTabBackground);
+}

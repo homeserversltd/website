@@ -11,6 +11,7 @@ export const Input: React.FC<InputProps> = ({
   label,
   error,
   size = 'medium',
+  variant = 'default',
   disabled = false,
   className = '',
   name,
@@ -25,6 +26,7 @@ export const Input: React.FC<InputProps> = ({
 
   const inputClasses = [
     'ui-input',
+    variant !== 'default' ? `ui-input--${variant}` : '',
     `ui-input--${size}`,
     error ? 'ui-input--error' : '',
     className,

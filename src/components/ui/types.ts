@@ -51,6 +51,8 @@ export interface TabGroupProps {
   className?: string;
 }
 
+export type InputVariant = 'default' | 'display';
+
 export interface InputProps extends BaseComponentProps {
   type?: 'text' | 'password' | 'number' | 'email' | 'tel' | 'url';
   value?: string | number;
@@ -60,6 +62,7 @@ export interface InputProps extends BaseComponentProps {
   label?: string;
   error?: string;
   size?: ComponentSize;
+  variant?: InputVariant;
   name?: string;
   id?: string;
   required?: boolean;
@@ -206,6 +209,83 @@ export interface TextBoxProps extends BaseComponentProps {
   autoScroll?: boolean;
   maxHeight?: string;
   placeholder?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}
+
+export interface BreadcrumbItem {
+  name: string;
+  path: string;
+}
+
+export interface BreadcrumbsProps extends BaseComponentProps {
+  items: BreadcrumbItem[];
+  currentPath: string;
+  onNavigate: (path: string) => void;
+  separator?: string;
+}
+
+export interface IconButtonProps extends BaseComponentProps {
+  icon: import('@fortawesome/fontawesome-svg-core').IconDefinition;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  size?: ComponentSize;
+  variant?: 'default' | 'primary' | 'secondary';
+  shape?: 'square' | 'circle';
+  type?: 'button' | 'submit' | 'reset';
+  'aria-label': string;
+}
+
+export interface FileInputProps extends BaseComponentProps {
+  onChange: (files: FileList | null) => void;
+  multiple?: boolean;
+  accept?: string;
+  label?: string;
+  disabled?: boolean;
+  buttonText?: string;
+  displayText?: string;
+  size?: ComponentSize;
+  'aria-label'?: string;
+}
+
+export type ProgressBarVariant = 'default' | 'memory' | 'swap' | 'process' | 'disk';
+
+export interface ProgressBarProps extends BaseComponentProps {
+  value: number; // 0-100
+  variant?: ProgressBarVariant;
+  size?: ComponentSize;
+  showPercentage?: boolean;
+  label?: string;
+  leftLabel?: string;
+  rightLabel?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}
+
+export interface TableColumnSizing {
+  minWidth?: string;
+  width?: string;
+}
+
+export interface TableProps extends BaseComponentProps {
+  headers?: React.ReactNode[];
+  rows: React.ReactNode[][];
+  responsive?: boolean;
+  columnSizing?: TableColumnSizing[];
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+}
+
+export type CollapsibleVariant = 'default' | 'card' | 'minimal';
+
+export interface CollapsibleProps extends BaseComponentProps {
+  title?: string;
+  defaultCollapsed?: boolean;
+  headerContent?: React.ReactNode;
+  variant?: CollapsibleVariant;
+  size?: ComponentSize;
+  onToggle?: (expanded: boolean) => void;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
   'aria-label'?: string;
   'aria-labelledby'?: string;
 }

@@ -16,6 +16,12 @@ export { TimePicker } from './TimePicker';
 export { RowInfoTile } from './RowInfoTile';
 export { Slider } from './Slider';
 export { TextBox } from './TextBox';
+export { Breadcrumbs } from './Breadcrumbs';
+export { IconButton } from './IconButton';
+export { FileInput } from './FileInput';
+export { ProgressBar } from './ProgressBar';
+export { Table } from './Table';
+export { Collapsible } from './Collapsible';
 
 // Types
 export type {
@@ -43,4 +49,14 @@ export type {
   TextBoxProps,
   TextBoxVariant,
   BadgeVariant,
+  BreadcrumbsProps,
+  BreadcrumbItem,
+  IconButtonProps,
+  FileInputProps,
+  ProgressBarProps,
+  ProgressBarVariant,
+  TableProps,
+  TableColumnSizing,
+  CollapsibleProps,
+  CollapsibleVariant,
 } from './types';

@@ -43,8 +43,8 @@ export const Tab: React.FC<TabProps> = ({
     .filter(Boolean)
     .join(' ');
 
-  const showVisibilityToggle = adminMode && !adminOnly;
-  const showStarButton = visible && !adminOnly;
+  const showVisibilityToggle = adminMode && !adminOnly && depth <= 1;
+  const showStarButton = visible && !adminOnly && depth <= 1;
   const hasBothIcons = showVisibilityToggle && showStarButton;
 
   return (

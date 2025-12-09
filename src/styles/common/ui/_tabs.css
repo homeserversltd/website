@@ -6,23 +6,9 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   align-items: flex-end;
   flex-wrap: wrap;
-}
-
-.ui-tab-group::-webkit-scrollbar {
-  height: 4px;
-}
-
-.ui-tab-group::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.ui-tab-group::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 2px;
 }
 
 /* Individual Tab - Matches TabBar style */

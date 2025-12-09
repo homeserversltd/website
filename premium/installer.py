@@ -173,6 +173,9 @@ class PremiumInstaller:
             if not batch_mode:
                 category_logger.info("=== POST-INSTALLATION PHASE ===")
                 
+                # Tab-specific post-install hooks
+                self._run_tab_post_install_hooks(tab_name, tab_path, category_logger)
+                
                 # Frontend rebuild
                 if not self.installation_state.build_manager.rebuild_frontend():
                     category_logger.error("Frontend rebuild failed")
@@ -520,6 +523,17 @@ class PremiumInstaller:
         except Exception as e:
             category_logger.error(f"Batch installation failed with exception: {str(e)}")
             return False
+    
+    def _run_tab_post_install_hooks(self, tab_name: str, tab_path: str, logger: logging.Logger) -> None:
+        """Run tab-specific post-installation hooks."""
+        try:
+            # backupTab: Note that venv setup is optional and triggered via UI button
+            # Files are installed, but venv setup requires user action via /install endpoint
+            if tab_name == "backupTab":
+                logger.info("backupTab installed - venv setup available via UI install button")
+                logger.info("User can trigger venv installation via the backupTab UI or API endpoint")
+        except Exception as e:
+            logger.warning(f"Post-install hook failed for {tab_name}: {e}")
     
     def _rollback_installation(self, category_logger: logging.Logger) -> None:
         """Rollback installation changes using utility managers."""

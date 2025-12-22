@@ -53,8 +53,6 @@
 .ui-tab--active {
   background-color: var(--primary);
   color: var(--text);
-  border-color: var(--primary);
-  border-top: 2px solid var(--primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-weight: 500;
 }

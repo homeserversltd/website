@@ -1,0 +1,19 @@
+{
+    "tabs": {
+        "youtube": {
+          "config": {
+            "displayName": "YouTube",
+            "adminOnly": true,
+            "order": 90,
+            "isEnabled": true
+          },
+          "visibility": {
+            "tab": true,
+            "elements": {
+            }
+          },
+          "data": {
+          }
+        }
+    }
+}

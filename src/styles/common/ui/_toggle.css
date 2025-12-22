@@ -1,0 +1,188 @@
+/* UI Toggle/Switch Component Styles */
+
+.ui-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1;
+}
+
+.ui-toggle--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Toggle Switch Container - Make whole area clickable */
+.ui-toggle__switch {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* Hide native checkbox but keep it accessible */
+.ui-toggle__input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+  top: 0;
+  left: 0;
+}
+
+/* Toggle Slider - Visible background track */
+.ui-toggle__slider {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  background-color: var(--secondary);
+  transition: background-color 0.4s ease;
+  border-radius: 24px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+  /* Ensure background fills container exactly */
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Toggle Slider Knob */
+.ui-toggle__slider::before {
+  position: absolute;
+  content: "";
+  background-color: white;
+  transition: transform 0.4s ease;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Toggle Sizes - Make whole switch area clickable */
+.ui-toggle--small .ui-toggle__switch {
+  width: 36px;
+  height: 20px;
+}
+
+.ui-toggle--small .ui-toggle__input {
+  width: 36px;
+  height: 20px;
+}
+
+.ui-toggle--small .ui-toggle__slider::before {
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ui-toggle--medium .ui-toggle__switch {
+  width: 46px;
+  height: 24px;
+}
+
+.ui-toggle--medium .ui-toggle__input {
+  width: 46px;
+  height: 24px;
+}
+
+.ui-toggle--medium .ui-toggle__slider::before {
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ui-toggle--large .ui-toggle__switch {
+  width: 56px;
+  height: 28px;
+}
+
+.ui-toggle--large .ui-toggle__input {
+  width: 56px;
+  height: 28px;
+}
+
+.ui-toggle--large .ui-toggle__slider::before {
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Checked State */
+.ui-toggle__input:checked + .ui-toggle__slider {
+  background-color: var(--success);
+}
+
+.ui-toggle--small .ui-toggle__input:checked + .ui-toggle__slider::before {
+  transform: translateY(-50%) translateX(16px);
+}
+
+.ui-toggle--medium .ui-toggle__input:checked + .ui-toggle__slider::before {
+  transform: translateY(-50%) translateX(22px);
+}
+
+.ui-toggle--large .ui-toggle__input:checked + .ui-toggle__slider::before {
+  transform: translateY(-50%) translateX(28px);
+}
+
+/* Hover State - Make background reactive */
+.ui-toggle__switch:hover:not(.ui-toggle--disabled) .ui-toggle__slider {
+  background-color: var(--primaryHover);
+  border-color: var(--primary);
+}
+
+.ui-toggle__switch:hover:not(.ui-toggle--disabled) .ui-toggle__input:checked + .ui-toggle__slider {
+  background-color: color-mix(in srgb, var(--success) 110%, white);
+}
+
+/* Disabled State */
+.ui-toggle--disabled .ui-toggle__switch {
+  cursor: not-allowed;
+}
+
+.ui-toggle__input:disabled + .ui-toggle__slider {
+  background-color: var(--secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ui-toggle__input:disabled:checked + .ui-toggle__slider {
+  background-color: color-mix(in srgb, var(--success) 60%, transparent);
+}
+
+/* Focus State */
+.ui-toggle__input:focus-visible + .ui-toggle__slider {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Label */
+.ui-toggle__label {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.ui-toggle--small .ui-toggle__label {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ui-toggle--large .ui-toggle__label {
+  font-size: 16px;
+  line-height: 1.6;
+}

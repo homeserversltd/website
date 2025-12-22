@@ -1,0 +1,419 @@
+.directory-browser {
+  /* Styles for the main container if needed */
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden; /* Ensures border-radius applies to children */
+  background-color: var(--background);
+}
+
+.directory-browser-header {
+  display: flex;
+  flex-wrap: wrap; /* Allow buttons to wrap to the next line */
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--hiddenTabBackground);
+  border-bottom: 1px solid var(--border);
+  gap: 8px; /* Space between buttons */
+}
+
+.directory-browser-header button {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--primary);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s, border-color 0.2s;
+  display: inline-flex; /* Align icon and text */
+  align-items: center;
+  gap: 4px;
+}
+
+.directory-browser-header button:hover:not(:disabled) {
+  background-color: var(--primaryHover);
+  border-color: var(--border);
+}
+
+.directory-browser-header button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Specific button styling if needed */
+.refresh-button {
+  /* Optional: specific styles */
+  font-weight: bold;
+}
+
+.admin-button {
+  /* Optional: common styles for admin buttons */
+}
+
+.directory-tree-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 8px;
+  max-height: 70vh; /* Adjust as needed */
+}
+
+.directory-entry {
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s ease-in-out;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Ensure the left gutter captures clicks comfortably */
+  position: relative;
+}
+
+.directory-entry:hover {
+  background-color: var(--primaryHover);
+}
+
+.directory-entry.selected {
+  background-color: var(--primaryHover);
+  font-weight: bold;
+  color: var(--text);
+}
+
+.directory-entry.loading::after {
+  content: '...';
+  margin-left: 5px;
+}
+
+.tree-line {
+  background-color: var(--border);
+  position: absolute;
+}
+
+.tree-line.vertical {
+  width: 1px;
+}
+
+.tree-line.horizontal {
+  height: 1px;
+}
+
+.directory-error,
+.directory-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--secondary);
+}
+
+.directory-loading-initial {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px; /* Ensure spinner is visible */
+  padding: 20px;
+} 
+
+@media (max-width: 480px) {
+  .directory-tree-container {
+    max-height: 35vh;
+    padding: 4px;
+  }
+}
+
+.directory-admin-controls button i {
+  margin-right: 6px;
+}
+
+.directory-browser-header button i,
+.directory-admin-controls button i {
+  /* margin-right: 6px; */ /* Remove if buttons only have icons now or adjust as needed */
+  /* Ensure icons are centered if they are the only content */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%; /* Make icon take full width of its container if it's the sole child */
+  height: 100%; /* Make icon take full height */
+}
+
+/* Style for the new toggle PIN button */
+.directory-admin-controls .toggle-pin-button {
+  /* Base styles similar to other admin buttons */
+  /* background-color: var(--button-secondary-background); */ /* Will be overridden by active/inactive state */
+  color: var(--button-secondary-text); /* Icon color */
+  border: 1px solid var(--button-secondary-border);
+  padding: 8px; /* Adjust padding for icon-only */
+  width: 40px; /* Example fixed width */
+  height: 36px; /* Example fixed height (to match other buttons if they are this size) */
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em; /* Make icon slightly larger if desired */
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; /* Center the icon */
+  line-height: 1; /* Ensure icon is centered vertically */
+  background-color: var(--danger-background); /* Default to RED (PIN OFF) */
+  color: var(--danger-text); /* Icon color for OFF state */
+  border-color: var(--danger-border);
+}
+
+.directory-admin-controls .toggle-pin-button:hover {
+  /* background-color: var(--button-secondary-hover-background); */
+  opacity: 0.8;
+}
+
+.directory-admin-controls .toggle-pin-button:disabled {
+  background-color: var(--button-disabled-background) !important; /* Ensure override */
+  color: var(--button-disabled-text) !important;
+  border-color: var(--button-disabled-border) !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.directory-admin-controls .toggle-pin-button.active {
+  background-color: var(--success-background); /* GREEN (PIN ON) */
+  color: var(--success-text); /* Icon color for ON state */
+  border-color: var(--success-border);
+}
+
+.directory-admin-controls .toggle-pin-button.active:hover {
+  /* background-color: var(--button-primary-hover-background); */
+  opacity: 0.8;
+}
+
+/* Remove margin from icon as it's now the only content */
+.directory-admin-controls .toggle-pin-button .fa-lock,
+.directory-admin-controls .toggle-pin-button .fa-unlock {
+  margin-right: 0;
+}
+
+/* Toggle Switch Styles */
+.toggle-pin-button {
+  position: relative;
+  width: 46px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  border-radius: 24px !important;
+  transition: all 0.3s ease !important;
+  overflow: hidden;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  /* Set background properties individually without the shorthand */
+  background-color: var(--error) !important;
+  background-image: none !important;
+  background-clip: padding-box !important;
+  background-origin: padding-box !important;
+  background-attachment: scroll !important;
+  background-repeat: no-repeat !important;
+  background-size: auto !important;
+  background-position: 0 0 !important;
+}
+
+.toggle-pin-button::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background-color: var(--text) !important;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.toggle-pin-button.active {
+  background-color: var(--success) !important;
+}
+
+.toggle-pin-button.active::before {
+  transform: translateX(22px);
+}
+
+.toggle-pin-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-pin-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.directory-error button,
+.directory-empty button {
+  background: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.directory-error button:hover,
+.directory-empty button:hover {
+  background: var(--primaryHover);
+  border-color: var(--border);
+}
+
+@keyframes macSelect {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.directory-entry:active {
+  animation: macSelect 0.2s ease;
+}
+
+.directory-browser.loading {
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.directory-error,
+.directory-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--secondary);
+}
+
+.directory-error button,
+.directory-empty button {
+  margin-top: 8px;
+  padding: 6px 12px;
+}
+
+.force-allow-button {
+  position: relative;
+}
+
+.force-allow-button.loading::after {
+  content: '';
+  position: absolute;
+  right: -25px;
+  border: 3px solid var(--text);
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Hierarchical navigation styles */
+.expand-control {
+  transition: all 0.2s ease;
+  color: var(--secondary);
+  background-color: transparent;
+  border: 1px solid transparent;
+}
+
+.expand-control:hover {
+  color: var(--text);
+  background-color: var(--primaryHover);
+  border-color: var(--border);
+  transform: scale(1.05);
+}
+
+.directory-entry[aria-expanded="true"] .expand-control {
+  color: var(--primary);
+}
+
+.directory-entry[aria-expanded="false"] .expand-control {
+  color: var(--secondary);
+}
+
+.directory-entry:hover .expand-control {
+  color: var(--text);
+}
+
+/* Animation for expanding/collapsing */
+@keyframes rotate-expand {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(90deg); }
+}
+
+@keyframes rotate-collapse {
+  from { transform: rotate(90deg); }
+  to { transform: rotate(0deg); }
+}
+
+.expand-control.expanding {
+  animation: rotate-expand 0.2s ease;
+}
+
+.expand-control.collapsing {
+  animation: rotate-collapse 0.2s ease;
+}
+
+/* Breadcrumb navigation styles */
+.directory-breadcrumb-container {
+  padding: 8px 12px;
+  background-color: var(--hiddenTabBackground);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9em;
+}
+
+.breadcrumb-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.breadcrumb-item {
+  color: var(--text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.breadcrumb-item:not(.current) {
+  color: var(--secondary);
+}
+
+.breadcrumb-item:not(.current):hover {
+  background-color: var(--primaryHover);
+  color: var(--text);
+}
+
+.breadcrumb-item.current {
+  color: var(--primary);
+  background-color: var(--primaryHover);
+}
+
+.breadcrumb-separator {
+  color: var(--secondary);
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .directory-breadcrumb-container {
+    padding: 6px 8px;
+    font-size: 0.8em;
+  }
+  
+  .breadcrumb-navigation {
+    gap: 1px;
+  }
+  
+  .breadcrumb-item {
+    padding: 1px 4px;
+  }
+}

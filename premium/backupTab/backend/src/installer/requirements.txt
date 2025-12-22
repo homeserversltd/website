@@ -1,0 +1,23 @@
+# Core dependencies (required)
+cryptography>=3.4.8
+pathlib2>=2.3.6; python_version<'3.4'
+
+# Additional dependencies (required)
+rich>=13.0.0
+pyyaml>=6.0
+python-dateutil>=2.8.0
+
+# Cloud provider dependencies (optional)
+# AWS S3 support
+boto3>=1.26.0
+
+# Google Drive support
+google-auth>=2.15.0
+google-auth-oauthlib>=0.8.0
+google-api-python-client>=2.70.0
+
+# Google Cloud Storage support
+google-cloud-storage>=2.10.0
+
+# Backblaze B2 support
+b2sdk>=1.19.0

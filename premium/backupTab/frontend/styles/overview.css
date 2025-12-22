@@ -1,0 +1,504 @@
+/**
+ * Overview tab styles - two-column layout matching providers.css
+ */
+
+.overview-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+  min-height: 600px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px var(--primary), 0 2px 4px var(--border);
+  background-color: var(--hiddenTabBackground);
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.overview-content {
+  display: flex;
+  flex: 1;
+  gap: 0;
+}
+
+/* Left Column - Providers */
+.providers-panel {
+  flex: 0 0 300px;
+  background: var(--background);
+  border-radius: 0;
+  padding: 20px;
+  overflow-y: auto;
+  border-right: 2px solid var(--border);
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
+
+/* Right Column - Files */
+.files-panel {
+  flex: 1;
+  background: var(--background);
+  border-radius: 0;
+  padding: 20px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+/* Stats Banner */
+.backup-tablet .stats-banner {
+  background: var(--accent);
+  color: var(--background);
+  padding: 12px 20px;
+  margin: 0 0 20px 0;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px var(--border);
+}
+
+.backup-tablet .stats-banner h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.backup-tablet .stats-banner .backup-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Stats Grid Layout */
+.backup-tablet .stats-grid {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.backup-tablet .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.backup-tablet .stat-item .backup-count,
+.backup-tablet .stat-item .next-backup,
+.backup-tablet .stat-item .backup-type {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--background);
+}
+
+.backup-tablet .stat-label {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+  color: var(--background);
+}
+
+/* Backup type specific styling */
+.backup-tablet .stat-item .backup-type {
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Panel Headers */
+.panel-header h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-description {
+  margin: 0 0 1.5rem 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Provider List - Left Column */
+.provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Provider item styles removed - using centralized Card component */
+
+/* Click animation for provider cards */
+.provider-item.clicked {
+  animation: backup-providerClick 0.3s ease-out;
+}
+
+@keyframes backup-providerClick {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 4px var(--border);
+  }
+  50% {
+    transform: scale(0.95);
+    box-shadow: 0 0 12px var(--accent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 4px var(--border);
+  }
+}
+
+.provider-icon {
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.provider-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-name {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+  font-size: 0.9rem;
+}
+
+.provider-description {
+  font-size: 0.75rem;
+  color: var(--text);
+  opacity: 0.8;
+  margin-bottom: 0.15rem;
+}
+
+/* Provider status badge styles removed - using centralized Badge component */
+
+
+/* File List - Right Column */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.file-item:hover {
+  background: var(--primaryHover);
+  border-color: var(--border);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.file-icon {
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.file-path {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: var(--text);
+  word-break: break-all;
+}
+
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.empty-state p {
+  margin: 0;
+  font-style: italic;
+}
+
+/* Version Footer */
+.version-footer {
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  font-size: 0.8rem;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+/* Installation Section Integration */
+.backup-tablet .installation-section {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Container adjustments - scoped to backup tablet */
+.backup-tablet .overview-container {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+/* Scoped overview layout */
+.backup-tablet .overview-layout {
+  width: 100%;
+  max-width: none;
+}
+
+/* ===== MOBILE RESPONSIVE RULES ===== */
+@media (max-width: 768px) {
+  /* Stack overview content vertically on mobile */
+  .overview-content {
+    flex-direction: column;
+  }
+
+  /* Providers panel takes full width and reduced height */
+  .providers-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid var(--border);
+    padding: 15px;
+    max-height: 50vh;
+    min-height: 200px;
+  }
+
+  /* Files panel takes full width below providers */
+  .files-panel {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 15px;
+    max-height: 50vh;
+    min-height: 200px;
+  }
+
+  /* Compact panel headers on mobile */
+  .panel-header h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .panel-description {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Tighter spacing for provider list */
+  .provider-list {
+    gap: 0.5rem;
+  }
+
+  /* Compact file items */
+  .file-item {
+    padding: 10px;
+  }
+
+  .file-path {
+    font-size: 0.85rem;
+  }
+
+  /* Stats grid adjustments (if still using old classes) */
+  .backup-tablet .stats-grid {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .backup-tablet .stat-item {
+    flex: 1 1 calc(50% - 0.375rem);
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Even more compact on very small screens */
+  .providers-panel,
+  .files-panel {
+    padding: 12px;
+    max-height: 45vh;
+  }
+
+  .panel-header h3 {
+    font-size: 0.9rem;
+  }
+
+  .panel-description {
+    font-size: 0.75rem;
+  }
+
+  .provider-list {
+    gap: 0.4rem;
+  }
+
+  .file-item {
+    padding: 8px;
+  }
+
+  .file-path {
+    font-size: 0.8rem;
+  }
+
+  /* Stats grid becomes 2x2 grid on very small screens */
+  .backup-tablet .stats-grid {
+    gap: 0.5rem;
+  }
+
+  .backup-tablet .stat-item {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 100px;
+  }
+}
+
+/* ===== CHUNK STATISTICS SECTION ===== */
+.chunk-stats-section {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chunk-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.chunk-stats-section .metric-card {
+  padding: 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.chunk-stats-section .metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent);
+}
+
+.chunk-stats-section .metric-card > div:first-child {
+  font-size: 0.875rem;
+  color: var(--text);
+  opacity: 0.7;
+  margin-bottom: 0.5rem;
+}
+
+.chunk-stats-section .metric-card > div:last-child {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text);
+  margin-top: 0.5rem;
+}
+
+.chunk-stats-section .metric-card > div:last-child[style*="success"] {
+  color: var(--success);
+}
+
+.chunk-stats-section .chunk-metrics .metric-card:has(div:last-child[style*="success"]) > div:last-child {
+  color: var(--success);
+}
+
+/* Error message styling */
+.chunk-stats-section div[style*="error"] {
+  color: var(--error);
+  padding: 1rem;
+  background: color-mix(in srgb, var(--error) 10%, var(--background));
+  border: 1px solid var(--error);
+  border-radius: 4px;
+}
+
+/* Empty state styling */
+.chunk-stats-section div[style*="textAlign"] {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* Loading state */
+.chunk-stats-section div:has-text("Loading statistics") {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* Mobile responsive for chunk statistics */
+@media (max-width: 768px) {
+  .chunk-stats-section {
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+  }
+
+  .chunk-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .chunk-stats-section .metric-card {
+    padding: 0.75rem;
+  }
+
+  .chunk-stats-section .metric-card > div:first-child {
+    font-size: 0.8rem;
+  }
+
+  .chunk-stats-section .metric-card > div:last-child {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chunk-stats-section {
+    margin-top: 1rem;
+    padding: 0.75rem;
+  }
+
+  .chunk-metrics {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .chunk-stats-section .metric-card {
+    padding: 0.75rem;
+  }
+
+  .chunk-stats-section .metric-card > div:first-child {
+    font-size: 0.75rem;
+  }
+
+  .chunk-stats-section .metric-card > div:last-child {
+    font-size: 1.1rem;
+  }
+}

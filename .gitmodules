@@ -1,0 +1,21 @@
+[submodule "premium/testTab"]
+	path = premium/testTab
+	url = https://github.com/homeserversltd/testTab.git
+[submodule "premium/conflictTab"]
+	path = premium/conflictTab
+	url = git@github.com:homeserversltd/conflictTab.git
+[submodule "premium/backupTab"]
+	path = premium/backupTab
+	url = git@github.com:homeserversltd/backupTab.git
+[submodule "premium/miner"]
+	path = premium/miner
+	url = git@home.arpa:owner/miner.git
+[submodule "premium/dhcp"]
+	path = premium/dhcp
+	url = git@github.com:homeserversltd/dhcp.git
+[submodule "premium/youtube"]
+	path = premium/youtube
+	url = git@github.com:homeserversltd/youtube.git
+[submodule "premium/nasLinker"]
+	path = premium/nasLinker
+	url = git@github.com:homeserversltd/linkerTab.git

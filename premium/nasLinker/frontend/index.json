@@ -1,0 +1,145 @@
+{
+  "name": "nasLinker",
+  "files": [
+    {
+      "source": "frontend/index.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/index.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main React entry point for the nasLinker tablet"
+    },
+    {
+      "source": "frontend/types.ts",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/types.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "TypeScript types for the tablet"
+    },
+    {
+      "source": "frontend/PortalCard.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/PortalCard.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Tablet-specific CSS"
+    },
+    {
+      "source": "frontend/components/FileBrowser.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/FileBrowser.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main file browser component"
+    },
+    {
+      "source": "frontend/components/FileBrowser.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/FileBrowser.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "File browser styles"
+    },
+    {
+      "source": "frontend/components/FileItem.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/FileItem.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "File/directory item component"
+    },
+    {
+      "source": "frontend/components/FileItem.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/FileItem.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "File item styles"
+    },
+    {
+      "source": "frontend/components/ActionBar.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/ActionBar.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Action bar component"
+    },
+    {
+      "source": "frontend/components/ActionBar.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/ActionBar.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Action bar styles"
+    },
+    {
+      "source": "frontend/components/PathBreadcrumb.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/PathBreadcrumb.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Breadcrumb navigation component"
+    },
+    {
+      "source": "frontend/components/PathBreadcrumb.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/PathBreadcrumb.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Breadcrumb styles"
+    },
+    {
+      "source": "frontend/components/StatusBar.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/StatusBar.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Status bar component"
+    },
+    {
+      "source": "frontend/components/StatusBar.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/StatusBar.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Status bar styles"
+    },
+    {
+      "source": "frontend/components/DestinationPanel.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/DestinationPanel.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Destination panel component"
+    },
+    {
+      "source": "frontend/components/DestinationPanel.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/DestinationPanel.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Destination panel styles"
+    },
+    {
+      "source": "frontend/components/RenameModal.tsx",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/RenameModal.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Rename modal component"
+    },
+    {
+      "source": "frontend/components/RenameModal.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/components/RenameModal.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Rename modal styles"
+    },
+    {
+      "source": "frontend/hooks/useNasLinkerControls.ts",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/hooks/useNasLinkerControls.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "Custom hook for API interactions"
+    },
+    {
+      "source": "frontend/styles/nasLinker.css",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/styles/nasLinker.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main stylesheet"
+    },
+    {
+      "source": "frontend/images/default.png",
+      "target": "/var/www/homeserver/src/tablets/nasLinker/images/default.png",
+      "type": "copy",
+      "identifier": null,
+      "description": "Default icon for the tablet"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "packages": [
+    {
+      "name": "rclone",
+      "version": "1.60.0",
+      "description": "Command line program to sync files and directories to and from cloud storage providers",
+      "flags": []
+    }
+  ],
+  "metadata": {
+    "platform": "debian",
+    "conflicts": [],
+    "description": "System dependencies for HOMESERVER Backup Tab",
+    "author": "HOMESERVER LLC",
+    "git_repository": "https://github.com/homeserver/backupTab.git",
+    "git_branch": "master"
+  }
+}

@@ -1,0 +1,11 @@
+{
+    "packages": [],
+    "pip_packages": [
+        "yt-dlp>=2024.0.0"
+    ],
+    "metadata": {
+        "version": "1.0.0",
+        "platform": "any",
+        "conflicts": []
+    }
+}

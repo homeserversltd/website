@@ -1,0 +1,40 @@
+{
+  "name": "testTab",
+  "version": "0.0.69",
+  "config": {
+    "repository": {
+        "url": "https://github.com/homeserversltd/testTab.git",
+        "branch": "master"
+    },
+    "git_managed": true
+  },
+  "files": {
+    "config": "homeserver.patch.json",
+    "readme": "README.md",
+    "backend": {
+      "index": "backend/index.json",
+      "requirements": "backend/requirements.txt", 
+      "blueprint": "backend/routes.py",
+      "utils": "backend/utils.py",
+      "init": "backend/__init__.py"
+    },
+    "frontend": {
+      "index": "frontend/index.json",
+      "package": "frontend/package.patch.json",
+      "TestCard": "frontend/components/TestCard.tsx",
+      "ComponentShowcase": "frontend/components/ComponentShowcase.tsx",
+      "ComponentShowcaseCSS": "frontend/components/ComponentShowcase.css",
+      "useTestControls": "frontend/hooks/useTestControls.ts",
+      "default": "frontend/images/default.png",
+      "PortalCard": "frontend/PortalCard.css",
+      "types": "frontend/types.ts",
+      "entry": "frontend/index.tsx"
+    },
+    "permissions": {
+      "sudoers": "permissions/flask-test"
+    },
+    "system": {
+      "dependencies": "system/dependencies.json"
+    }
+  }
+}

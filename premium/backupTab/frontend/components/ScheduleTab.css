@@ -1,0 +1,575 @@
+/**
+ * HOMESERVER Backup Schedule Tab Styles
+ * Professional backup scheduling interface styling - matches UpdateManagerModal
+ */
+
+.update-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.schedule-form {
+  background-color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.schedule-form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--accent);
+  border-radius: 12px 12px 0 0;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 16px;
+}
+
+.loading-spinner {
+  font-size: 2rem;
+  color: var(--accent);
+  animation: backup-spin 1s linear infinite;
+}
+
+.loading-container p {
+  color: var(--secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+@keyframes backup-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Form Layout - Exact match to UpdateManagerModal */
+.form-row {
+  display: grid;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-group label .icon {
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.form-control {
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--background);
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  border-color: var(--accent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.form-control:hover:not(:focus) {
+  border-color: var(--primaryHover);
+}
+
+.form-control select {
+  cursor: pointer;
+}
+
+.frequency-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Frequency option styles removed - using centralized Button component */
+
+/* Save schedule button styles removed - using centralized Button component */
+
+/* Toggle switch styles removed - using centralized Toggle component */
+
+.schedule-toggle-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background-color: var(--background);
+  border-radius: 8px;
+  border: 2px solid var(--border);
+}
+
+.schedule-toggle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedule-toggle-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.schedule-toggle-description {
+  color: var(--secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.schedule-options {
+  display: grid;
+  gap: 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-10px);
+}
+
+.schedule-options.visible {
+  opacity: 1;
+  max-height: 600px;
+  transform: translateY(0);
+}
+
+.day-selector {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Day option styles removed - using centralized Button component */
+
+.time-input-group {
+  position: relative;
+}
+
+.time-input-group .form-control {
+  padding-left: 40px;
+}
+
+.time-input-group::before {
+  content: '\f017'; /* Clock icon */
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  z-index: 1;
+}
+
+.schedule-preview {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 8px;
+  position: relative;
+  animation: backup-slideInUp 0.3s ease-out;
+}
+
+.schedule-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--accent);
+  border-radius: 8px 8px 0 0;
+}
+
+@keyframes backup-slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.schedule-preview h5 {
+  margin: 0 0 8px 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-preview-text {
+  color: var(--secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.schedule-preview-text strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Responsive Design - Exact match to UpdateManagerModal */
+@media (max-width: 768px) {
+  .schedule-form {
+    padding: 16px;
+  }
+  
+  .update-schedule-toggle {
+    padding: 12px;
+  }
+  
+  .schedule-toggle-title {
+    font-size: 1rem;
+  }
+  
+  .schedule-toggle-description {
+    font-size: 0.85rem;
+  }
+  
+  .frequency-selector {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .day-selector {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  
+  .schedule-preview {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .update-schedule-toggle {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .schedule-toggle-switch {
+    align-self: center;
+  }
+  
+  .day-selector {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .frequency-selector {
+    gap: 8px;
+  }
+}
+
+/* Removed duplicate styles - all toggle switch and form styles are now above */
+
+/* All styles now match UpdateManagerModal exactly */
+
+/* Schedule Actions */
+.schedule-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+/* Sync now button styles removed - using centralized Button component */
+
+/* Status Display */
+.schedule-status {
+  background-color: var(--primaryHover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.schedule-status h5 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.status-item strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.status-value {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Backup Type Selector */
+.backup-type-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.backup-type-option {
+  background-color: var(--secondary);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.backup-type-option:hover {
+  border-color: var(--accent);
+  background-color: var(--primaryHover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.backup-type-option.active {
+  border-color: var(--accent);
+  background-color: var(--accent-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.backup-type-header {
+  margin-bottom: 8px;
+}
+
+.backup-type-label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.backup-type-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Advanced Configuration Panel */
+.advanced-config-toggle {
+  background-color: var(--secondary);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.advanced-config-toggle:hover {
+  border-color: var(--accent);
+  background-color: var(--primaryHover);
+  transform: translateY(-1px);
+}
+
+.advanced-config-panel {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+  animation: backup-slideInDown 0.3s ease-out;
+}
+
+@keyframes backup-slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.advanced-config-panel h5 {
+  margin: 0 0 16px 0;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.config-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.config-section {
+  background-color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.config-section h6 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.config-section .form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.config-section .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  margin: 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.range-value {
+  display: inline-block;
+  margin-left: 8px;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 20px;
+  text-align: center;
+}
+
+.backup-type-retention {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background-color: var(--background);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* TimePicker and Calendar component styles removed - using centralized components */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .schedule-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .backup-type-selector {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .backup-type-option {
+    padding: 12px;
+  }
+  
+  .advanced-config-panel {
+    padding: 16px;
+  }
+  
+  .config-section {
+    padding: 12px;
+  }
+  
+  .config-section .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .config-sections {
+    gap: 16px;
+  }
+  
+}

@@ -1,0 +1,71 @@
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: var(--hiddenTabBackground);
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+
+.action-bar-left,
+.action-bar-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.action-btn {
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-btn:hover {
+  background: var(--hiddenTabBackground);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.action-btn.primary {
+  background: var(--accent);
+  color: var(--background);
+  border-color: var(--accent);
+}
+
+.action-btn.primary:hover {
+  background: var(--primaryHover);
+  border-color: var(--primaryHover);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-bar-left,
+  .action-bar-right {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

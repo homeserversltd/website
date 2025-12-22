@@ -1,0 +1,203 @@
+/**
+ * Repository and backup card styles
+ */
+
+.repositories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Repository card styles removed - using centralized Card component */
+
+.repository-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.repository-card-title {
+  flex: 1;
+}
+
+.repository-card-title h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* Status badge styles removed - using centralized Badge component */
+
+.repository-checkbox {
+  margin-left: 1rem;
+}
+
+.repository-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.repository-card-content {
+  margin-bottom: 1rem;
+}
+
+.repository-path {
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+  word-break: break-all;
+}
+
+.repository-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.backup-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.backup-history {
+  margin-top: 2rem;
+}
+
+.backup-history h3 {
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+/* Backup card styles removed - using centralized Card component */
+
+.backup-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.backup-card-title {
+  flex: 1;
+}
+
+.backup-card-title h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.backup-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.backup-card-content {
+  margin-bottom: 1rem;
+}
+
+.backup-repositories {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.backup-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Progress bar styles removed - using centralized ProgressBar component */
+
+.progress-text {
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.8;
+  min-width: 40px;
+  text-align: right;
+}
+
+.backup-output {
+  margin-bottom: 0.75rem;
+}
+
+.backup-output details {
+  font-size: 0.85rem;
+}
+
+.backup-output summary {
+  cursor: pointer;
+  color: var(--text);
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.backup-output pre {
+  background: var(--primary);
+  padding: 0.75rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  color: var(--text);
+  opacity: 0.8;
+  margin: 0;
+}
+
+.backup-error {
+  background: var(--error);
+  border: 1px solid var(--error);
+  color: var(--background);
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.cloud-test-results {
+  margin-top: 1rem;
+}
+
+.cloud-provider {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--primary);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.cloud-provider-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.cloud-provider-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cloud-provider-status.success {
+  color: var(--statusUp);
+}
+
+.cloud-provider-status.error {
+  color: var(--statusDown);
+}

@@ -1,0 +1,55 @@
+{
+  "name": "nasLinker",
+  "version": "0.0.69",
+  "config": {
+    "repository": {
+      "url": "https://github.com/homeserversltd/linkerTab.git",
+      "branch": "main"
+    },
+    "git_managed": true
+  },
+  "files": {
+    "config": "homeserver.patch.json",
+    "readme": "README.md",
+    "license": "LICENSE",
+    "backend": {
+      "index": "backend/index.json",
+      "requirements": "backend/requirements.txt",
+      "blueprint": "backend/routes.py",
+      "utils": "backend/utils.py",
+      "init": "backend/__init__.py"
+    },
+    "frontend": {
+      "index": "frontend/index.json",
+      "package": "frontend/package.patch.json",
+      "FileBrowser": "frontend/components/FileBrowser.tsx",
+      "FileBrowserCSS": "frontend/components/FileBrowser.css",
+      "FileItem": "frontend/components/FileItem.tsx",
+      "FileItemCSS": "frontend/components/FileItem.css",
+      "ActionBar": "frontend/components/ActionBar.tsx",
+      "ActionBarCSS": "frontend/components/ActionBar.css",
+      "PathBreadcrumb": "frontend/components/PathBreadcrumb.tsx",
+      "PathBreadcrumbCSS": "frontend/components/PathBreadcrumb.css",
+      "StatusBar": "frontend/components/StatusBar.tsx",
+      "StatusBarCSS": "frontend/components/StatusBar.css",
+      "DestinationPanel": "frontend/components/DestinationPanel.tsx",
+      "DestinationPanelCSS": "frontend/components/DestinationPanel.css",
+      "RenameModal": "frontend/components/RenameModal.tsx",
+      "RenameModalCSS": "frontend/components/RenameModal.css",
+      "SelectionSummary": "frontend/components/SelectionSummary.tsx",
+      "SelectionSummaryCSS": "frontend/components/SelectionSummary.css",
+      "useNasLinkerControls": "frontend/hooks/useNasLinkerControls.ts",
+      "default": "frontend/images/default.png",
+      "PortalCard": "frontend/PortalCard.css",
+      "nasLinkerCSS": "frontend/styles/nasLinker.css",
+      "types": "frontend/types.ts",
+      "entry": "frontend/index.tsx"
+    },
+    "permissions": {
+      "sudoers": "permissions/flask-nasLinker"
+    },
+    "system": {
+      "dependencies": "system/dependencies.json"
+    }
+  }
+}

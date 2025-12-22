@@ -1,0 +1,2 @@
+# DHCP Premium Tab Python Dependencies
+# No additional dependencies required - uses standard library and subprocess

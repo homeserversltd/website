@@ -1,0 +1,610 @@
+/**
+ * Installation Manager Component Styles
+ * Professional installation status and management interface
+ * Matches backup tab theme and styling patterns
+ */
+
+.installation-manager {
+  background: var(--background);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px var(--primary), 0 2px 4px var(--border);
+  margin: 1.5rem 0;
+}
+
+/* Compact Installation Manager */
+.installation-manager-compact {
+  background: var(--background);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 1rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.installation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  position: relative;
+  min-height: 48px;
+}
+
+.installation-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 8px 8px 0 0;
+}
+
+.installation-row.installed::before {
+  background: var(--success);
+}
+
+.installation-row.not-installed::before {
+  background: var(--warning);
+}
+
+.installation-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.status-indicator-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: 1px solid;
+}
+
+.installation-row.installed .status-indicator-compact {
+  background: color-mix(in srgb, var(--success) 15%, var(--background));
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.installation-row.not-installed .status-indicator-compact {
+  background: color-mix(in srgb, var(--warning) 15%, var(--background));
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.status-indicator-compact .icon {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.status-indicator-compact .text {
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-size: 0.8rem;
+}
+
+.version-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--primary);
+  color: var(--text);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+}
+
+.version-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.version-value {
+  color: var(--text);
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.installation-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 70px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.action-button.primary {
+  background: var(--accent);
+  color: var(--background);
+  border: 1px solid var(--accent);
+}
+
+.action-button.primary:hover {
+  background: var(--primaryHover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.action-button.danger {
+  background: var(--error);
+  color: var(--background);
+  border: 1px solid var(--error);
+}
+
+.action-button.danger:hover {
+  background: color-mix(in srgb, var(--error) 85%, var(--background) 15%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.action-button:disabled::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 1px solid transparent;
+  border-top: 1px solid currentColor;
+  border-radius: 50%;
+  animation: backup-spin 1s linear infinite;
+  margin-left: 6px;
+  display: inline-block;
+}
+
+.installation-status {
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.installation-status::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+
+.installation-status.installed::before {
+  background: linear-gradient(90deg, var(--success), var(--accent));
+}
+
+.installation-status.not-installed::before {
+  background: linear-gradient(90deg, var(--warning), var(--error));
+}
+
+.installation-status.unknown::before {
+  background: linear-gradient(90deg, var(--secondary), var(--text-muted));
+}
+
+.installation-status h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.installation-status h3::before {
+  content: '🔧';
+  font-size: 1.3rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Status Indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.status-indicator.success {
+  background: color-mix(in srgb, var(--success) 20%, var(--background));
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.status-indicator.error {
+  background: color-mix(in srgb, var(--error) 20%, var(--background));
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.status-indicator.warning {
+  background: color-mix(in srgb, var(--warning) 20%, var(--background));
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+.status-indicator .icon {
+  font-size: 1rem;
+  font-weight: bold;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.status-indicator .text {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Installation Details */
+.installation-details {
+  background: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.installation-details p {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.installation-details p:last-child {
+  margin-bottom: 0;
+}
+
+.installation-details strong {
+  color: var(--text);
+  font-weight: 600;
+  min-width: 80px;
+  display: inline-block;
+}
+
+/* Installation Prompt */
+.installation-prompt {
+  background: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.installation-prompt p {
+  margin: 0 0 16px 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.installation-prompt p:last-child {
+  margin-bottom: 0;
+}
+
+/* Missing Components */
+.missing-components {
+  background: color-mix(in srgb, var(--warning) 10%, var(--background));
+  border: 1px solid var(--warning);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 16px 0;
+}
+
+.missing-components p {
+  margin: 0 0 8px 0;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.missing-components ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.missing-components li {
+  margin-bottom: 4px;
+  opacity: 0.9;
+}
+
+/* Install Error */
+.install-error {
+  background: color-mix(in srgb, var(--error) 10%, var(--background));
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.install-error p {
+  margin: 0;
+  color: var(--error);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Buttons */
+.install-button,
+.uninstall-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  min-width: 160px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.install-button::before,
+.uninstall-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.install-button:hover::before,
+.uninstall-button:hover::before {
+  left: 100%;
+}
+
+.install-button.primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primaryHover) 100%);
+  color: var(--background);
+  border: 1px solid var(--accent);
+}
+
+.install-button.primary:hover {
+  background: linear-gradient(135deg, var(--primaryHover) 0%, var(--accent) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.install-button.primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.uninstall-button.danger {
+  background: linear-gradient(135deg, var(--error) 0%, color-mix(in srgb, var(--error) 80%, var(--background) 20%) 100%);
+  color: var(--background);
+  border: 1px solid var(--error);
+}
+
+.uninstall-button.danger:hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--error) 80%, var(--background) 20%) 0%, var(--error) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.uninstall-button.danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.install-button:disabled,
+.uninstall-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Loading States */
+.install-button:disabled::after,
+.uninstall-button:disabled::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: backup-spin 1s linear infinite;
+  margin-left: 8px;
+}
+
+@keyframes backup-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .installation-manager {
+    margin: 1rem 0;
+  }
+  
+  .installation-manager-compact {
+    margin: 0.75rem 0;
+  }
+  
+  .installation-row {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .installation-info {
+    justify-content: space-between;
+    gap: 12px;
+  }
+  
+  .installation-actions {
+    justify-content: center;
+  }
+  
+  .action-button {
+    flex: 1;
+    min-width: auto;
+  }
+  
+  .installation-status {
+    padding: 20px;
+  }
+  
+  .installation-status h3 {
+    font-size: 1.3rem;
+  }
+  
+  .installation-details,
+  .installation-prompt {
+    padding: 16px;
+  }
+  
+  .install-button,
+  .uninstall-button {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .installation-row {
+    padding: 8px 10px;
+  }
+  
+  .installation-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .version-tile {
+    font-size: 0.8rem;
+  }
+  
+  .action-button {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+  
+  .installation-status {
+    padding: 16px;
+  }
+  
+  .installation-status h3 {
+    font-size: 1.2rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .status-indicator {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+  
+  .installation-details,
+  .installation-prompt {
+    padding: 12px;
+  }
+  
+  .installation-details p {
+    font-size: 0.85rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .installation-details strong {
+    min-width: auto;
+  }
+}
+
+/* Animation for status changes */
+.installation-status {
+  animation: backup-fadeInUp 0.5s ease-out;
+}
+
+.installation-manager-compact {
+  animation: backup-fadeInUp 0.3s ease-out;
+}
+
+@keyframes backup-fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hover effects for interactive elements */
+.installation-details:hover,
+.installation-prompt:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Focus states for accessibility */
+.install-button:focus,
+.uninstall-button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .status-indicator {
+    border-width: 2px;
+  }
+  
+  .installation-details,
+  .installation-prompt {
+    border-width: 2px;
+  }
+  
+  .install-button,
+  .uninstall-button {
+    border-width: 2px;
+  }
+}

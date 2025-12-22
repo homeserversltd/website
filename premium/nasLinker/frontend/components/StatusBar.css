@@ -1,0 +1,74 @@
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: var(--hiddenTabBackground);
+  border-bottom: 2px solid var(--border);
+  gap: 1rem;
+}
+
+.status-bar-status {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.status-bar-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.status-bar-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.status-bar-btn:hover:not(:disabled) {
+  background: var(--primaryHover);
+  border-color: var(--primary);
+}
+
+.status-bar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status-bar-btn.rename-btn {
+  background: var(--accent);
+  color: var(--background);
+  border-color: var(--accent);
+}
+
+.status-bar-btn.rename-btn:hover:not(:disabled) {
+  background: var(--primaryHover);
+  border-color: var(--primaryHover);
+}
+
+.status-bar-btn.clear-btn {
+  background: var(--background);
+  color: var(--text);
+}
+
+@media (max-width: 768px) {
+  .status-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .status-bar-actions {
+    width: 100%;
+  }
+
+  .status-bar-btn {
+    flex: 1;
+  }
+}

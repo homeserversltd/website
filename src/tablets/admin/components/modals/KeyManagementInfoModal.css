@@ -1,0 +1,87 @@
+/* Styles for the outer modal container (handled by useModal) */
+[data-floating-ui-portal] .modal:has(.key-management-info-modal) {
+  max-width: 95vw !important;
+  width: 95vw !important;
+  max-height: 90vh !important; /* Added max-height */
+}
+
+/* Hide scrollbar on the direct .modal-content parent if our modal handles scrolling */
+.modal-content:has(.key-management-info-modal) {
+  overflow: hidden !important; /* Let the inner modal handle scroll */
+  padding: 0 !important; /* Remove padding from the immediate parent */
+}
+
+.key-management-info-modal {
+  display: flex; /* Use flexbox for layout */
+  flex-direction: column; /* Stack header, content, actions vertically */
+  width: 100%; /* Fill parent width (set by the rule above) */
+  height: 100%; /* Fill parent height (set by the rule above) */
+  background-color: var(--background);
+  border-radius: 8px; /* This might be overridden by parent if padding is 0 */
+  color: var(--text);
+  /* max-width: 700px; Removed for full-width effect */
+  /* margin: auto; Removed for full-width effect */
+  border: 1px solid var(--border);
+  overflow: hidden; /* Ensure modal itself doesn't show scrollbars if children handle it */
+}
+
+
+
+.key-management-info-modal .modal-content {
+  padding-left: 20px;
+  padding-right: 20px;
+  overflow-y: auto; /* Make this section scrollable */
+  flex: 1; /* Allow content to take available space and scroll */
+}
+
+.key-management-info-modal .modal-content section {
+  margin-bottom: 20px;
+}
+
+.key-management-info-modal .modal-content h4 {
+  font-size: 1.15em;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.key-management-info-modal .modal-content h4 svg {
+  margin-right: 10px;
+  font-size: 1em;
+  color: var(--accent);
+}
+
+.key-management-info-modal .modal-content p {
+  line-height: 1.6;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: var(--secondary);
+}
+
+.key-management-info-modal .modal-content p strong {
+  color: var(--text);
+}
+
+.key-management-info-modal .modal-content code {
+  background-color: var(--primary);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--accent);
+  font-size: 0.85em;
+}
+
+.key-management-info-modal .warning-section h4 {
+  color: var(--warning);
+}
+
+.key-management-info-modal .warning-section h4 svg {
+  color: var(--warning);
+}
+
+.key-management-info-modal .warning-section p {
+  color: var(--secondary);
+}
+
+ 

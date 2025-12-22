@@ -1,0 +1,1488 @@
+#!/usr/bin/env python3
+"""
+HOMESERVER Enhanced Backup CLI Utility
+Copyright (C) 2024 HOMESERVER LLC
+
+Enhanced backup utility with modular provider system for rigorous testing.
+"""
+
+import os
+import sys
+import json
+import argparse
+import tempfile
+import shutil
+import tarfile
+import hashlib
+from pathlib import Path
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+# Add src to path for imports
+current_dir = Path(__file__).parent
+src_dir = current_dir / "src"
+sys.path.insert(0, str(src_dir))
+
+try:
+    # Try relative import first (when used as module)
+    from .src.providers import get_provider, PROVIDERS
+    from .src.utils import get_logger, CronManager, ConfigManager, EncryptionManager
+    from .src.utils.config_manager import BACKUP_BASE_DIR
+    from .src.chunk_manager import ChunkManager
+    from .src.chunk_database import ChunkDatabase
+except ImportError:
+    try:
+        # Fall back to absolute import (when run as script)
+        from src.providers import get_provider, PROVIDERS
+        from src.utils import get_logger, CronManager, ConfigManager, EncryptionManager
+        from src.utils.config_manager import BACKUP_BASE_DIR
+        from src.chunk_manager import ChunkManager
+        from src.chunk_database import ChunkDatabase
+    except ImportError as e:
+        print(f"ERROR: Failed to import providers: {e}")
+        print(f"Current directory: {current_dir}")
+        print(f"Looking for providers in: {src_dir}")
+        sys.exit(1)
+
+class EnhancedBackupCLI:
+    """Enhanced backup CLI with modular provider system."""
+    
+    def __init__(self, config_file: Optional[str] = None):
+        # Use installed config by default, fallback to template
+        if config_file is None:
+            installed_config = "/var/www/homeserver/premium/backup/settings.json"
+            template_config = "src/config/settings.json"
+            if os.path.exists(installed_config):
+                self.config_file = installed_config
+            else:
+                self.config_file = template_config
+        else:
+            self.config_file = config_file
+        self.temp_dir = Path("/tmp/homeserver-backup-cli-enhanced")
+        self.backup_dir = Path(BACKUP_BASE_DIR)
+        # State is now stored in settings.json, no separate state file needed
+        self.state_file = None
+        
+        # Initialize utilities
+        self.logger = get_logger()
+        self.cron_manager = CronManager()
+        self.config_manager = ConfigManager(self.config_file)
+        self.encryption_manager = EncryptionManager()
+        
+        # Ensure directories exist
+        self.temp_dir.mkdir(parents=True, exist_ok=True)
+        self.backup_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Load configuration
+        self.config = self.config_manager.load_config()
+        
+        # Configure file logging
+        if 'logging' in self.config:
+            self.logger.configure_file_logging(self.config['logging'])
+        
+        # Initialize chunking system if enabled
+        self.chunking_enabled = self.config.get('chunking', {}).get('enabled', True)
+        if self.chunking_enabled:
+            chunking_config = self.config.get('chunking', {})
+            self.chunk_manager = ChunkManager(
+                target_chunk_size_mb=chunking_config.get('target_chunk_size_mb', 50),
+                min_chunk_size_mb=chunking_config.get('min_chunk_size_mb', 25),
+                max_chunk_size_mb=chunking_config.get('max_chunk_size_mb', 75)
+            )
+            db_config = self.config.get('database', {})
+            db_path = db_config.get('path', '/var/www/homeserver/premium/backup/chunks.db')
+            self.chunk_db = ChunkDatabase(db_path)
+            self.logger.info("Chunked backup system initialized")
+        else:
+            self.chunk_manager = None
+            self.chunk_db = None
+            self.logger.info("Chunked backup system disabled, using legacy tarball backups")
+        
+        # Initialize providers
+        self.providers = {}
+        self._initialize_providers()
+    
+    
+    def _initialize_providers(self):
+        """Initialize enabled providers."""
+        for provider_name, provider_config in self.config["providers"].items():
+            if provider_config.get("enabled", False):
+                try:
+                    provider = get_provider(provider_name, provider_config)
+                    self.providers[provider_name] = provider
+                    print(f"Initialized provider: {provider_name}")
+                except Exception as e:
+                    print(f"WARNING: Failed to initialize provider {provider_name}: {e}")
+    
+    def _calculate_file_hash(self, file_path: Path) -> str:
+        """Calculate SHA256 hash of entire file."""
+        sha256 = hashlib.sha256()
+        with open(file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(8192), b''):
+                sha256.update(chunk)
+        return sha256.hexdigest()
+    
+    def _get_file_size(self, path: Path) -> int:
+        """Get file or directory size."""
+        if path.is_file():
+            return path.stat().st_size
+        elif path.is_dir():
+            total = 0
+            for item in path.rglob('*'):
+                if item.is_file():
+                    total += item.stat().st_size
+            return total
+        return 0
+    
+    def _get_mtime(self, path: Path) -> datetime:
+        """Get file modification time."""
+        return datetime.fromtimestamp(path.stat().st_mtime)
+    
+    def _update_backup_state(self, backup_path: Optional[Path], backup_type: str = 'manual'):
+        """Update the backup state in settings.json with last backup timestamp and size."""
+        try:
+            # Get backup size
+            backup_size_bytes = 0
+            backup_size_display = "Unknown"
+            
+            if backup_path and backup_path.exists():
+                backup_size_bytes = backup_path.stat().st_size
+                
+                # Convert to human-readable format
+                units = ['B', 'KB', 'MB', 'GB', 'TB']
+                unit_index = 0
+                size_value = float(backup_size_bytes)
+                
+                while size_value >= 1024 and unit_index < len(units) - 1:
+                    size_value /= 1024
+                    unit_index += 1
+                
+                backup_size_display = f"{size_value:.1f} {units[unit_index]}"
+            
+            # Current timestamp
+            current_timestamp = datetime.now().isoformat()
+            
+            # Load existing settings
+            try:
+                with open(self.config_file, 'r') as f:
+                    settings = json.load(f)
+            except Exception as e:
+                self.logger.warning(f"Failed to load settings: {e}")
+                settings = {}
+            
+            # Initialize state section if it doesn't exist
+            if 'state' not in settings:
+                settings['state'] = {}
+            
+            # Load existing backup_history
+            backup_history = settings['state'].get('backup_history', [])
+            
+            # Update last backup information
+            settings['state']['last_backup'] = current_timestamp
+            settings['state']['last_backup_size_bytes'] = backup_size_bytes
+            settings['state']['last_backup_size_display'] = backup_size_display
+            settings['state']['last_backup_type'] = backup_type
+            
+            # If this is a daily/scheduled backup, also update last_daily_backup
+            if backup_type == 'daily' or backup_type == 'scheduled':
+                settings['state']['last_daily_backup'] = current_timestamp
+            
+            # Add to backup history (keep last 100 entries)
+            backup_entry = {
+                'timestamp': current_timestamp,
+                'type': backup_type,
+                'size_bytes': backup_size_bytes,
+                'size_display': backup_size_display,
+                'success': True
+            }
+            backup_history.append(backup_entry)
+            if len(backup_history) > 100:
+                backup_history = backup_history[-100:]
+            settings['state']['backup_history'] = backup_history
+            
+            # Write settings.json
+            with open(self.config_file, 'w') as f:
+                json.dump(settings, f, indent=2)
+            
+            self.logger.info(f"Backup state updated: {backup_type} backup at {current_timestamp}, size: {backup_size_display}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to update backup state: {e}")
+            return False
+    
+    def _create_backup_metadata(self, backup_items: List[str], timestamp: str) -> Dict[str, Any]:
+        """Create metadata for backup package."""
+        metadata = {
+            "timestamp": timestamp,
+            "backup_name": f"homeserver_backup_{timestamp}",
+            "items": [],
+            "created_at": datetime.now().isoformat(),
+            "homeserver_version": "1.0.0",
+            "cli_version": "1.0.0-enhanced",
+            "providers": list(self.providers.keys())
+        }
+        
+        for item in backup_items:
+            item_path = Path(item)
+            if item_path.exists():
+                stat = item_path.stat()
+                item_info = {
+                    "source_path": str(item_path),
+                    "backup_name": item_path.name,
+                    "type": "directory" if item_path.is_dir() else "file",
+                    "size": stat.st_size,
+                    "permissions": oct(stat.st_mode)[-3:],
+                    "owner": f"{stat.st_uid}:{stat.st_gid}",
+                    "mtime": datetime.fromtimestamp(stat.st_mtime).isoformat()
+                }
+                metadata["items"].append(item_info)
+        
+        return metadata
+    
+    def _create_backup_package(self, backup_items: List[str], timestamp: str) -> Optional[Path]:
+        """Create backup package with metadata."""
+        package_name = f"homeserver_backup_{timestamp}"
+        package_path = self.temp_dir / f"{package_name}.tar.gz"
+        
+        print(f"Creating backup package: {package_name}")
+        
+        # Create metadata
+        metadata = self._create_backup_metadata(backup_items, timestamp)
+        
+        # Create tar.gz archive
+        with tarfile.open(package_path, "w:gz", compresslevel=self.config["compression"]["level"]) as tar:
+            for item in backup_items:
+                item_path = Path(item)
+                if item_path.exists():
+                    tar.add(item, arcname=item_path.name)
+                    print(f"  Added: {item}")
+                else:
+                    print(f"  WARNING: Item not found: {item}")
+            
+            # Add metadata file to archive
+            metadata_file = self.temp_dir / "backup_metadata.json"
+            with open(metadata_file, "w") as f:
+                json.dump(metadata, f, indent=2)
+            tar.add(metadata_file, arcname="backup_metadata.json")
+            metadata_file.unlink()
+        
+        print(f"Created backup package: {package_path}")
+        return package_path
+    
+    def _encrypt_backup(self, package_path: Path) -> Optional[Path]:
+        """Encrypt backup package with FAK."""
+        if not self.config["encryption"]["enabled"]:
+            return package_path
+        
+        print("Encrypting backup package...")
+        
+        if not self.encryption_manager.is_encryption_available():
+            print("ERROR: FAK key not available, cannot encrypt backup")
+            return None
+        
+        try:
+            encrypted_path = self.encryption_manager.encrypt_file(package_path)
+        except KeyboardInterrupt:
+            raise
+        except SystemExit as e:
+            raise
+        except Exception as e:
+            import traceback
+            self.logger.error(f"Exception during encrypt_file: {type(e).__name__}: {e}")
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
+            return None
+        
+        if not encrypted_path:
+            print("ERROR: Failed to encrypt backup package")
+            return None
+        
+        # Clean up unencrypted package
+        try:
+            package_path.unlink()
+        except Exception as e:
+            self.logger.warning(f"Failed to delete unencrypted package: {e}")
+        
+        print(f"Encrypted backup package: {encrypted_path}")
+        return encrypted_path
+    
+    def create_backup(self, items: Optional[List[str]] = None) -> Optional[Path]:
+        """Create a new backup using chunked incremental system or legacy tarball."""
+        backup_items = items or self.config["backup_items"]
+        timestamp = datetime.now().strftime(self.config.get("timestamp_chains", {}).get("format", "%Y%m%d_%H%M%S"))
+        
+        # Use chunked backup if enabled, otherwise fall back to legacy
+        if self.chunking_enabled and self.chunk_manager and self.chunk_db:
+            return self._create_chunked_backup(backup_items, timestamp)
+        else:
+            return self._create_legacy_backup(backup_items, timestamp)
+    
+    def _create_chunked_backup(self, backup_items: List[str], timestamp: str) -> Optional[Path]:
+        """Create incremental chunked backup."""
+        backup_id = f"backup_{timestamp}"
+        self.logger.log_backup_start(backup_items, list(self.providers.keys()))
+        
+        # Get primary provider (first enabled non-local provider, or local)
+        primary_provider_name = None
+        for name, provider in self.providers.items():
+            if name != "local" or len(self.providers) == 1:
+                primary_provider_name = name
+                break
+        
+        if not primary_provider_name:
+            self.logger.error("No enabled providers found")
+            return None
+        
+        # Initialize backup record
+        if not self.chunk_db.create_backup(backup_id, primary_provider_name):
+            self.logger.error("Failed to create backup record in database")
+            return None
+        
+        unchanged_files = []
+        changed_files = []
+        new_chunks_to_upload = []
+        reused_chunks = []
+        total_uploaded = 0
+        
+        # Step 1: Quick file-level change detection
+        self.logger.info("Analyzing files for changes...")
+        for item_path_str in backup_items:
+            item_path = Path(item_path_str)
+            if not item_path.exists():
+                self.logger.warning(f"Item not found: {item_path_str}")
+                continue
+            
+            # For directories, process each file
+            if item_path.is_dir():
+                for file_path in item_path.rglob('*'):
+                    if file_path.is_file():
+                        self._process_file_for_backup(file_path, backup_id, unchanged_files, 
+                                                    changed_files, new_chunks_to_upload, 
+                                                    reused_chunks, primary_provider_name)
+            else:
+                # Single file
+                self._process_file_for_backup(item_path, backup_id, unchanged_files,
+                                            changed_files, new_chunks_to_upload,
+                                            reused_chunks, primary_provider_name)
+        
+        # Step 2: Upload new chunks
+        self.logger.info(f"Uploading {len(new_chunks_to_upload)} new chunks...")
+        for chunk_info in new_chunks_to_upload:
+            chunk_hash = chunk_info['chunk_hash']
+            encrypted_data = chunk_info['encrypted_data']
+            remote_path = chunk_info['remote_path']
+            
+            # Upload to all enabled providers
+            upload_success = False
+            for provider_name, provider in self.providers.items():
+                if provider_name == "local":
+                    # Local provider: save to local storage
+                    local_chunk_path = Path(self.config.get('providers', {}).get('local', {}).get('container', '/var/backups/homeserver')) / 'chunks' / f"{chunk_hash}.bca"
+                    local_chunk_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(local_chunk_path, 'wb') as f:
+                        f.write(encrypted_data)
+                    upload_success = True
+                else:
+                    # Cloud providers: upload chunk
+                    temp_chunk_file = self.temp_dir / f"{chunk_hash}.bca"
+                    with open(temp_chunk_file, 'wb') as f:
+                        f.write(encrypted_data)
+                    
+                    try:
+                        if provider.upload(temp_chunk_file, remote_path):
+                            upload_success = True
+                            self.logger.debug(f"Uploaded chunk {chunk_hash[:16]}... to {provider_name}")
+                        else:
+                            self.logger.error(f"Failed to upload chunk {chunk_hash[:16]}... to {provider_name}")
+                    except Exception as e:
+                        self.logger.error(f"Exception uploading chunk to {provider_name}: {e}")
+                    finally:
+                        if temp_chunk_file.exists():
+                            temp_chunk_file.unlink()
+            
+            if upload_success:
+                total_uploaded += len(encrypted_data)
+            else:
+                self.logger.error(f"Failed to upload chunk {chunk_hash[:16]}... to any provider")
+                # Continue with other chunks
+        
+        # Step 3: Update backup statistics
+        total_reused = sum(len(f['chunks']) for f in unchanged_files) + len(reused_chunks)
+        total_chunks = total_reused + len(new_chunks_to_upload)
+        
+        self.chunk_db.update_backup(
+            backup_id=backup_id,
+            total_chunks=total_chunks,
+            uploaded_bytes=total_uploaded,
+            reused_chunks=total_reused,
+            status='completed'
+        )
+        
+        self.logger.info(f"Backup {backup_id} completed:")
+        self.logger.info(f"  - Total chunks: {total_chunks}")
+        self.logger.info(f"  - Uploaded: {total_uploaded / (1024*1024):.2f} MB")
+        self.logger.info(f"  - Reused: {total_reused} chunks")
+        self.logger.info(f"  - New: {len(new_chunks_to_upload)} chunks")
+        
+        # Update backup state
+        self._update_backup_state(None, backup_type='manual')
+        
+        # Increment backup count
+        try:
+            self.config_manager.increment_backup_count()
+        except Exception as e:
+            self.logger.warning(f"Failed to increment backup count: {e}")
+        
+        return None  # Chunked backups don't return a single file path
+    
+    def _process_file_for_backup(self, file_path: Path, backup_id: str, unchanged_files: List,
+                                 changed_files: List, new_chunks_to_upload: List,
+                                 reused_chunks: List, provider_name: str):
+        """Process a single file for chunked backup."""
+        try:
+            current_file_hash = self._calculate_file_hash(file_path)
+            current_size = self._get_file_size(file_path)
+            current_mtime = self._get_mtime(file_path)
+            
+            # Check last known state
+            last_metadata = self.chunk_db.get_file_metadata(str(file_path))
+            
+            if (last_metadata and 
+                last_metadata.get('last_file_hash') == current_file_hash and
+                last_metadata.get('last_size') == current_size):
+                # File completely unchanged - reuse all chunks from last backup
+                last_backup_id = last_metadata.get('last_backup_id')
+                last_chunks = self.chunk_db.get_chunks_for_file(str(file_path), last_backup_id)
+                
+                # Create backup_file record
+                file_record_id = self.chunk_db.create_backup_file(
+                    backup_id=backup_id,
+                    original_path=str(file_path),
+                    size=current_size,
+                    file_hash=current_file_hash,
+                    chunk_count=len(last_chunks),
+                    mtime=current_mtime
+                )
+                
+                # Create mappings for reused chunks
+                for idx, chunk_info in enumerate(last_chunks):
+                    self.chunk_db.create_chunk_mapping(
+                        backup_id=backup_id,
+                        file_id=file_record_id,
+                        chunk_hash=chunk_info['chunk_hash'],
+                        chunk_index=idx
+                    )
+                
+                unchanged_files.append({
+                    'path': str(file_path),
+                    'chunks': last_chunks,
+                    'backup_id': last_backup_id
+                })
+                reused_chunks.extend([c['chunk_hash'] for c in last_chunks])
+                self.logger.info(f"File unchanged: {file_path} - reusing {len(last_chunks)} chunks")
+            else:
+                # File changed - need chunk-level processing
+                changed_files.append(file_path)
+                self._process_changed_file(file_path, backup_id, new_chunks_to_upload, 
+                                         reused_chunks, provider_name, current_file_hash, 
+                                         current_size, current_mtime)
+        except Exception as e:
+            self.logger.error(f"Error processing file {file_path}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+    
+    def _process_changed_file(self, file_path: Path, backup_id: str, new_chunks_to_upload: List,
+                             reused_chunks: List, provider_name: str, file_hash: str,
+                             file_size: int, mtime: datetime):
+        """Process a changed file: chunk it and check for deduplication."""
+        self.logger.info(f"Processing changed file: {file_path}")
+        
+        # Chunk current file
+        current_chunks = self.chunk_manager.chunk_file_with_cdc(file_path)
+        
+        # Create backup_file record
+        file_record_id = self.chunk_db.create_backup_file(
+            backup_id=backup_id,
+            original_path=str(file_path),
+            size=file_size,
+            file_hash=file_hash,
+            chunk_count=len(current_chunks),
+            mtime=mtime
+        )
+        
+        # Process each chunk
+        for idx, chunk in enumerate(current_chunks):
+            chunk_hash = chunk['hash']
+            
+            # Check if chunk exists in storage (any backup)
+            existing_chunk = self.chunk_db.get_chunk_by_hash(chunk_hash)
+            
+            if existing_chunk:
+                # Chunk exists - reuse it (no upload needed!)
+                self.logger.debug(f"Reusing chunk {idx} for {file_path}: {chunk_hash[:16]}...")
+                
+                self.chunk_db.create_chunk_mapping(
+                    backup_id=backup_id,
+                    file_id=file_record_id,
+                    chunk_hash=chunk_hash,
+                    chunk_index=idx
+                )
+                
+                reused_chunks.append(chunk_hash)
+            else:
+                # New chunk - encrypt and prepare for upload
+                self.logger.info(f"New chunk {idx} for {file_path}: {chunk_hash[:16]}...")
+                
+                # Encrypt chunk
+                encrypted_data = self.chunk_manager.encrypt_chunk(chunk['data'])
+                
+                # Store in global chunk registry
+                remote_path = f"chunks/{chunk_hash}.bca"
+                self.chunk_db.store_chunk(
+                    chunk_hash=chunk_hash,
+                    size=chunk['size'],
+                    encrypted_size=len(encrypted_data),
+                    remote_path=remote_path,
+                    provider=provider_name,
+                    first_seen_backup_id=backup_id
+                )
+                
+                # Create mapping
+                self.chunk_db.create_chunk_mapping(
+                    backup_id=backup_id,
+                    file_id=file_record_id,
+                    chunk_hash=chunk_hash,
+                    chunk_index=idx
+                )
+                
+                new_chunks_to_upload.append({
+                    'chunk_hash': chunk_hash,
+                    'encrypted_data': encrypted_data,
+                    'remote_path': remote_path,
+                    'size': chunk['size']
+                })
+        
+        # Update file metadata
+        self.chunk_db.update_file_metadata(
+            original_path=str(file_path),
+            last_backup_id=backup_id,
+            file_hash=file_hash,
+            size=file_size,
+            chunk_count=len(current_chunks),
+            mtime=mtime
+        )
+    
+    def _create_legacy_backup(self, backup_items: List[str], timestamp: str) -> Optional[Path]:
+        """Create legacy tarball backup (fallback when chunking disabled)."""
+        self.logger.log_backup_start(backup_items, list(self.providers.keys()))
+        
+        # Create backup package
+        package_path = self._create_backup_package(backup_items, timestamp)
+        if not package_path:
+            self.logger.log_backup_failure("Failed to create backup package")
+            return None
+        
+        # Encrypt if enabled (for cloud providers only)
+        encrypted_path = None
+        if self.config.get("encryption", {}).get("enabled", False):
+            try:
+                encrypted_path = self._encrypt_backup(package_path)
+            except Exception as e:
+                import traceback
+                self.logger.error(f"Exception during encryption: {e}")
+                self.logger.error(f"Traceback: {traceback.format_exc()}")
+                self.logger.log_backup_failure("Failed to encrypt backup package")
+                return None
+            if not encrypted_path:
+                self.logger.log_backup_failure("Failed to encrypt backup package")
+                return None
+            self.logger.info("Backup package encrypted for cloud providers")
+        else:
+            self.logger.info("Encryption disabled - all providers will receive unencrypted data")
+        
+        # Upload to all enabled providers
+        upload_results = {}
+        for provider_name, provider in self.providers.items():
+            self.logger.info(f"Processing with {provider_name}...")
+            
+            # Choose which version to upload based on provider type
+            if provider_name == "local":
+                upload_path = package_path
+                self.logger.info("Using unencrypted package for local provider")
+            else:
+                upload_path = encrypted_path if encrypted_path else package_path
+                if encrypted_path:
+                    self.logger.info(f"Using encrypted package for {provider_name} provider")
+                else:
+                    self.logger.info(f"Using unencrypted package for {provider_name} provider (encryption disabled)")
+            
+            # Upload to the provider
+            if provider_name == "local":
+                backup_path = provider.create_backup(backup_items, timestamp)
+                success = backup_path is not None
+                if success:
+                    self.logger.info(f"Local backup created: {backup_path}")
+            else:
+                remote_name = "homeserver_backup_latest.tar.gz"
+                if encrypted_path and upload_path == encrypted_path:
+                    remote_name = "homeserver_backup_latest.tar.gz.enc"
+                
+                self.logger.info(f"Starting upload to {provider_name}: {upload_path} -> {remote_name}")
+                try:
+                    success = provider.upload(upload_path, remote_name)
+                    if success:
+                        self.logger.info(f"Successfully uploaded to {provider_name}: {remote_name}")
+                    else:
+                        self.logger.error(f"Upload to {provider_name} failed (returned False)")
+                except Exception as e:
+                    self.logger.error(f"Upload to {provider_name} failed with exception: {e}")
+                    import traceback
+                    self.logger.error(f"Traceback: {traceback.format_exc()}")
+                    success = False
+            
+            upload_results[provider_name] = success
+            self.logger.log_provider_operation(provider_name, "upload", success)
+        
+        # Move to local backup directory (only if not using local provider)
+        if "local" not in self.providers or not upload_results.get("local", False):
+            local_path = self.backup_dir / package_path.name
+            shutil.move(str(package_path), str(local_path))
+            self.logger.log_backup_success(str(local_path), upload_results)
+            
+            try:
+                self.config_manager.increment_backup_count()
+            except Exception as count_error:
+                self.logger.warning(f"Failed to increment backup count: {count_error}")
+            
+            self._update_backup_state(local_path, backup_type='manual')
+            return local_path
+        else:
+            if package_path.exists():
+                package_path.unlink()
+            self.logger.log_backup_success("NAS storage", upload_results)
+            
+            try:
+                self.config_manager.increment_backup_count()
+            except Exception as count_error:
+                self.logger.warning(f"Failed to increment backup count: {count_error}")
+            
+            self._update_backup_state(backup_path, backup_type='manual')
+            return None
+    
+    def list_backups(self, provider_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List available backups from specified provider or all providers."""
+        all_backups = []
+        
+        if provider_name:
+            if provider_name in self.providers:
+                provider = self.providers[provider_name]
+                backups = provider.list_files()
+                for backup in backups:
+                    backup['provider'] = provider_name
+                all_backups.extend(backups)
+            else:
+                print(f"ERROR: Provider {provider_name} not available")
+        else:
+            # List from all providers
+            for prov_name, provider in self.providers.items():
+                backups = provider.list_files()
+                for backup in backups:
+                    backup['provider'] = prov_name
+                all_backups.extend(backups)
+        
+        return sorted(all_backups, key=lambda x: x.get('mtime', 0), reverse=True)
+    
+    def test_providers(self) -> Dict[str, bool]:
+        """Test all enabled providers."""
+        results = {}
+        
+        for provider_name, provider in self.providers.items():
+            print(f"Testing {provider_name}...")
+            success = provider.test_connection()
+            results[provider_name] = success
+            if success:
+                print(f"  ✓ {provider_name} connection successful")
+            else:
+                print(f"  ✗ {provider_name} connection failed")
+        
+        return results
+    
+    def download_backup(self, backup_name: str, provider_name: str, local_path: Optional[str] = None) -> bool:
+        """Download backup from specified provider."""
+        if provider_name not in self.providers:
+            print(f"ERROR: Provider {provider_name} not available")
+            return False
+        
+        if not local_path:
+            local_path = self.temp_dir / backup_name
+        
+        provider = self.providers[provider_name]
+        success = provider.download(backup_name, Path(local_path))
+        
+        if success:
+            print(f"Downloaded {backup_name} from {provider_name} to {local_path}")
+        else:
+            print(f"Failed to download {backup_name} from {provider_name}")
+        
+        return success
+    
+    def restore_files(self, backup_id: str, target_paths: List[str], restore_location: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Restore specific files/directories from backup by downloading only necessary chunks.
+        
+        Args:
+            backup_id: Backup to restore from
+            target_paths: List of paths to restore (e.g., ["/opt/gogs", "/etc/postgresql/15/main"])
+            restore_location: Where to restore (default: original locations)
+            
+        Returns:
+            Dictionary with restore results
+        """
+        if not self.chunking_enabled or not self.chunk_db:
+            return {
+                'success': False,
+                'error': 'Chunked backup system not enabled'
+            }
+        
+        self.logger.info(f"Restoring from backup {backup_id}: {target_paths}")
+        
+        # Step 1: Query database for required chunks
+        required_chunks = self.chunk_db.get_chunks_for_restore(backup_id, target_paths)
+        
+        if not required_chunks:
+            return {
+                'success': False,
+                'error': f'No chunks found for paths in backup {backup_id}'
+            }
+        
+        self.logger.info(f"Need to download {len(required_chunks)} chunks")
+        
+        # Step 2: Group chunks by provider
+        chunks_by_provider = {}
+        for chunk_info in required_chunks:
+            provider = chunk_info['provider']
+            if provider not in chunks_by_provider:
+                chunks_by_provider[provider] = []
+            chunks_by_provider[provider].append(chunk_info)
+        
+        # Step 3: Download chunks from each provider
+        downloaded_chunks = {}
+        
+        for provider_name, chunks in chunks_by_provider.items():
+            if provider_name not in self.providers:
+                self.logger.error(f"Provider {provider_name} not available for restore")
+                continue
+            
+            provider = self.providers[provider_name]
+            
+            for chunk_info in chunks:
+                chunk_hash = chunk_info['chunk_hash']
+                remote_path = chunk_info['remote_path']
+                
+                self.logger.debug(f"Downloading chunk: {chunk_hash[:16]}...")
+                
+                # Download encrypted chunk
+                temp_encrypted = self.temp_dir / f"{chunk_hash}.bca"
+                
+                if provider_name == "local":
+                    # Local provider: read from local storage
+                    local_chunk_path = Path(self.config.get('providers', {}).get('local', {}).get('container', '/var/backups/homeserver')) / remote_path
+                    if local_chunk_path.exists():
+                        with open(local_chunk_path, 'rb') as f:
+                            encrypted_data = f.read()
+                        with open(temp_encrypted, 'wb') as f:
+                            f.write(encrypted_data)
+                        success = True
+                    else:
+                        self.logger.error(f"Chunk not found locally: {local_chunk_path}")
+                        success = False
+                else:
+                    # Cloud providers: download
+                    success = provider.download(remote_path, temp_encrypted)
+                
+                if not success:
+                    self.logger.error(f"Failed to download chunk {chunk_hash}")
+                    return {
+                        'success': False,
+                        'error': f'Failed to download chunk {chunk_hash[:16]}...'
+                    }
+                
+                # Decrypt chunk
+                try:
+                    decrypted_data = self.chunk_manager.decrypt_chunk_file(temp_encrypted)
+                    downloaded_chunks[chunk_hash] = decrypted_data
+                except Exception as e:
+                    self.logger.error(f"Failed to decrypt chunk {chunk_hash}: {e}")
+                    return {
+                        'success': False,
+                        'error': f'Failed to decrypt chunk {chunk_hash[:16]}...: {e}'
+                    }
+                
+                # Cleanup
+                if temp_encrypted.exists():
+                    temp_encrypted.unlink()
+        
+        # Step 4: Reassemble files
+        files_to_restore = self.chunk_db.get_files_for_restore(backup_id, target_paths)
+        files_restored = 0
+        
+        for file_info in files_to_restore:
+            original_path = file_info['original_path']
+            file_id = file_info['id']
+            chunk_mappings = self.chunk_db.get_chunk_mappings_for_file(backup_id, file_id)
+            
+            # Sort chunks by index
+            chunk_mappings.sort(key=lambda x: x['chunk_index'])
+            
+            # Reassemble file
+            file_data = bytearray()
+            for mapping in chunk_mappings:
+                chunk_hash = mapping['chunk_hash']
+                if chunk_hash not in downloaded_chunks:
+                    self.logger.error(f"Missing chunk {chunk_hash} for file {original_path}")
+                    continue
+                chunk_data = downloaded_chunks[chunk_hash]
+                file_data.extend(chunk_data)
+            
+            # Determine restore path
+            if restore_location:
+                restore_path = Path(restore_location) / Path(original_path).name
+            else:
+                restore_path = Path(original_path)
+            
+            # Ensure parent directory exists
+            restore_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Write restored file
+            with open(restore_path, 'wb') as f:
+                f.write(file_data)
+            
+            files_restored += 1
+            self.logger.info(f"Restored: {original_path} -> {restore_path} ({len(file_data)} bytes)")
+        
+        self.logger.info(f"Restore completed: {files_restored} files restored")
+        
+        return {
+            'success': True,
+            'files_restored': files_restored,
+            'chunks_downloaded': len(required_chunks),
+            'total_bytes': sum(len(d) for d in downloaded_chunks.values())
+        }
+    
+    def test_backup_cycle(self, items: Optional[List[str]] = None) -> bool:
+        """Test complete backup cycle: create, upload, download, verify."""
+        print("Testing complete backup cycle...")
+        
+        # Create backup
+        backup_path = self.create_backup(items)
+        if not backup_path:
+            print("ERROR: Failed to create backup")
+            return False
+        
+        backup_name = backup_path.name
+        
+        # Test download from each provider
+        for provider_name, provider in self.providers.items():
+            print(f"Testing download from {provider_name}...")
+            test_path = self.temp_dir / f"test_{provider_name}_{backup_name}"
+            
+            if provider.download(backup_name, test_path):
+                print(f"  ✓ Download from {provider_name} successful")
+                # Verify file exists and has content
+                if test_path.exists() and test_path.stat().st_size > 0:
+                    print(f"  ✓ File verification successful")
+                else:
+                    print(f"  ✗ File verification failed")
+                test_path.unlink()  # Clean up
+            else:
+                print(f"  ✗ Download from {provider_name} failed")
+        
+        print("Backup cycle test completed")
+        return True
+    
+    def set_provider_credentials(self, provider_name: str, username: str, password: str) -> bool:
+        """Set credentials for a specific provider using keyman integration."""
+        from src.utils.keyman_integration import KeymanIntegration
+        
+        # Initialize keyman integration
+        keyman = KeymanIntegration()
+        
+        # Store credentials in keyman vault
+        success = keyman.create_service_credentials(provider_name, username, password)
+        
+        if not success:
+            print(f"ERROR: Failed to store credentials in keyman vault for {provider_name}")
+            return False
+        
+        # Update non-sensitive provider configuration
+        updates = {}
+        
+        # Handle provider-specific non-sensitive config
+        if provider_name == "backblaze":
+            updates["container"] = "homeServer-serverGenesis"  # Set correct bucket name
+            updates["bucket"] = "homeServer-serverGenesis"  # Backblaze provider uses 'bucket' field
+            updates["keyman_integrated"] = True
+            updates["keyman_service_name"] = provider_name
+        elif provider_name == "aws_s3":
+            updates["keyman_integrated"] = True
+            updates["keyman_service_name"] = provider_name
+        elif provider_name == "google_cloud_storage":
+            # Google Cloud Storage uses service account key, not username/password
+            print("NOTE: Google Cloud Storage uses service account key authentication")
+            print("Make sure you have downloaded service account key from Google Cloud Console")
+            updates["keyman_integrated"] = True
+            updates["keyman_service_name"] = provider_name
+        
+        # Update provider config with non-sensitive settings
+        if updates:
+            config_success = self.config_manager.update_provider_config(provider_name, updates)
+            if not config_success:
+                print(f"WARNING: Failed to update provider config for {provider_name}")
+        
+        self.logger.log_credential_operation(provider_name, "set", True)
+        print(f"Credentials stored in keyman vault for {provider_name}")
+        return True
+    
+    def set_provider_credentials_json(self, provider_name: str, credentials_json: str) -> bool:
+        """Set credentials JSON content for a specific provider."""
+        try:
+            # Validate JSON format
+            import json
+            parsed_json = json.loads(credentials_json)
+            
+            # Write credentials file
+            credentials_file = f"{provider_name}_credentials.json"
+            credentials_path = Path(credentials_file)
+            
+            with open(credentials_path, 'w') as f:
+                json.dump(parsed_json, f, indent=2)
+            
+            # Update provider config with credentials file path
+            updates = {"credentials_file": credentials_file}
+            success = self.config_manager.update_provider_config(provider_name, updates)
+            
+            if success:
+                self.logger.log_credential_operation(provider_name, "set_credentials_json", True)
+                print(f"Credentials JSON updated for {provider_name}")
+                print(f"Credentials file saved as: {credentials_file}")
+                return True
+            else:
+                print(f"ERROR: Provider '{provider_name}' not found")
+                return False
+                
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Invalid JSON format: {e}")
+            return False
+        except Exception as e:
+            print(f"ERROR: Failed to save credentials: {e}")
+            return False
+    
+    def get_provider_credentials(self, provider_name: str) -> Optional[Dict[str, str]]:
+        """Get credentials for a specific provider from keyman vault."""
+        from src.utils.keyman_integration import KeymanIntegration
+        
+        # Initialize keyman integration
+        keyman = KeymanIntegration()
+        
+        # Check if provider is configured in keyman
+        if not keyman.service_configured(provider_name):
+            print(f"ERROR: Provider '{provider_name}' not configured in keyman vault")
+            return None
+        
+        # Get credentials from keyman
+        credentials = keyman.get_service_credentials(provider_name)
+        
+        if not credentials:
+            print(f"ERROR: Failed to retrieve credentials from keyman vault for {provider_name}")
+            return None
+        
+        return credentials
+    
+    def enable_provider(self, provider_name: str) -> bool:
+        """Enable a specific provider."""
+        success = self.config_manager.enable_provider(provider_name)
+        
+        if success:
+            self.logger.info(f"Provider '{provider_name}' enabled")
+            print(f"Provider '{provider_name}' enabled")
+        else:
+            print(f"ERROR: Provider '{provider_name}' not found")
+        
+        return success
+    
+    def disable_provider(self, provider_name: str) -> bool:
+        """Disable a specific provider."""
+        success = self.config_manager.disable_provider(provider_name)
+        
+        if success:
+            self.logger.info(f"Provider '{provider_name}' disabled")
+            print(f"Provider '{provider_name}' disabled")
+        else:
+            print(f"ERROR: Provider '{provider_name}' not found")
+        
+        return success
+    
+    def set_backup_schedule(self, schedule: str) -> bool:
+        """Set the backup cron schedule."""
+        success = self.cron_manager.set_schedule(schedule)
+        if success:
+            print(f"Backup schedule updated to: {schedule}")
+        else:
+            print(f"ERROR: Failed to set backup schedule")
+        return success
+    
+    def get_backup_schedule(self) -> Optional[str]:
+        """Get the current backup cron schedule."""
+        schedule = self.cron_manager.get_schedule()
+        if schedule:
+            print(f"Current backup schedule: {schedule}")
+        else:
+            print("No backup schedule found")
+        return schedule
+    
+    def disable_backup_schedule(self) -> bool:
+        """Disable the backup cron schedule."""
+        success = self.cron_manager.disable_schedule()
+        if success:
+            print("Backup schedule disabled")
+        else:
+            print("ERROR: Failed to disable backup schedule")
+        return success
+    
+    def enable_backup_schedule(self, schedule: str = "0 2 * * *") -> bool:
+        """Enable the backup cron schedule with default daily at 2 AM."""
+        return self.set_backup_schedule(schedule)
+    
+    def set_provider_config(self, provider_name: str, key: str, value: str) -> bool:
+        """Set a specific configuration value for a provider."""
+        # Convert string values to appropriate types
+        if value.lower() in ['true', 'false']:
+            value = value.lower() == 'true'
+        elif value.lower() == 'null':
+            value = None
+        elif value.isdigit():
+            value = int(value)
+        elif value.replace('.', '', 1).isdigit():
+            value = float(value)
+        
+        updates = {key: value}
+        success = self.config_manager.update_provider_config(provider_name, updates)
+        
+        if success:
+            self.logger.info(f"Updated {provider_name} config: {key} = {value}")
+            print(f"Updated {provider_name} config: {key} = {value}")
+        else:
+            print(f"ERROR: Provider '{provider_name}' not found")
+        
+        return success
+    
+    def get_provider_config(self, provider_name: str) -> Optional[Dict[str, Any]]:
+        """Get configuration for a specific provider."""
+        provider_config = self.config_manager.get_provider_config(provider_name)
+        
+        if not provider_config:
+            print(f"ERROR: Provider '{provider_name}' not found")
+            return None
+        
+        return provider_config
+    
+    def deploy_cron_job(self, schedule: str) -> bool:
+        """Deploy cron job with the specified schedule using backup service."""
+        print(f"Deploying cron job with schedule: {schedule}")
+        
+        try:
+            # Use the backup service for deployment
+            from src.service.backup_service import BackupService
+            service = BackupService(self.config_file)
+            result = service.deploy_cron_schedule(schedule)
+            
+            if result["success"]:
+                print(f"Cron job deployed successfully: {result['message']}")
+                print(f"Cron file: {result['cron_file']}")
+                return True
+            else:
+                print(f"ERROR: {result['error']}")
+                return False
+                
+        except Exception as e:
+            print(f"ERROR: Failed to deploy cron job: {e}")
+            return False
+    
+    def remove_cron_job(self) -> bool:
+        """Remove the cron job completely using backup service."""
+        print("Removing cron job...")
+        
+        try:
+            # Use the backup service for removal
+            from src.service.backup_service import BackupService
+            service = BackupService(self.config_file)
+            result = service.remove_cron_schedule()
+            
+            if result["success"]:
+                print(f"Cron job removed successfully: {result['message']}")
+                return True
+            else:
+                print(f"ERROR: {result['error']}")
+                return False
+                
+        except Exception as e:
+            print(f"ERROR: Failed to remove cron job: {e}")
+            return False
+    
+    def get_cron_job_status(self) -> Dict[str, Any]:
+        """Get comprehensive cron job status using backup service."""
+        try:
+            # Use the backup service for status
+            from src.service.backup_service import BackupService
+            service = BackupService(self.config_file)
+            result = service.get_cron_status()
+            
+            if result["success"]:
+                status = result["status"]
+                print(f"Cron Job Status:")
+                print(f"  Enabled: {status['enabled']}")
+                print(f"  Schedule: {status['schedule'] or 'None'}")
+                print(f"  Cron File: {status['cron_file']}")
+                print(f"  File Exists: {status['exists']}")
+                print(f"  Backup Script: {status['backup_script']}")
+                print(f"  Script Executable: {status['script_executable']}")
+                return status
+            else:
+                print(f"ERROR: {result['error']}")
+                return {"error": result["error"]}
+                
+        except Exception as e:
+            print(f"ERROR: Failed to get cron status: {e}")
+            return {"error": str(e)}
+    
+    def list_keyman_services(self) -> List[str]:
+        """List all configured keyman services."""
+        from src.utils.keyman_integration import KeymanIntegration
+        
+        keyman = KeymanIntegration()
+        services = keyman.get_configured_services()
+        
+        if services:
+            print("Configured keyman services:")
+            for service in services:
+                print(f"  {service}")
+        else:
+            print("No keyman services configured")
+        
+        return services
+    
+    def remove_provider_credentials(self, provider_name: str) -> bool:
+        """Remove credentials for a provider from keyman vault."""
+        from src.utils.keyman_integration import KeymanIntegration
+        
+        keyman = KeymanIntegration()
+        
+        # Check if provider is configured
+        if not keyman.service_configured(provider_name):
+            print(f"ERROR: Provider '{provider_name}' not configured in keyman vault")
+            return False
+        
+        # Remove credentials
+        success = keyman.delete_service_credentials(provider_name)
+        
+        if success:
+            print(f"Credentials removed from keyman vault for {provider_name}")
+        else:
+            print(f"ERROR: Failed to remove credentials for {provider_name}")
+        
+        return success
+    
+    def test_keyman_credentials(self, provider_name: str) -> bool:
+        """Test keyman credentials for a provider."""
+        from src.utils.keyman_integration import KeymanIntegration
+        
+        keyman = KeymanIntegration()
+        
+        # Check if provider is configured
+        if not keyman.service_configured(provider_name):
+            print(f"ERROR: Provider '{provider_name}' not configured in keyman vault")
+            return False
+        
+        # Test credential retrieval
+        credentials = keyman.get_service_credentials(provider_name)
+        
+        if credentials:
+            print(f"✓ Keyman credentials accessible for {provider_name}")
+            print(f"  Username: {credentials.get('username', 'N/A')}")
+            print(f"  Password: {'*' * len(credentials.get('password', '')) if credentials.get('password') else 'N/A'}")
+            return True
+        else:
+            print(f"✗ Failed to retrieve keyman credentials for {provider_name}")
+            return False
+
+def main():
+    """Main CLI entry point."""
+    parser = argparse.ArgumentParser(description="HOMESERVER Enhanced Backup CLI Utility")
+    parser.add_argument("--config", "-c", help="Configuration file path")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    
+    # Add note about future developments
+    parser.epilog = "Note: Google Cloud Storage and AWS S3 providers are future developments and currently disabled. Only Local and Backblaze providers are fully functional."
+    
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    
+    # Create backup command
+    create_parser = subparsers.add_parser("create", help="Create a new backup")
+    create_parser.add_argument("--items", "-i", nargs="+", help="Items to backup")
+    
+    # List backups command
+    list_parser = subparsers.add_parser("list", help="List available backups")
+    list_parser.add_argument("--provider", "-p", help="Specific provider to list from")
+    
+    # Test providers command
+    subparsers.add_parser("test-providers", help="Test all enabled providers")
+    
+    # Download backup command
+    download_parser = subparsers.add_parser("download", help="Download backup from provider")
+    download_parser.add_argument("backup_name", help="Name of backup to download")
+    download_parser.add_argument("--provider", "-p", required=True, help="Provider to download from")
+    download_parser.add_argument("--to", "-t", help="Local path to save to")
+    
+    # Restore files command
+    restore_parser = subparsers.add_parser("restore", help="Restore specific files/directories from chunked backup")
+    restore_parser.add_argument("--backup-id", "-b", required=True, help="Backup ID to restore from")
+    restore_parser.add_argument("--paths", "-p", nargs="+", required=True, help="Paths to restore")
+    restore_parser.add_argument("--location", "-l", help="Restore location (default: original paths)")
+    
+    # Test backup cycle command
+    test_parser = subparsers.add_parser("test-cycle", help="Test complete backup cycle")
+    test_parser.add_argument("--items", "-i", nargs="+", help="Items to backup")
+    
+    # List available providers
+    subparsers.add_parser("list-providers", help="List available providers (some are future developments)")
+    
+    # Set provider credentials command
+    set_creds_parser = subparsers.add_parser("set-credentials", help="Set credentials for a provider")
+    set_creds_parser.add_argument("provider", help="Provider name")
+    set_creds_parser.add_argument("--username", "-u", required=True, help="Username/access key")
+    set_creds_parser.add_argument("--password", "-p", required=True, help="Password/secret key")
+    
+    # Set provider credentials JSON command
+    set_creds_json_parser = subparsers.add_parser("set-credentials-json", help="Set credentials JSON content for a provider")
+    set_creds_json_parser.add_argument("provider", help="Provider name")
+    set_creds_json_parser.add_argument("--json", "-j", required=True, help="Credentials JSON content")
+    
+    # Get provider credentials command
+    get_creds_parser = subparsers.add_parser("get-credentials", help="Get credentials for a provider")
+    get_creds_parser.add_argument("provider", help="Provider name")
+    
+    # Keyman-specific commands
+    subparsers.add_parser("list-keyman-services", help="List all configured keyman services")
+    
+    remove_creds_parser = subparsers.add_parser("remove-credentials", help="Remove credentials from keyman vault")
+    remove_creds_parser.add_argument("provider", help="Provider name")
+    
+    test_keyman_parser = subparsers.add_parser("test-keyman", help="Test keyman credentials for a provider")
+    test_keyman_parser.add_argument("provider", help="Provider name")
+    
+    # Enable provider command
+    enable_parser = subparsers.add_parser("enable-provider", help="Enable a provider")
+    enable_parser.add_argument("provider", help="Provider name")
+    
+    # Disable provider command
+    disable_parser = subparsers.add_parser("disable-provider", help="Disable a provider")
+    disable_parser.add_argument("provider", help="Provider name")
+    
+    # Set backup schedule command
+    schedule_parser = subparsers.add_parser("set-schedule", help="Set backup cron schedule")
+    schedule_parser.add_argument("schedule", help="Cron schedule (e.g., '0 2 * * *' for daily at 2 AM)")
+    
+    # Get backup schedule command
+    subparsers.add_parser("get-schedule", help="Get current backup schedule")
+    
+    # Enable backup schedule command
+    enable_schedule_parser = subparsers.add_parser("enable-schedule", help="Enable backup schedule")
+    enable_schedule_parser.add_argument("--schedule", "-s", default="0 2 * * *", help="Cron schedule (default: daily at 2 AM)")
+    
+    # Disable backup schedule command
+    subparsers.add_parser("disable-schedule", help="Disable backup schedule")
+    
+    # Self-contained installer command
+    install_parser = subparsers.add_parser("install", help="Install backup system with virtual environment")
+    install_parser.add_argument("--force", action="store_true", help="Force installation")
+    
+    # Uninstall command
+    uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall backup system")
+    
+    # Set provider config command
+    set_config_parser = subparsers.add_parser("set-config", help="Set configuration for a provider")
+    set_config_parser.add_argument("provider", help="Provider name")
+    set_config_parser.add_argument("key", help="Configuration key")
+    set_config_parser.add_argument("value", help="Configuration value")
+    
+    # Get provider config command
+    get_config_parser = subparsers.add_parser("get-config", help="Get configuration for a provider")
+    get_config_parser.add_argument("provider", help="Provider name")
+    
+    # Deploy cron job command
+    deploy_cron_parser = subparsers.add_parser("deploy-cron", help="Deploy cron job with schedule")
+    deploy_cron_parser.add_argument("schedule", help="Cron schedule (e.g., '0 2 * * *' for daily at 2 AM)")
+    
+    # Remove cron job command
+    subparsers.add_parser("remove-cron", help="Remove cron job")
+    
+    # Get cron status command
+    subparsers.add_parser("cron-status", help="Get cron job status")
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return
+    
+    # Initialize CLI
+    cli = EnhancedBackupCLI(args.config)
+    
+    try:
+        if args.command == "create":
+            cli.create_backup(args.items)
+        elif args.command == "list":
+            backups = cli.list_backups(args.provider)
+            if backups:
+                print("Available backups:")
+                for backup in backups:
+                    provider = backup.get('provider', 'unknown')
+                    mtime = backup.get('mtime', 0)
+                    if isinstance(mtime, (int, float)):
+                        mtime = datetime.fromtimestamp(mtime).isoformat()
+                    print(f"  {backup['name']} - {backup.get('size', 0)} bytes - {mtime} ({provider})")
+            else:
+                print("No backups found")
+        elif args.command == "test-providers":
+            results = cli.test_providers()
+            print(f"Provider test results: {results}")
+        elif args.command == "download":
+            success = cli.download_backup(args.backup_name, args.provider, args.to)
+            if not success:
+                sys.exit(1)
+        elif args.command == "restore":
+            result = cli.restore_files(args.backup_id, args.paths, args.location)
+            if result.get('success'):
+                print(f"Restore completed successfully:")
+                print(f"  Files restored: {result['files_restored']}")
+                print(f"  Chunks downloaded: {result['chunks_downloaded']}")
+                print(f"  Total bytes: {result['total_bytes'] / (1024*1024):.2f} MB")
+            else:
+                print(f"ERROR: Restore failed: {result.get('error', 'Unknown error')}")
+                sys.exit(1)
+        elif args.command == "test-cycle":
+            success = cli.test_backup_cycle(args.items)
+            if not success:
+                sys.exit(1)
+        elif args.command == "list-providers":
+            print("Available providers:")
+            for provider_name in PROVIDERS.keys():
+                status = "enabled" if provider_name in cli.providers else "disabled"
+                if provider_name in ['google_cloud_storage']:
+                    print(f"  {provider_name} ({status}) - Future development (currently disabled)")
+                else:
+                    print(f"  {provider_name} ({status})")
+        elif args.command == "set-credentials":
+            success = cli.set_provider_credentials(args.provider, args.username, args.password)
+            if not success:
+                sys.exit(1)
+        elif args.command == "set-credentials-json":
+            success = cli.set_provider_credentials_json(args.provider, args.json)
+            if not success:
+                sys.exit(1)
+        elif args.command == "get-credentials":
+            creds = cli.get_provider_credentials(args.provider)
+            if creds:
+                print(f"Provider: {args.provider}")
+                print(f"Username: {creds['username']}")
+                print(f"Password: {'*' * len(creds['password']) if creds['password'] else '(empty)'}")
+            else:
+                sys.exit(1)
+        elif args.command == "list-keyman-services":
+            cli.list_keyman_services()
+        elif args.command == "remove-credentials":
+            success = cli.remove_provider_credentials(args.provider)
+            if not success:
+                sys.exit(1)
+        elif args.command == "test-keyman":
+            success = cli.test_keyman_credentials(args.provider)
+            if not success:
+                sys.exit(1)
+        elif args.command == "enable-provider":
+            success = cli.enable_provider(args.provider)
+            if not success:
+                sys.exit(1)
+        elif args.command == "disable-provider":
+            success = cli.disable_provider(args.provider)
+            if not success:
+                sys.exit(1)
+        elif args.command == "set-schedule":
+            success = cli.set_backup_schedule(args.schedule)
+            if not success:
+                sys.exit(1)
+        elif args.command == "get-schedule":
+            cli.get_backup_schedule()
+        elif args.command == "enable-schedule":
+            success = cli.enable_backup_schedule(args.schedule)
+            if not success:
+                sys.exit(1)
+        elif args.command == "disable-schedule":
+            success = cli.disable_backup_schedule()
+            if not success:
+                sys.exit(1)
+        elif args.command == "install":
+            # Run environment setup
+            try:
+                from src.installer.setupEnvironment import BackupEnvironmentSetup
+                setup = BackupEnvironmentSetup()
+                success = setup.install()
+                if not success:
+                    sys.exit(1)
+            except ImportError as e:
+                print(f"ERROR: Could not import environment setup: {e}")
+                sys.exit(1)
+        elif args.command == "uninstall":
+            # Run environment cleanup
+            try:
+                from src.installer.setupEnvironment import BackupEnvironmentSetup
+                setup = BackupEnvironmentSetup()
+                success = setup.uninstall()
+                if not success:
+                    sys.exit(1)
+            except ImportError as e:
+                print(f"ERROR: Could not import environment setup: {e}")
+                sys.exit(1)
+        elif args.command == "set-config":
+            success = cli.set_provider_config(args.provider, args.key, args.value)
+            if not success:
+                sys.exit(1)
+        elif args.command == "get-config":
+            config = cli.get_provider_config(args.provider)
+            if config:
+                print(f"Configuration for {args.provider}:")
+                for key, value in config.items():
+                    if key in ['password', 'secret_key', 'application_key', 'encryption_key']:
+                        value = '*' * len(str(value)) if value else '(empty)'
+                    print(f"  {key}: {value}")
+            else:
+                sys.exit(1)
+        elif args.command == "deploy-cron":
+            success = cli.deploy_cron_job(args.schedule)
+            if not success:
+                sys.exit(1)
+        elif args.command == "remove-cron":
+            success = cli.remove_cron_job()
+            if not success:
+                sys.exit(1)
+        elif args.command == "cron-status":
+            cli.get_cron_job_status()
+    
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

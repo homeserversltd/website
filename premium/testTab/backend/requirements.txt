@@ -1,0 +1,15 @@
+# Test Premium Tab Python Dependencies
+# These are additional packages that don't conflict with the main application
+
+# Data processing and utilities
+pandas==2.1.4
+numpy==1.24.3
+
+# Additional HTTP client (different from main app's requests)
+httpx==0.25.2
+
+# JSON schema validation
+jsonschema==4.23.0
+
+# Date/time utilities
+python-dateutil==2.9.0

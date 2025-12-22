@@ -1,0 +1,387 @@
+/**
+ * Responsive design styles
+ * Mobile-first approach using CSS variables from theme system
+ */
+
+/* ===== TABLET AND BELOW (768px) ===== */
+@media (max-width: 768px) {
+  .backup-tablet {
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .repositories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .backup-tablet-nav {
+    flex-direction: column;
+  }
+
+  .nav-button {
+    border-bottom: 1px solid var(--border);
+    border-right: none;
+  }
+
+  .nav-button.active {
+    border-bottom-color: var(--border);
+    border-left: 3px solid var(--accent);
+  }
+
+  .backup-actions {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+
+  .repository-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-controls {
+    flex-direction: column;
+  }
+
+  .providers-layout {
+    flex-direction: column;
+  }
+
+  .provider-selector {
+    flex: none;
+    max-height: 300px;
+  }
+
+  /* ===== OVERVIEW TAB MOBILE OPTIMIZATIONS ===== */
+  
+  /* Stack the two-column layout vertically on mobile */
+  .overview-content {
+    flex-direction: column;
+  }
+
+  .providers-panel {
+    flex: 1 1 auto;
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid var(--border);
+    padding: 15px;
+    max-height: 50vh;
+  }
+
+  .files-panel {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 15px;
+    max-height: 50vh;
+  }
+
+  /* Reduce padding on mobile for better space usage */
+  .panel-header h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .panel-description {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Optimize provider cards for mobile */
+  .provider-list {
+    gap: 0.5rem;
+  }
+
+  /* Optimize file list for mobile */
+  .file-list {
+    gap: 0.5rem;
+  }
+
+  .file-item {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .file-path {
+    font-size: 0.8rem;
+  }
+
+  /* ===== CONFIG TAB MOBILE OPTIMIZATIONS ===== */
+  
+  .config-panel {
+    padding: 15px;
+  }
+
+  .config-panel h3 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+
+  .config-section {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .config-section h4 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  /* File input group stacks vertically on mobile */
+  .file-input-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* File list optimizations */
+  .file-list {
+    max-height: 150px;
+    padding: 8px;
+  }
+
+  .file-item {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+
+  .file-path {
+    font-size: 0.8rem;
+    word-break: break-all;
+    margin-right: 8px;
+    flex: 1 1 100%;
+    margin-bottom: 4px;
+  }
+
+  .remove-button {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Recommended paths pills wrap better on mobile */
+  .recommended-pills {
+    max-height: 100px;
+    gap: 6px;
+  }
+
+  .recommended-pill {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+  }
+
+  /* Settings grid becomes single column */
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  /* Action buttons stack and fill width */
+  .config-actions {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .action-button {
+    width: 100%;
+    min-width: auto;
+  }
+
+  /* Encryption settings mobile layout */
+  .encryption-settings {
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .encryption-toggle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .password-input-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .password-submit {
+    width: 100%;
+  }
+
+  /* Advanced config panel mobile */
+  .advanced-config-panel {
+    padding: 15px;
+  }
+
+  .advanced-config-panel h5 {
+    font-size: 1rem;
+    margin-bottom: 15px;
+  }
+
+  .advanced-config-panel .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* About section mobile */
+  .about-info {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .info-item {
+    padding: 8px;
+  }
+
+  /* Backup type selector mobile */
+  .backup-type-selector {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .backup-type-option {
+    padding: 15px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ===== SMALL MOBILE (480px and below) ===== */
+@media (max-width: 480px) {
+  /* Even more compact spacing for very small screens */
+  .config-panel {
+    padding: 10px;
+  }
+
+  .config-section {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .config-section h4 {
+    font-size: 0.9rem;
+  }
+
+  .providers-panel,
+  .files-panel {
+    padding: 12px;
+  }
+
+  .panel-header h3 {
+    font-size: 0.9rem;
+  }
+
+  .panel-description {
+    font-size: 0.75rem;
+  }
+
+  /* Compact file items */
+  .file-item {
+    padding: 8px 10px;
+  }
+
+  .file-path {
+    font-size: 0.75rem;
+  }
+
+  /* Compact recommended pills */
+  .recommended-pill {
+    font-size: 0.65rem;
+    padding: 3px 6px;
+  }
+
+  /* Compact metric items in status header */
+  .status-header-bar {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .status-header-bar .status-metrics {
+    gap: 0.25rem;
+    justify-content: stretch;
+    align-items: stretch;
+  }
+
+  .status-header-bar .metric-item {
+    min-width: 0;
+    flex: 1 1 calc(50% - 0.125rem);
+    padding: 0.4rem 0.2rem;
+    min-height: 55px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .status-header-bar .metric-label {
+    font-size: 0.6rem;
+    margin-bottom: 0.15rem;
+    line-height: 1.1;
+    text-align: center;
+    width: 100%;
+  }
+
+  .status-header-bar .metric-value {
+    font-size: 0.7rem;
+    line-height: 1.2;
+    text-align: center;
+    width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Compact action buttons */
+  .action-button {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Compact form controls */
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  /* Compact encryption toggle */
+  .encryption-toggle {
+    padding: 10px;
+  }
+
+  .toggle-text label {
+    font-size: 0.9rem;
+  }
+
+  .toggle-text small {
+    font-size: 0.75rem;
+  }
+}
+
+/* ===== LANDSCAPE MOBILE (max-height: 600px) ===== */
+@media (max-height: 600px) and (orientation: landscape) {
+  /* Optimize for landscape mobile - reduce vertical space */
+  .overview-layout {
+    min-height: auto;
+  }
+
+  .providers-panel,
+  .files-panel {
+    max-height: 40vh;
+    padding: 10px;
+  }
+
+  .config-panel {
+    padding: 12px;
+  }
+
+  .config-section {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .status-header-bar {
+    padding: 0.5rem 1rem;
+  }
+}

@@ -1,0 +1,465 @@
+[data-floating-ui-portal] .modal:has(.hard-drive-test-modal) {
+  max-width: 95vw !important;
+  width: 95vw !important;
+}
+
+/* Hide scrollbar on modal-content when it's a parent of our hard drive test */
+.modal-content:has(.hard-drive-test-modal) {
+  overflow: hidden !important;
+}
+
+.hard-drive-test-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: var(--background);
+  border-radius: 8px;
+}
+
+.hard-drive-test-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: var(--primary);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.hard-drive-test-modal .modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hard-drive-test-modal .modal-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background-color: var(--background);
+}
+
+/* Loading and Error States */
+.hard-drive-test-modal .loading-container,
+.hard-drive-test-modal .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+  gap: 15px;
+  height: 100%;
+}
+
+.hard-drive-test-modal .error-container {
+  color: var(--error);
+}
+
+.hard-drive-test-modal .error-icon {
+  color: var(--error);
+  font-size: 24px;
+}
+
+.hard-drive-test-modal .warning-icon {
+  color: var(--warning);
+  font-size: 20px;
+}
+
+/* Device Selection */
+.hard-drive-test-modal .device-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hard-drive-test-modal .devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.hard-drive-test-modal .device-option {
+  background-color: var(--primary);
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.hard-drive-test-modal .device-option:hover {
+  background-color: var(--primaryHover);
+}
+
+.hard-drive-test-modal .device-option.selected {
+  border-color: var(--accent);
+  background-color: var(--primaryHover);
+  box-shadow: 0 0 10px var(--border);
+}
+
+.hard-drive-test-modal .device-option.selected::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--accent);
+  border-radius: 4px 0 0 4px;
+}
+
+.hard-drive-test-modal .device-icon {
+  font-size: 1.5rem;
+  color: var(--text);
+}
+
+.hard-drive-test-modal .device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hard-drive-test-modal .device-name {
+  color: var(--text);
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.hard-drive-test-modal .device-path {
+  font-size: 0.85rem;
+  color: var(--secondary);
+}
+
+.hard-drive-test-modal .no-devices {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--warning);
+  background-color: var(--primaryHover);
+  border-radius: 8px;
+  gap: 12px;
+}
+
+/* Test Options */
+.hard-drive-test-modal .test-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hard-drive-test-modal .options-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.hard-drive-test-modal .test-option {
+  background-color: var(--primary);
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.hard-drive-test-modal .test-option:hover {
+  background-color: var(--primaryHover);
+}
+
+.hard-drive-test-modal .test-option.selected {
+  border-color: var(--accent);
+  background-color: var(--primaryHover);
+  box-shadow: 0 0 10px var(--border);
+}
+
+.hard-drive-test-modal .test-option.selected::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--accent);
+  border-radius: 4px 0 0 4px;
+}
+
+.hard-drive-test-modal .option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.hard-drive-test-modal .option-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.hard-drive-test-modal .duration {
+  font-size: 0.9rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+.hard-drive-test-modal .test-option p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--secondary);
+}
+
+/* Warning Message */
+.hard-drive-test-modal .warning-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--primary);
+  border-radius: 8px;
+  border-left: 4px solid var(--warning);
+  color: var(--text);
+}
+
+.hard-drive-test-modal .warning-message .warning-icon {
+  color: var(--warning);
+  font-size: 1.2rem;
+}
+
+/* Action Buttons */
+.hard-drive-test-modal .action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.hard-drive-test-modal .action-button,
+.hard-drive-test-modal .primary-btn,
+.hard-drive-test-modal .secondary-btn,
+.hard-drive-test-modal .view-results-btn {
+  padding: 10px 15px;
+  border-radius: 5px;
+  color: var(--text);
+  background-color: var(--primary);
+  border: 1px solid var(--border);
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.hard-drive-test-modal .action-button:hover,
+.hard-drive-test-modal .primary-btn:hover,
+.hard-drive-test-modal .secondary-btn:hover,
+.hard-drive-test-modal .view-results-btn:hover {
+  background-color: var(--primaryHover);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.hard-drive-test-modal .action-button:disabled,
+.hard-drive-test-modal .primary-btn:disabled,
+.hard-drive-test-modal .secondary-btn:disabled,
+.hard-drive-test-modal .view-results-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--primary);
+  color: var(--secondary);
+  border-color: var(--border);
+}
+
+.hard-drive-test-modal .action-button.loading,
+.hard-drive-test-modal .primary-btn.loading,
+.hard-drive-test-modal .secondary-btn.loading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+/* Test Progress */
+.hard-drive-test-modal .test-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.hard-drive-test-modal .progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hard-drive-test-modal .progress-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.hard-drive-test-modal .progress-percentage {
+  font-weight: 600;
+  font-size: 1.2rem;
+  min-width: 60px;
+  text-align: right;
+  color: var(--text);
+}
+
+.hard-drive-test-modal .progress-bar-container {
+  width: 250px;
+  height: 8px;
+  background-color: var(--primary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hard-drive-test-modal .progress-bar {
+  height: 100%;
+  background-color: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.hard-drive-test-modal .test-log {
+  flex: 1;
+  background-color: var(--primaryHover);
+  color: var(--text);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: monospace;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+}
+
+.hard-drive-test-modal .log-entry {
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.hard-drive-test-modal .test-complete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--primary);
+  border-radius: 8px;
+  border-left: 4px solid var(--success);
+  color: var(--text);
+}
+
+.hard-drive-test-modal .complete-icon {
+  color: var(--success);
+  font-size: 1.2rem;
+}
+
+/* Test Results */
+.hard-drive-test-modal .test-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.hard-drive-test-modal .no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  gap: 16px;
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.hard-drive-test-modal .no-results .warning-icon {
+  font-size: 2rem;
+  color: var(--warning);
+}
+
+.hard-drive-test-modal .no-results p {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.hard-drive-test-modal .results-content {
+  background-color: var(--primary);
+  color: var(--text);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  max-width: 100%;
+  flex: 1;
+  overflow: hidden;
+}
+
+.hard-drive-test-modal .results-content pre {
+  color: var(--text);
+  font-family: monospace;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+/* Media query for small screens */
+@media (max-width: 768px) {
+  .hard-drive-test-modal {
+    height: 100%;
+    max-height: none;
+  }
+  
+  .hard-drive-test-modal .options-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .hard-drive-test-modal .progress-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .hard-drive-test-modal .progress-bar-container {
+    width: 100%;
+  }
+  
+  .hard-drive-test-modal .action-buttons {
+    flex-direction: column;
+  }
+  
+  .hard-drive-test-modal .primary-btn,
+  .hard-drive-test-modal .secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+} 

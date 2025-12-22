@@ -1,0 +1,3 @@
+# nasLinker backend requirements
+# Note: linker core modules are expected to be available at /usr/local/lib/linker
+# or will be copied during installation

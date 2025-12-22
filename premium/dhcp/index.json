@@ -1,0 +1,41 @@
+{
+  "name": "dhcp",
+  "version": "1.0.0",
+  "config": {
+    "repository": {
+      "url": "git@github.com:homeserversltd/dhcp.git",
+      "branch": "main"
+    },
+    "git_managed": true
+  },
+  "files": {
+    "config": "homeserver.patch.json",
+    "readme": "README.md",
+    "license": "LICENSE",
+    "backend": {
+      "index": "backend/index.json",
+      "requirements": "backend/requirements.txt",
+      "init": "backend/__init__.py",
+      "routes": "backend/routes.py",
+      "dhcp_manager": "backend/dhcp_manager.py"
+    },
+    "frontend": {
+      "index": "frontend/index.json",
+      "package": "frontend/package.patch.json",
+      "entry": "frontend/index.tsx",
+      "types": "frontend/types.ts",
+      "styles": "frontend/PortalCard.css",
+      "DhcpCard": "frontend/components/DhcpCard.tsx",
+      "ReservationSlider": "frontend/components/ReservationSlider.tsx",
+      "useDhcpControls": "frontend/hooks/useDhcpControls.ts",
+      "anonymize": "frontend/utils/anonymize.ts",
+      "default_icon": "frontend/images/default.png"
+    },
+    "permissions": {
+      "sudoers": "permissions/flask-dhcp"
+    },
+    "system": {
+      "dependencies": "system/dependencies.json"
+    }
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "name": "backupTab",
+  "files": [
+    {
+      "source": "frontend/index.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/index.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main React entry point for the backup tablet"
+    },
+    {
+      "source": "frontend/types.ts",
+      "target": "/var/www/homeserver/src/tablets/backupTab/types.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "TypeScript types for the backup tablet"
+    },
+    {
+      "source": "frontend/backupTab.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/backupTab.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main CSS import file for backup tablet"
+    },
+    {
+      "source": "frontend/styles/base.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/base.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Base styles for backup tablet"
+    },
+    {
+      "source": "frontend/styles/navigation.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/navigation.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Navigation styles for backup tablet"
+    },
+    {
+      "source": "frontend/styles/providers.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/providers.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Provider selection and configuration styles"
+    },
+    {
+      "source": "frontend/styles/forms.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/forms.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Form and input styling for backup tablet"
+    },
+    {
+      "source": "frontend/styles/overview.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/overview.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Overview tab specific styles"
+    },
+    {
+      "source": "frontend/styles/repositories.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/repositories.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Repository cards and backup history styles"
+    },
+    {
+      "source": "frontend/styles/config.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/config.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Configuration panel styles"
+    },
+    {
+      "source": "frontend/styles/responsive.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/styles/responsive.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Responsive design styles for mobile and tablet"
+    },
+    {
+      "source": "frontend/components/BackupCard.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/BackupCard.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Backup operation card component"
+    },
+    {
+      "source": "frontend/components/RepositoryCard.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/RepositoryCard.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Repository management card component"
+    },
+    {
+      "source": "frontend/hooks/useBackupControls.ts",
+      "target": "/var/www/homeserver/src/tablets/backupTab/hooks/useBackupControls.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "Custom hook for backup operations"
+    },
+    {
+      "source": "frontend/components/GoogleSetupModal.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/GoogleSetupModal.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Unified Google setup modal for Drive and Cloud Storage"
+    },
+    {
+      "source": "frontend/components/GoogleSetupModal.css",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/GoogleSetupModal.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "CSS styles for Google setup modal"
+    },
+    {
+      "source": "frontend/images/default.png",
+      "target": "/var/www/homeserver/src/tablets/backupTab/images/default.png",
+      "type": "copy",
+      "identifier": null,
+      "description": "Default icon for the backup tablet"
+    },
+    {
+      "source": "frontend/components/index.ts",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/index.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "Centralized component exports"
+    },
+    {
+      "source": "frontend/components/README.md",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/README.md",
+      "type": "copy",
+      "identifier": null,
+      "description": "Component documentation"
+    },
+    {
+      "source": "frontend/components/StatusUtils.ts",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/StatusUtils.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "Shared utility functions for status handling"
+    },
+    {
+      "source": "frontend/components/OverviewTab.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/OverviewTab.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Overview subtab component"
+    },
+    {
+      "source": "frontend/components/ProvidersTab.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/ProvidersTab.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Providers subtab component"
+    },
+    {
+      "source": "frontend/components/ScheduleTab.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/ScheduleTab.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Schedule subtab component"
+    },
+    {
+      "source": "frontend/components/ConfigTab.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/ConfigTab.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Config subtab component"
+    },
+    {
+      "source": "frontend/components/RestoreTab.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/RestoreTab.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Restore subtab component"
+    },
+    {
+      "source": "frontend/components/StatusHeaderBar.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/StatusHeaderBar.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Status header bar component"
+    },
+    {
+      "source": "frontend/components/InstallationManager.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/InstallationManager.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Installation manager component"
+    },
+    {
+      "source": "frontend/components/TimePicker.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/TimePicker.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Time picker component"
+    },
+    {
+      "source": "frontend/components/Calendar.tsx",
+      "target": "/var/www/homeserver/src/tablets/backupTab/components/Calendar.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Calendar component"
+    }
+  ]
+}

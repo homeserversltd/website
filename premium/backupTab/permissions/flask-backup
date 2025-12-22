@@ -1,0 +1,70 @@
+# HOMESERVER Backup System Permissions
+# Professional backup system access control
+
+# Allow backup system operations
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl start homeserver-backup.timer
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl stop homeserver-backup.timer
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl enable homeserver-backup.timer
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl disable homeserver-backup.timer
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl is-active homeserver-backup.timer
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl list-timers homeserver-backup.timer
+
+# Allow backup CLI execution
+www-data ALL=(root) NOPASSWD: /usr/bin/python3 /opt/homeserver-backup/homeserver_backup_service.py
+
+# Allow backup script execution for sync now functionality
+www-data ALL=(root) NOPASSWD: /var/www/homeserver/premium/backupTab/backend/backup
+www-data ALL=(root) NOPASSWD: /var/www/homeserver/premium/backup/backup
+www-data ALL=(root) NOPASSWD: /var/www/homeserver/premium/backup/backup-venv
+www-data ALL=(root) NOPASSWD: /usr/bin/python3 /var/www/homeserver/premium/backupTab/backend/backup
+www-data ALL=(root) NOPASSWD: /usr/bin/python3 /var/www/homeserver/premium/backup/backup
+
+# Allow configuration file access
+www-data ALL=(root) NOPASSWD: /usr/bin/cp /opt/homeserver-backup/config.yaml*
+www-data ALL=(root) NOPASSWD: /usr/bin/tail /var/log/homeserver-backup/backup.log
+
+# Allow backup tab configuration operations
+www-data ALL=(root) NOPASSWD: /bin/cp /etc/backupTab/settings.json*
+www-data ALL=(root) NOPASSWD: /bin/cp /etc/backupTab/settings.json /etc/backupTab/settings.json.backup.*
+www-data ALL=(root) NOPASSWD: /bin/cp /etc/backupTab/settings.json* /tmp/
+www-data ALL=(root) NOPASSWD: /bin/cp /tmp/settings.json* /etc/backupTab/
+www-data ALL=(root) NOPASSWD: /bin/cp /tmp/tmp*.json /etc/backupTab/settings.json
+www-data ALL=(root) NOPASSWD: /bin/cp /var/www/homeserver/premium/backupTab/backend/src/config/settings.json /etc/backupTab/settings.json
+
+# Allow cron file management
+www-data ALL=(root) NOPASSWD: /bin/cp /tmp/*.cron /etc/cron.d/homeserver-backup
+www-data ALL=(root) NOPASSWD: /bin/rm /etc/cron.d/homeserver-backup
+www-data ALL=(root) NOPASSWD: /bin/cat /etc/cron.d/homeserver-backup
+
+# Allow keyman credential operations
+www-data ALL=(root) NOPASSWD: /vault/keyman/exportkey.sh *
+www-data ALL=(root) NOPASSWD: /vault/keyman/newkey.sh *
+www-data ALL=(root) NOPASSWD: /vault/keyman/change_key.sh *
+# Allow backup credential export helper script
+www-data ALL=(root) NOPASSWD: /var/www/homeserver/premium/backupTab/backend/export_credentials.sh *
+www-data ALL=(root) NOPASSWD: /usr/bin/test -f /vault/.keys/backup.key
+www-data ALL=(root) NOPASSWD: /usr/bin/test -f /vault/.keys/backblaze.key
+www-data ALL=(root) NOPASSWD: /usr/bin/test -f /vault/.keys/google_cloud_storage.key
+www-data ALL=(root) NOPASSWD: /usr/bin/test -f /vault/.keys/aws_s3.key
+
+# Allow directory creation and management
+www-data ALL=(root) NOPASSWD: /usr/bin/mkdir -p /opt/homeserver-backup
+www-data ALL=(root) NOPASSWD: /usr/bin/mkdir -p /tmp/homeserver-backups
+www-data ALL=(root) NOPASSWD: /usr/bin/mkdir -p /var/log/homeserver-backup
+www-data ALL=(root) NOPASSWD: /usr/bin/chown -R www-data\:www-data /opt/homeserver-backup
+www-data ALL=(root) NOPASSWD: /usr/bin/chown -R www-data\:www-data /tmp/homeserver-backups
+www-data ALL=(root) NOPASSWD: /usr/bin/chown -R www-data\:www-data /var/log/homeserver-backup
+
+# Allow file permission management for backup scripts
+www-data ALL=(root) NOPASSWD: /bin/chmod 755 /var/www/homeserver/premium/backupTab/backend/backup
+www-data ALL=(root) NOPASSWD: /bin/chmod 755 /var/www/homeserver/premium/backup/backup
+www-data ALL=(root) NOPASSWD: /bin/chmod +x /var/www/homeserver/premium/backupTab/backend/backup
+www-data ALL=(root) NOPASSWD: /bin/chmod +x /var/www/homeserver/premium/backup/backup
+
+# Allow system link creation and removal
+www-data ALL=(root) NOPASSWD: /bin/ln -sf /var/www/homeserver/premium/backup/backup-venv /usr/local/bin/homeserver-backup
+www-data ALL=(root) NOPASSWD: /bin/rm /usr/local/bin/homeserver-backup
+
+# Allow settings.json file removal for clean uninstall
+www-data ALL=(root) NOPASSWD: /bin/rm /etc/backupTab/settings.json
+www-data ALL=(root) NOPASSWD: /bin/cp /etc/backupTab/settings.json /etc/backupTab/settings.backup.*

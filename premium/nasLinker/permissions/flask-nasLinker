@@ -1,0 +1,6 @@
+# Sudo permissions for nasLinker premium tab
+# Allows hardlink operations within /mnt/nas directory
+
+www-data ALL=(ALL) NOPASSWD: /usr/local/bin/linker
+www-data ALL=(ALL) NOPASSWD: /usr/local/lib/linker/*
+

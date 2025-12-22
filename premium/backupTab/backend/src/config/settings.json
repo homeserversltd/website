@@ -1,0 +1,93 @@
+{
+    "backup_items": [
+      "/tmp/test.txt"
+    ],
+    "providers": {
+      "local": {
+        "enabled": true,
+        "container": "/mnt/nas/backups/homeserver"
+      },
+      "google_cloud_storage": {
+        "enabled": false,
+        "credentials_key": "google_cloud_storage",
+        "container": "homeserver-backups",
+        "container_type": "bucket",
+        "credentials_file": "gcs_credentials.json",
+        "bucket_name": "homeserver-backups",
+        "project_id": "",
+        "max_retries": 3,
+        "retry_delay": 1.0,
+        "timeout": 300,
+        "username": "",
+        "password": ""
+      },
+      "aws_s3": {
+        "enabled": false,
+        "credentials_key": "aws_s3",
+        "container": "homeserver-backups",
+        "container_type": "bucket",
+        "bucket_name": "homeserver-backups",
+        "region": "us-west-2",
+        "keyman_integrated": true,
+        "keyman_service_name": "aws_s3",
+        "max_retries": 3,
+        "retry_delay": 1.0,
+        "timeout": 300
+      },
+      "backblaze": {
+        "enabled": false,
+        "credentials_key": "backblaze",
+        "container": "homeserver-backups",
+        "container_type": "bucket",
+        "keyman_integrated": true,
+        "keyman_service_name": "backblaze",
+        "region": "us-west-000",
+        "max_retries": 3,
+        "retry_delay": 1.0,
+        "timeout": 300,
+        "max_bandwidth": null,
+        "upload_chunk_size": 104857600,
+        "encryption_enabled": false,
+        "encryption_key": null,
+        "encryption_salt": null,
+        "connection_pool_size": 5
+      }
+    },
+    "retention_days": 30,
+    "chunking": {
+      "enabled": true,
+      "target_chunk_size_mb": 50,
+      "min_chunk_size_mb": 25,
+      "max_chunk_size_mb": 75,
+      "algorithm": "cdc_rabin",
+      "deduplication": true
+    },
+    "database": {
+      "path": "/var/www/homeserver/premium/backup/chunks.db",
+      "backup_interval_days": 7
+    },
+    "upload": {
+      "max_concurrent_uploads": 5,
+      "retry_attempts": 3,
+      "retry_delay_seconds": 5
+    },
+    "state": {
+      "encryption_enabled": true,
+      "backup_count": 0,
+      "last_backup": null,
+      "last_backup_size_bytes": null,
+      "last_backup_size_display": null,
+      "last_backup_type": null,
+      "last_daily_backup": null,
+      "backup_history": []
+    },
+    "logging": {
+      "enabled": true,
+      "log_file": "/var/www/homeserver/premium/backup/logs/backup.log",
+      "log_level": "INFO",
+      "max_file_size_mb": 10,
+      "backup_count": 5,
+      "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    }
+  }
+  

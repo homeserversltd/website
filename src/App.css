@@ -1,0 +1,502 @@
+/*
+  This CSS file is responsible for setting the layout of the application.
+  It defines the structure and positioning of various components, ensuring
+  a consistent and responsive design. No additional styles or themes are 
+  applied here; the focus is solely on layout management.
+*/
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background);
+  /* Default values that will be overridden by JavaScript */
+  --tab-bar-height: 48px;
+  --header-height: 48px;
+  --admin-offset: 0px;
+  
+  /* Global scrollbar variables for consistency */
+  --scrollbar-width: 8px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(136, 136, 136, 0.5);
+  --scrollbar-thumb-hover: rgba(136, 136, 136, 0.8);
+}
+
+/* Main sections */
+.header {
+  flex: 0 0 auto;
+  width: 100%;
+  z-index: 100;
+}
+
+/* Header layout for desktop */
+.header-top-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tab-bar {
+  margin-top: var(--header-height); /* Desktop spacing */
+  display: flex;
+  flex-wrap: wrap; /* Allow tabs to wrap to next line */
+  /* Remove overflow-x: auto to prevent horizontal scrolling */
+  position: relative;
+}
+
+/* TabBar placeholder to prevent layout shifts during bootstrap */
+.tab-bar-placeholder {
+  margin-top: var(--header-height); /* Same as tab-bar */
+  background-color: var(--background);
+  min-height: var(--tab-bar-height);
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Custom scrollbar styling for tab-bar */
+.tab-bar::-webkit-scrollbar {
+  height: var(--scrollbar-width);
+  width: var(--scrollbar-width);
+}
+
+.tab-bar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: calc(var(--scrollbar-width) / 2);
+}
+
+.tab-bar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: calc(var(--scrollbar-width) / 2);
+  border: 2px solid var(--scrollbar-track);
+}
+
+.tab-bar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Add a class that JavaScript can use to detect overflow */
+.tab-bar::after {
+  content: '';
+  display: block;
+  height: 0;
+  width: 0;
+  visibility: hidden;
+  clear: both;
+}
+
+/* When JavaScript detects overflow, it will add this class */
+.tab-bar.tabs-overflow {
+  flex-direction: column;
+  align-items: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 300px;
+}
+
+/* Responsive TabBar layout */
+@media screen and (max-width: 768px) {
+  /* Always use vertical layout for tabs */
+  .tab-bar {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: 300px; /* Limit height when in vertical mode */
+  }
+  
+  /* Remove tabs-overflow class check since we always want vertical layout */
+  .tab-bar.tabs-overflow {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: 300px; /* Limit height when in vertical mode */
+  }
+}
+
+/* Small mobile devices - always stack tabs vertically */
+@media screen and (max-width: 480px) {
+  .tab-bar {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: 300px; /* Limit height when in vertical mode */
+  }
+}
+
+main.content {
+  flex: 1 1 auto;
+  width: 100%;
+  padding: 8px;
+  background-color: var(--background);
+  overflow-y: auto;
+  
+  /* Global scrollbar styling using variables */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); /* Firefox */
+}
+
+/* Custom scrollbar styling for Webkit browsers (Chrome, Safari, Edge) */
+main.content::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+main.content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: calc(var(--scrollbar-width) / 2);
+}
+
+main.content::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: calc(var(--scrollbar-width) / 2);
+  border: 2px solid var(--scrollbar-track);
+}
+
+main.content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Ensure tablet containers inherit the scrollbar behavior */
+.tablet-container {
+  height: 100%;
+  overflow: inherit;
+}
+
+/* Only apply this spacing adjustment on desktop views */
+@media screen and (min-width: 769px) {
+  
+  /* When tab bar is hidden, just use the header height margin */
+  nav[data-hidden="true"] ~ main.content {
+    margin-top: var(--header-height);
+  }
+  
+  /* When no tab bar exists at all (completely removed from DOM) */
+  .header + main.content {
+    margin-top: var(--header-height);
+  }
+}
+
+/* Reset any default margins */
+body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Mobile-specific body and root styles */
+@media screen and (max-width: 768px) {
+  body, #root {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+}
+
+/* Add this before the 768px media query */
+@media screen and (max-width: 900px) {
+  .header-center {
+    transform: translateX(-4%);
+  }
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    position: relative; /* Ensure proper stacking context */
+  }
+
+  /* Ensure the content flows naturally in the document */
+  .header, .tab-bar, main.content {
+    position: relative;
+    width: 100%;
+  }
+
+  .header {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    width: 100%;
+    align-items: center;
+  }
+
+  /* Create a flex row for header-left and header-center */
+  .header-top-row {
+    display: flex !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .header-left {
+    flex: 0 0 auto !important;
+    justify-content: flex-start !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: max-content !important;
+  }
+
+  .header-center {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    transform: translateX(0%);
+    gap: 8px !important;
+    align-items: center !important;
+    margin-left: 8px !important;
+  }
+
+  .header-right {
+    flex: 0 1 auto !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+  }
+
+  /* TabBar layout for mobile */
+  .tab-bar {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important; /* Always stack vertically */
+    gap: 8px !important;
+    margin-top: 0 !important; /* Reset margin for mobile flow */
+    z-index: 10 !important; /* Lower than header */
+    overflow-x: hidden !important; /* Prevent horizontal scrolling */
+    overflow-y: auto !important; /* Allow vertical scrolling */
+    flex-wrap: nowrap !important;
+  }
+
+  /* Remove tabs-overflow class since we always want vertical layout */
+  .tab-bar.tabs-overflow {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: 300px !important;
+  }
+
+  /* When header gets too narrow, stack sections vertically */
+  @media screen and (max-width: 480px) {
+    .header,
+    .tab-bar,
+    main.content {
+      padding: 4px;
+    }
+    
+    .header {
+      flex-direction: column !important;
+    }
+
+    .header-top-row {
+      flex-direction: column !important;
+    }
+
+    .header-left,
+    .header-center {
+      width: 100% !important;
+      justify-content: center !important;
+    }
+
+    .header-left {
+      margin-bottom: 8px !important;
+    }
+
+    .header-center {
+      margin-left: 0 !important;
+    }
+
+    /* TabBar layout for small mobile */
+    .tab-bar {
+      flex-direction: column !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      max-height: 300px !important;
+      padding: 4px !important;
+    }
+  }
+
+  .tab {
+    width: 100% !important;
+    margin: 1px 0 !important;
+  }
+
+  /* Ensure the content area can scroll independently */
+  main.content {
+    flex: 1;
+    width: 100%;
+    padding: 8px;
+    overflow-y: auto !important; /* Ensure scrolling works on mobile */
+    margin-top: 0; /* Reset margin for mobile flow */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+
+  /* Ensure the app container allows scrolling */
+  #root, body {
+    overflow-y: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+}
+
+/* Small mobile devices */
+
+/* Target tablet containers directly */
+div[class$="-tablet"] {
+  background: var(--background);
+  border-radius: 6px;
+  padding: 0 8px;
+  width: 100%;
+  height: auto;
+  transition: transform 0.2s ease-out;
+  /* Inherit scrollbar behavior from parent */
+  overflow: inherit;
+}
+
+/* Ensure all tablet content containers use the global scrollbar styling */
+.tablet-container,
+div[class$="-tablet"],
+.tablet-content {
+  /* Inherit scrollbar styling from main.content */
+  scrollbar-width: inherit;
+}
+
+/* Ensure WebKit browsers also inherit scrollbar styling */
+.tablet-container::-webkit-scrollbar,
+div[class$="-tablet"]::-webkit-scrollbar,
+.tablet-content::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+.tablet-container::-webkit-scrollbar-track,
+div[class$="-tablet"]::-webkit-scrollbar-track,
+.tablet-content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: calc(var(--scrollbar-width) / 2);
+}
+
+.tablet-container::-webkit-scrollbar-thumb,
+div[class$="-tablet"]::-webkit-scrollbar-thumb,
+.tablet-content::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: calc(var(--scrollbar-width) / 2);
+  border: 2px solid var(--scrollbar-track);
+}
+
+.tablet-container::-webkit-scrollbar-thumb:hover,
+div[class$="-tablet"]::-webkit-scrollbar-thumb:hover,
+.tablet-content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Reset any default margins that might cause overflow */
+body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow: visible; /* Allow content to determine scroll */
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+/* Add bootstrap loading styles */
+.bootstrap-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--background-color);
+}
+
+.bootstrap-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  border-radius: 8px;
+  background-color: var(--surface-color, #f5f5f5);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bootstrap-container p {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  color: var(--text-color, #333);
+}
+
+/* Connection blocked message overlay */
+.connection-blocked-message {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--primary, rgba(0, 0, 0, 0.7));
+  z-index: 99999; /* Extremely high z-index */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.blocked-content {
+  background: var(--background, #2a2a2a);
+  padding: 30px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  max-width: 90%;
+  width: 400px;
+}
+
+.blocked-content p {
+  margin: 15px 0;
+  color: var(--text-color, #f0f0f0);
+  font-size: 16px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Prevent FOUC (Flash of Unstyled Content) */
+html, body {
+  background-color: var(--background, #2a2a2a);
+  transition: background-color 0.2s ease;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  color: var(--text-color, #f0f0f0);
+}

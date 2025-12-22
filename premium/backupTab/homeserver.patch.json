@@ -1,0 +1,19 @@
+{
+    "tabs": {
+        "backupTab": {
+          "config": {
+            "displayName": "Backup",
+            "adminOnly": false,
+            "order": 10,
+            "isEnabled": true
+          },
+          "visibility": {
+            "tab": true,
+            "elements": {
+            }
+          },
+          "data": {
+          }
+        }
+    }
+}

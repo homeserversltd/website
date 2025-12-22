@@ -1,0 +1,13 @@
+{
+  "name": "nasLinker",
+  "version": "1.0.0",
+  "files": [
+    {
+      "source": "backend/__init__.py",
+      "target": "/var/www/homeserver/backend/__init__.py",
+      "type": "append",
+      "identifier": "nasLinker",
+      "description": "Blueprint registration injection point for nasLinker premium tab"
+    }
+  ]
+}

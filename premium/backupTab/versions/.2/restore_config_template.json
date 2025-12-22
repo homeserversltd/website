@@ -1,0 +1,36 @@
+{
+  "backup_name": "homeserver_backup_20241201_020000.encrypted",
+  "provider": "aws_s3",
+  "items": [
+    {
+      "source_name": "src",
+      "target_path": "/var/www/homeserver/src",
+      "type": "directory",
+      "owner": "www-data:www-data",
+      "permissions": "755"
+    },
+    {
+      "source_name": "gogs",
+      "target_path": "/var/lib/gogs",
+      "type": "directory",
+      "owner": "git:git",
+      "permissions": "755"
+    },
+    {
+      "source_name": "homeserver.json",
+      "target_path": "/etc/homeserver/homeserver.json",
+      "type": "file",
+      "owner": "www-data:www-data",
+      "permissions": "644"
+    },
+    {
+      "source_name": "backup.log",
+      "target_path": "/var/log/homeserver/backup.log",
+      "type": "file",
+      "owner": "www-data:www-data",
+      "permissions": "644"
+    }
+  ],
+  "backup_existing": true,
+  "dry_run": false
+}

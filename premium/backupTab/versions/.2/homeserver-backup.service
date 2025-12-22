@@ -1,0 +1,31 @@
+[Unit]
+Description=HOMESERVER Backup Service - Professional 3-2-1 backup system
+Documentation=https://github.com/homeserversltd/homeserver-backup
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/homeserver/backup
+ExecStart=/usr/bin/python3 /var/www/homeserver/backup/backup_service.py
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=homeserver-backup
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/homeserver/backup /tmp/homeserver-backups /var/lib/gogs /vault/.keys
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

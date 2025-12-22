@@ -1,0 +1,322 @@
+/* UI Tab Components Styles */
+/* Matches TabBar styling - tabs sit on top, rounded bottom corners */
+
+/* Tab Group Container */
+.ui-tab-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Individual Tab - Matches TabBar style */
+.ui-tab {
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-top: none;
+  background-color: var(--background);
+  color: var(--secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  white-space: nowrap;
+  position: relative;
+  font-family: inherit;
+  line-height: 1.5;
+  border-radius: 0 0 6px 6px;
+  margin: 0 2px;
+  min-height: 48px;
+  min-width: 120px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  gap: 8px;
+  justify-items: right;
+}
+
+/* Hover - Movement only, no color change */
+.ui-tab:hover:not(:disabled):not(.ui-tab--active) {
+  transform: translateY(1px);
+}
+
+.ui-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+  border-radius: 0 0 6px 6px;
+}
+
+/* Active Tab - Uses primary color, no hover */
+.ui-tab--active {
+  background-color: var(--primary);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+}
+
+.ui-tab--active:hover {
+  /* No hover effect on active tab */
+  transform: none;
+}
+
+/* Disabled Tab */
+.ui-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Tab Content */
+.ui-tab__content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-self: left;
+  grid-column: 2;
+}
+
+/* Tab Icon */
+.ui-tab__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 1em;
+}
+
+/* Tab Label */
+.ui-tab__label {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  text-align: left;
+}
+
+/* Visibility Column */
+.ui-tab__visibility-column {
+  width: 24px;
+  min-width: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  grid-column: 1;
+}
+
+/* Visibility Toggle Button */
+.ui-tab__visibility-toggle {
+  color: var(--secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.ui-tab__visibility-toggle[data-visible="true"] {
+  color: var(--text);
+}
+
+.ui-tab__visibility-toggle:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: var(--primaryHover);
+}
+
+/* Star Column */
+.ui-tab__star-column {
+  width: 24px;
+  min-width: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  grid-column: 3;
+}
+
+/* Star Button */
+.ui-tab__star-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  color: var(--text);
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  margin: 0 auto;
+}
+
+.ui-tab__star-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  background-color: var(--primaryHover);
+  opacity: 1;
+}
+
+.ui-tab__star-button--starred {
+  color: var(--star-color, #FFC107);
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.ui-tab.active .ui-tab__star-button {
+  color: var(--background);
+  opacity: 0.9;
+}
+
+.ui-tab.active .ui-tab__star-button--starred {
+  color: var(--star-color, #FFC107);
+  opacity: 1;
+}
+
+.ui-tab__star-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Hidden State */
+.ui-tab--hidden {
+  opacity: 0.7;
+  background-color: var(--hiddenTabBackground, color-mix(in srgb, var(--background) 50%, var(--primary)));
+  color: var(--hiddenTabText, var(--secondary));
+  box-shadow: none;
+}
+
+.ui-tab--hidden.ui-tab--active {
+  opacity: 1;
+}
+
+/* Admin Only State */
+.ui-tab--admin-only {
+  /* Admin-only tabs don't show visibility/star toggles */
+  /* Placeholder for future admin-only specific styling */
+  position: relative;
+}
+
+/* Tab Sizes */
+.ui-tab--small {
+  padding: 0.5rem 1rem;
+  font-size: 12px;
+}
+
+.ui-tab--medium {
+  padding: 0.75rem 1.25rem;
+  font-size: 14px;
+}
+
+.ui-tab--large {
+  padding: 1rem 1.5rem;
+  font-size: 16px;
+}
+
+/* Depth indicators - visual hierarchy for nested tabs using pseudo-element */
+.ui-tab[data-depth="1"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--border);
+  border-radius: 6px 0 0 6px;
+}
+
+.ui-tab[data-depth="2"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--border);
+  border-radius: 6px 0 0 6px;
+}
+
+.ui-tab[data-depth="3"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background-color: var(--border);
+  border-radius: 6px 0 0 6px;
+}
+
+/* Active tabs with depth get primary color indicator */
+.ui-tab[data-depth="1"].ui-tab--active::before,
+.ui-tab[data-depth="2"].ui-tab--active::before,
+.ui-tab[data-depth="3"].ui-tab--active::before {
+  background-color: var(--primary);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .ui-tab-group {
+    gap: 0.25rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ui-tab {
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 100%;
+    margin: 2px 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    grid-template-columns: auto 1fr auto;
+  }
+
+  /* Depth indicators on mobile - same approach, no layout changes */
+  .ui-tab[data-depth="1"]::before {
+    width: 4px;
+  }
+
+  .ui-tab[data-depth="2"]::before {
+    width: 5px;
+  }
+
+  .ui-tab[data-depth="3"]::before {
+    width: 6px;
+  }
+
+  /* Center text when both eye and star icons are present */
+  .ui-tab[data-has-both-icons="true"] .ui-tab__content {
+    justify-self: center;
+  }
+
+  .ui-tab[data-has-both-icons="true"] .ui-tab__label {
+    text-align: center;
+  }
+
+  .ui-tab--small {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .ui-tab--active {
+    border-top: 1px solid var(--primary);
+  }
+}

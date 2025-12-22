@@ -1,0 +1,36 @@
+/* Main stylesheet for nasLinker premium tab */
+
+.nas-linker-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+}
+
+.nas-linker-panels {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.nas-linker-panel-left,
+.nas-linker-panel-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .nas-linker-panels {
+    flex-direction: column;
+  }
+
+  .nas-linker-panel-left,
+  .nas-linker-panel-right {
+    min-height: 0;
+  }
+}

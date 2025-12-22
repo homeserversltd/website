@@ -1,0 +1,6 @@
+www-data ALL=(root) NOPASSWD: /usr/bin/crontab -l
+www-data ALL=(root) NOPASSWD: /usr/bin/crontab *
+www-data ALL=(root) NOPASSWD: /bin/cp /tmp/* /usr/local/bin/youtube-subscription-check.sh
+www-data ALL=(root) NOPASSWD: /bin/chmod +x /usr/local/bin/youtube-subscription-check.sh
+www-data ALL=(root) NOPASSWD: /usr/local/bin/yt-dlp *
+

@@ -1,0 +1,76 @@
+/* UI Visibility Toggle Button Styles */
+
+.ui-visibility-toggle {
+  color: var(--secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* Sizes */
+.ui-visibility-toggle--small {
+  width: 20px;
+  height: 20px;
+  padding: 3px;
+  font-size: 12px;
+}
+
+.ui-visibility-toggle--medium {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  font-size: 14px;
+}
+
+.ui-visibility-toggle--large {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  font-size: 16px;
+}
+
+/* Visible State */
+.ui-visibility-toggle--visible {
+  color: var(--text);
+}
+
+/* Hidden State */
+.ui-visibility-toggle--hidden {
+  color: var(--secondary);
+}
+
+/* Hover State - Never same as background */
+.ui-visibility-toggle:hover:not(:disabled) {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: var(--primaryHover);
+  color: var(--text);
+}
+
+/* Disabled State */
+.ui-visibility-toggle--disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.ui-visibility-toggle:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Focus State */
+.ui-visibility-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

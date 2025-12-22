@@ -1,0 +1,17 @@
+/**
+ * HOMESERVER Backup Tab Styles
+ * Main import file for modular CSS architecture
+ * Uses theme system variables from light.json/dark.json
+ */
+
+/* Import all component styles */
+@import './styles/base.css';
+@import './styles/navigation.css';
+@import './styles/providers.css';
+@import './styles/forms.css';
+@import './styles/overview.css';
+@import './styles/repositories.css';
+@import './styles/config.css';
+@import './styles/installation.css';
+@import './styles/responsive.css';
+@import './components/ScheduleTab.css';

@@ -1,0 +1,145 @@
+/* UI Checkbox Component Styles */
+
+.ui-checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ui-checkbox--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Checkbox Wrapper */
+.ui-checkbox__wrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Hide native checkbox */
+.ui-checkbox__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Checkbox Rounded */
+.ui-checkbox__checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--border);
+  border: 1px solid var(--primaryHover);
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 1px var(--primaryHover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Checkbox Icon (checkmark) */
+.ui-checkbox__icon {
+  display: none;
+  color: white;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+/* Checked State - Match stats tab style with blue accent */
+.ui-checkbox__input:checked + .ui-checkbox__checkmark {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.ui-checkbox__input:checked + .ui-checkbox__checkmark .ui-checkbox__icon {
+  display: block;
+}
+
+/* Hover State - Lighten accent color on hover */
+.ui-checkbox:hover:not(.ui-checkbox--disabled) .ui-checkbox__checkmark {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.ui-checkbox:hover:not(.ui-checkbox--disabled) .ui-checkbox__input:checked + .ui-checkbox__checkmark {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  opacity: 0.9;
+}
+
+/* Focus State */
+.ui-checkbox__input:focus-visible + .ui-checkbox__checkmark {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Disabled State */
+.ui-checkbox__input:disabled + .ui-checkbox__checkmark {
+  background-color: var(--border);
+  border-color: var(--primaryHover);
+  cursor: not-allowed;
+  opacity: 0.4;
+  box-shadow: 0 0 0 1px var(--primaryHover);
+}
+
+.ui-checkbox__input:disabled:checked + .ui-checkbox__checkmark {
+  background-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* Checkbox Sizes */
+.ui-checkbox--small .ui-checkbox__wrapper {
+  width: 16px;
+  height: 16px;
+}
+
+.ui-checkbox--small .ui-checkbox__icon {
+  width: 10px;
+  height: 10px;
+}
+
+.ui-checkbox--medium .ui-checkbox__wrapper {
+  width: 20px;
+  height: 20px;
+}
+
+.ui-checkbox--medium .ui-checkbox__icon {
+  width: 12px;
+  height: 12px;
+}
+
+.ui-checkbox--large .ui-checkbox__wrapper {
+  width: 24px;
+  height: 24px;
+}
+
+.ui-checkbox--large .ui-checkbox__icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Label */
+.ui-checkbox__label {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.ui-checkbox--small .ui-checkbox__label {
+  font-size: 12px;
+}
+
+.ui-checkbox--large .ui-checkbox__label {
+  font-size: 16px;
+}

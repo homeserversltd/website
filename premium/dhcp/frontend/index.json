@@ -1,0 +1,54 @@
+{
+  "name": "dhcp",
+  "files": [
+    {
+      "source": "frontend/index.tsx",
+      "target": "/var/www/homeserver/src/tablets/dhcp/index.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main React entry point for the tablet"
+    },
+    {
+      "source": "frontend/types.ts",
+      "target": "/var/www/homeserver/src/tablets/dhcp/types.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "TypeScript types for the tablet"
+    },
+    {
+      "source": "frontend/PortalCard.css",
+      "target": "/var/www/homeserver/src/tablets/dhcp/PortalCard.css",
+      "type": "copy",
+      "identifier": null,
+      "description": "Tablet-specific CSS"
+    },
+    {
+      "source": "frontend/components/DhcpCard.tsx",
+      "target": "/var/www/homeserver/src/tablets/dhcp/components/DhcpCard.tsx",
+      "type": "copy",
+      "identifier": null,
+      "description": "Main card component for displaying DHCP leases and reservations"
+    },
+    {
+      "source": "frontend/hooks/useDhcpControls.ts",
+      "target": "/var/www/homeserver/src/tablets/dhcp/hooks/useDhcpControls.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "Custom hook for DHCP operations (leases, reservations, config)"
+    },
+    {
+      "source": "frontend/images/default.png",
+      "target": "/var/www/homeserver/src/tablets/dhcp/images/default.png",
+      "type": "copy",
+      "identifier": null,
+      "description": "Default icon for the tablet"
+    },
+    {
+      "source": "frontend/utils/anonymize.ts",
+      "target": "/var/www/homeserver/src/tablets/dhcp/utils/anonymize.ts",
+      "type": "copy",
+      "identifier": null,
+      "description": "Utility functions for anonymizing MAC addresses and hostnames"
+    }
+  ]
+}

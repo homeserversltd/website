@@ -1,0 +1,8 @@
+/* nasLinker Premium Tab CSS */
+
+.nas-linker-container {
+  padding: 24px;
+  background: var(--background);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}

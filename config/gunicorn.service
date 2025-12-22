@@ -1,0 +1,38 @@
+[Unit]
+Description=Gunicorn instance for homeserver
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/homeserver
+Environment="PATH=/var/www/homeserver/venv/bin"
+# Modified to use eventlet worker for WebSocket support
+ExecStart=/var/www/homeserver/venv/bin/gunicorn \
+    --worker-class eventlet \
+    --workers 1 \
+    --bind unix:/mnt/ramdisk/homeserver.sock \
+    --timeout 300 \
+    --graceful-timeout 15 \
+    --keep-alive 5 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    main:app
+
+# Ensure proper signal handling and cleanup
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=20
+SendSIGKILL=yes
+
+# Slower restart behavior to allow cleanup
+TimeoutStartSec=10
+Restart=on-failure
+RestartSec=5
+
+ReadWritePaths=/etc/nginx
+ReadWritePaths=/var/www/homeserver/src/config
+ReadWritePaths=/etc/ssh/sshd_config
+ReadWritePaths=/mnt
+[Install]
+WantedBy=multi-user.target

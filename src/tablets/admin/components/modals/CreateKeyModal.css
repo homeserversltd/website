@@ -1,0 +1,17 @@
+.processing-note {
+  font-size: 0.8rem;
+  margin-top: 4px;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Add pulsing animation for extended operations */
+@keyframes admin-pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.modal-button-primary .processing-note {
+  animation: admin-pulse 2s infinite; 
+} 

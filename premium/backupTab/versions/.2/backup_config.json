@@ -1,0 +1,33 @@
+{
+  "backup_items": [
+    "/var/www/homeserver/src",
+    "/var/lib/gogs",
+    "/etc/homeserver",
+    "/var/log/homeserver"
+  ],
+  "providers": {
+    "aws_s3": {
+      "enabled": false,
+      "credentials_key": "aws_s3",
+      "bucket": "homeserver-backups"
+    },
+    "google_drive": {
+      "enabled": false,
+      "credentials_key": "google_drive",
+      "folder": "HOMESERVER Backups"
+    },
+    "dropbox": {
+      "enabled": false,
+      "credentials_key": "dropbox",
+      "folder": "/HOMESERVER Backups"
+    },
+    "backblaze": {
+      "enabled": false,
+      "credentials_key": "backblaze",
+      "bucket": "homeserver-backups"
+    }
+  },
+  "retention_days": 30,
+  "compression_level": 6,
+  "encryption_enabled": true
+}

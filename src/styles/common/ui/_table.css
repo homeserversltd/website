@@ -1,0 +1,194 @@
+/* Table Component Styles */
+
+.ui-table {
+  width: 100%;
+}
+
+.ui-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ui-table th,
+.ui-table td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: left;
+  min-width: 120px; /* Default min-width for all cells */
+}
+
+.ui-table th {
+  background-color: var(--hiddenTabBackground);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.ui-table td {
+  color: var(--text);
+  vertical-align: top;
+}
+
+/* Legacy class names for backward compatibility */
+.kea-leases-table {
+  width: 100%;
+}
+
+.kea-leases-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.kea-leases-table th,
+.kea-leases-table td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: left;
+  min-width: 120px; /* Default min-width for all cells */
+}
+
+.kea-leases-table th {
+  background-color: var(--hiddenTabBackground);
+  color: var(--text);
+}
+
+.network-interfaces-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.network-interfaces-table th {
+  background-color: var(--hiddenTabBackground);
+}
+
+.network-interfaces-table th,
+.network-interfaces-table td {
+  border: 1px solid var(--border);
+}
+
+.network-interfaces-table th {
+  text-align: left;
+  padding: 0.5rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.network-interfaces-table td {
+  padding: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ui-table--responsive th,
+  .ui-table--responsive td {
+    min-width: 90px; /* Reduced default min-width */
+    padding: 6px;
+  }
+
+  .kea-leases-table th,
+  .kea-leases-table td {
+    min-width: 90px; /* Reduced default min-width */
+    padding: 6px;
+  }
+
+  .network-interfaces-table th,
+  .network-interfaces-table td {
+    padding: 6px;
+  }
+}
+
+/* Mobile Card-Style Layout */
+@media (max-width: 480px) {
+  .ui-table--responsive table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+
+  .ui-table--responsive thead {
+    display: none;
+  }
+
+  .ui-table--responsive tr {
+    display: block;
+    margin-bottom: 8px;
+    background: var(--background);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .ui-table--responsive td {
+    display: flex;
+    align-items: center;
+    min-width: unset !important;
+    width: 100%;
+    padding: 8px 12px;
+    border: none !important;
+    font-size: 0.8rem;
+  }
+
+  .ui-table--responsive td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    margin-right: 8px;
+    min-width: 100px;
+  }
+
+  /* Legacy responsive styles */
+  .kea-leases-table table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+
+  .kea-leases-table thead {
+    display: none;
+  }
+
+  .kea-leases-table tr {
+    display: block;
+    margin-bottom: 8px;
+    background: var(--background);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .kea-leases-table td {
+    display: flex;
+    align-items: center;
+    min-width: unset !important;
+    width: 100%;
+    padding: 8px 12px;
+    border: none !important;
+    font-size: 0.8rem;
+  }
+
+  .kea-leases-table td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    margin-right: 8px;
+    min-width: 100px;
+  }
+
+  /* Specific column adjustments for legacy tables */
+  .kea-leases-table th:nth-child(4), /* MAC column */
+  .kea-leases-table td:nth-child(4) {
+    min-width: 0;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kea-leases-table th:nth-child(1),
+  .kea-leases-table td:nth-child(1) { /* Device Note */
+    min-width: 100px;
+  }
+  
+  .kea-leases-table th:nth-child(2), /* Hostname */
+  .kea-leases-table td:nth-child(2) {
+    min-width: 80px;
+  }
+  
+  .kea-leases-table th:nth-child(3), /* IP */
+  .kea-leases-table td:nth-child(3) {
+    min-width: 90px;
+  }
+}

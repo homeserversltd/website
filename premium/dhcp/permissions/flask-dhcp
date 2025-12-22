@@ -1,0 +1,8 @@
+www-data ALL=(root) NOPASSWD: /usr/bin/cat /etc/kea/kea-dhcp4.conf
+www-data ALL=(root) NOPASSWD: /usr/local/sbin/update-kea-dhcp.sh *
+www-data ALL=(root) NOPASSWD: /usr/sbin/kea-dhcp4 -t /etc/kea/kea-dhcp4.conf
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl is-active kea-dhcp4-server
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl status kea-dhcp4-server
+www-data ALL=(root) NOPASSWD: /usr/bin/systemctl reload kea-dhcp4-server
+www-data ALL=(root) NOPASSWD: /usr/bin/cat /var/lib/kea/kea-leases4.csv
+

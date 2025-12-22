@@ -1,0 +1,110 @@
+/* UI Select Component Styles */
+
+.ui-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.ui-select-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.ui-select-label--required::after {
+  content: ' *';
+  color: var(--error);
+}
+
+/* Select Element */
+.ui-select {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  padding-right: 2.5rem; /* Extra space for dropdown arrow */
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius, 6px);
+  background-color: var(--background);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  /* Dropdown arrow using current text color for theme compatibility */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+}
+
+.ui-select:hover:not(:disabled) {
+  border-color: var(--primary);
+  background-color: var(--primaryHover);
+}
+
+.ui-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+/* Select Sizes */
+.ui-select--small {
+  padding: 0.5rem 0.625rem;
+  padding-right: 2rem;
+  font-size: 12px;
+  background-size: 10px;
+  background-position: right 0.625rem center;
+}
+
+.ui-select--medium {
+  padding: 0.625rem 0.75rem;
+  padding-right: 2.5rem;
+  font-size: 14px;
+  background-size: 12px;
+  background-position: right 0.75rem center;
+}
+
+.ui-select--large {
+  padding: 0.75rem 1rem;
+  padding-right: 3rem;
+  font-size: 16px;
+  background-size: 14px;
+  background-position: right 1rem center;
+}
+
+/* Error State */
+.ui-select--error {
+  border-color: var(--error);
+}
+
+.ui-select--error:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--error) 20%, transparent);
+}
+
+/* Disabled State */
+.ui-select:disabled {
+  background-color: color-mix(in srgb, var(--background) 50%, var(--primary));
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Error Message */
+.ui-select-error {
+  font-size: 12px;
+  color: var(--error);
+  margin-top: -0.25rem;
+  line-height: 1.4;
+}
+
+/* Option Styling */
+.ui-select option {
+  background-color: var(--background);
+  color: var(--text);
+  padding: 0.5rem;
+}

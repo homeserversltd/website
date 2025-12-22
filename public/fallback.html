@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeServer - System Recovery</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <meta http-equiv="Cache-Control" content="max-age=31536000, immutable">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .fallback-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            color: #ff6b6b;
+            font-weight: 400;
+        }
+
+        .status-message {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #cccccc;
+        }
+
+        .error-details {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .error-details h3 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .error-details ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .error-details li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .error-details li:before {
+            content: "•";
+            color: #ff6b6b;
+            position: absolute;
+            left: 0;
+        }
+
+        .auto-refresh-note {
+            font-size: 0.9rem;
+            font-style: italic;
+            color: #999999;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 120px;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #357abd 0%, #2968a3 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        .system-info {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            color: #888888;
+        }
+
+        .version-info {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666666;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: rgba(76, 175, 80, 0.9);
+        }
+
+        @media (max-width: 768px) {
+            .fallback-container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            .logo {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+
+            .notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                transform: translateY(-100px);
+            }
+
+            .notification.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fallback-container">
+        <div class="logo">
+            <img src="/android-chrome-192x192.png" alt="HomeServer Logo">
+        </div>
+        
+        <h1>HomeServer</h1>
+        <h2>System Fallback Mode</h2>
+        
+        <div class="status-message">
+            The server is not responding to requests at this time.
+        </div>
+
+        <div class="error-details">
+            <h3>Possible Causes</h3>
+            <ul>
+                <li>Network connectivity issues</li>
+                <li>The server is being updated or upgraded</li>
+                <li>The site is not running, being rebuilt, or restarted</li>
+                <li>The server is being rebooted</li>
+                <li>The server is powered off</li>
+            </ul>
+        </div>
+
+        <div class="auto-refresh-note">
+            This page periodically attempts to reconnect you automatically. You can also try manually by pressing the Reload Page button below.
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="reloadBtn" onclick="smartReload()">
+                Reload Page
+            </button>
+        </div>
+
+        <div class="system-info">
+            <div>Product of HOMESERVER LLC</div>
+            <div class="version-info">
+            </div>
+            <div class="version-info" id="timestamp">
+                <!-- Timestamp will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification system -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Set timestamp
+        document.getElementById('timestamp').textContent = 
+            'Activated: ' + new Date().toLocaleString();
+
+        // Notification system
+        function showNotification(message, type = 'error', duration = 4000) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+
+        // Helper function to check server availability without UI changes
+        async function checkServerAvailability() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                
+                // Test multiple endpoints to ensure server is fully operational
+                const checkUrl = `/api/version?t=${Date.now()}`;
+                const vaultCheckUrl = `/api/status/vault/status?t=${Date.now()}`;
+                
+                // First check version endpoint
+                const versionResponse = await fetch(checkUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    signal: controller.signal,
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                console.log('Version endpoint response:', {
+                    ok: versionResponse.ok,
+                    status: versionResponse.status,
+                    contentType: versionResponse.headers.get('content-type')
+                });
+                
+                // Check if version endpoint is working properly
+                const versionContentType = versionResponse.headers.get('content-type');
+                if (!versionResponse.ok || !versionContentType?.includes('application/json')) {
+                    console.log('Version endpoint not ready');
+                    clearTimeout(timeoutId);
+                    return false;
+                }
+                
+                const versionData = await versionResponse.json();
+                console.log('Version data:', versionData);
+                
+                if (!versionData.status || versionData.status !== 'success' || !versionData.version) {
+                    console.log('Version endpoint returned invalid data');
+                    clearTimeout(timeoutId);
+                    return false;
+                }
+                
+                // Now check vault status endpoint to ensure full server functionality
+                const vaultResponse = await fetch(vaultCheckUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    signal: controller.signal,
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                console.log('Vault endpoint response:', {
+                    ok: vaultResponse.ok,
+                    status: vaultResponse.status,
+                    contentType: vaultResponse.headers.get('content-type')
+                });
+                
+                clearTimeout(timeoutId);
+                
+                // Both endpoints must be working for server to be considered fully operational
+                const vaultContentType = vaultResponse.headers.get('content-type');
+                const isFullyOperational = vaultResponse.ok; // Just check if vault endpoint responds with 200, don't require JSON
+                
+                console.log('Server fully operational:', isFullyOperational);
+                return isFullyOperational;
+                
+            } catch (error) {
+                console.log('Server check failed:', error);
+                return false;
+            }
+        }
+
+        // Enhanced reload function with connection detection
+        async function smartReload() {
+            const reloadBtn = document.getElementById('reloadBtn');
+            
+            try {
+                const isServerAvailable = await checkServerAvailability();
+                
+                if (isServerAvailable) {
+                    showNotification('Connection restored! Redirecting...', 'success', 2000);
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                    return;
+                }
+                
+                // Server not available - reset retry timer and restart auto-retry loop
+                console.log('Manual refresh: Server not available, restarting auto-retry for another 60 seconds');
+                retryStartTime = Date.now(); // Reset the retry timer
+                showNotification('Server is not available. Auto-retry restarted for 60 seconds.', 'error', 4000);
+                
+                // Start auto-retry immediately (don't wait 10 seconds)
+                setTimeout(autoRetry, 2000); // Start in 2 seconds
+                
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    showNotification('The server is not responding. Please wait and try again.', 'error', 5000);
+                } else if (!navigator.onLine) {
+                    showNotification('No internet connection detected.', 'error', 5000);
+                } else {
+                    // Reset retry timer even on error
+                    console.log('Manual refresh failed: Restarting auto-retry for another 60 seconds');
+                    retryStartTime = Date.now();
+                    showNotification('Server is not available. Auto-retry restarted for 60 seconds.', 'error', 4000);
+                    setTimeout(autoRetry, 2000);
+                }
+            }
+        }
+
+        // Auto-retry mechanism - retry for 60 seconds instead of just 3 attempts
+        let retryStartTime = Date.now();
+        const maxRetryDuration = 60000; // 60 seconds
+        const retryInterval = 5000; // 5 seconds between retries
+        
+        function autoRetry() {
+            const elapsedTime = Date.now() - retryStartTime;
+            const remainingTime = maxRetryDuration - elapsedTime;
+            
+            if (remainingTime > 0) {
+                const attemptNumber = Math.floor(elapsedTime / retryInterval) + 1;
+                console.log(`Auto-retry attempt ${attemptNumber} (${Math.ceil(remainingTime / 1000)}s remaining)`);
+                
+                checkServerAvailability()
+                    .then(isAvailable => {
+                        if (isAvailable) {
+                            console.log('Server appears to be responding, redirecting...');
+                            showNotification('Connection restored! Redirecting...', 'success', 2000);
+                            setTimeout(() => {
+                                window.location.href = '/';
+                            }, 1000);
+                        } else {
+                            console.log('Server still not responding');
+                            const timeLeft = maxRetryDuration - (Date.now() - retryStartTime);
+                            if (timeLeft > 0) {
+                                setTimeout(autoRetry, retryInterval);
+                            } else {
+                                console.log('Auto-retry timeout reached (60 seconds). Stopping automatic retries.');
+                            }
+                        }
+                    });
+            } else {
+                console.log('Auto-retry timeout reached (60 seconds). Stopping automatic retries.');
+            }
+        }
+
+        // Start auto-retry after 10 seconds
+        setTimeout(autoRetry, 10000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'r' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                smartReload();
+            }
+        });
+
+        // Register service worker for caching
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/fallback-sw.js').catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+
+        // Handle online/offline events
+        window.addEventListener('online', async () => {
+            showNotification('Internet connection restored! Checking server...', 'success', 3000);
+            
+            // Wait a moment for connection to stabilize, then check server
+            setTimeout(async () => {
+                const isServerAvailable = await checkServerAvailability();
+                if (isServerAvailable) {
+                    showNotification('Server is back online! Redirecting...', 'success', 2000);
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    showNotification('Internet restored, but server is still unavailable.', 'error', 4000);
+                }
+            }, 1000); // Wait 1 second for connection to stabilize
+        });
+
+        window.addEventListener('offline', () => {
+            showNotification('Internet connection lost. Page is cached and will work offline.', 'error', 5000);
+        });
+    </script>
+</body>
+</html> 

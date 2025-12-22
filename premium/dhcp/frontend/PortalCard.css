@@ -1,0 +1,1234 @@
+/* DHCP Premium Tab CSS */
+
+.dhcp-tablet {
+  padding: 24px;
+  background: var(--background);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.dhcp-tablet-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.dhcp-tablet-header h2 {
+  color: var(--text);
+  margin-bottom: 8px;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.dhcp-tablet-description {
+  color: var(--secondary);
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+}
+
+/* Information Banner */
+.dhcp-info-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.dhcp-info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.dhcp-info-value {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.dhcp-info-separator {
+  color: var(--secondary);
+  opacity: 0.5;
+}
+
+/* Button Row */
+.dhcp-button-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--primary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.dhcp-action-button {
+  background: var(--secondary);
+  color: var(--background);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.dhcp-action-button:hover:not(:disabled) {
+  background: var(--primaryHover);
+}
+
+.dhcp-action-button:disabled {
+  background: var(--secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Anonymize Toggle */
+.anonymize-toggle-container {
+  display: flex;
+  align-items: center;
+}
+
+.anonymize-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.anonymize-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.anonymize-toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  background: var(--secondary);
+  border-radius: 24px;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+}
+
+.anonymize-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: var(--background);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.anonymize-toggle-input:checked + .anonymize-toggle-slider {
+  background: var(--accent);
+}
+
+.anonymize-toggle-input:checked + .anonymize-toggle-slider::before {
+  transform: translateX(26px);
+}
+
+.anonymize-toggle-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.version-info {
+  margin-top: 12px;
+}
+
+.version-badge {
+  background: var(--accent);
+  color: var(--background);
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Navigation */
+.dhcp-tablet-nav {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+  border-bottom: 2px solid var(--border);
+}
+
+.nav-button {
+  background: none;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--secondary);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  color: var(--accent);
+  background: var(--hiddenTabBackground);
+}
+
+.nav-button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Content Areas */
+.dhcp-tablet-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.error-banner {
+  background: var(--error);
+  color: var(--background);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid var(--error);
+  opacity: 0.9;
+}
+
+.loading-banner {
+  background: var(--accent);
+  color: var(--background);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid var(--accent);
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* DHCP List */
+.dhcp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dhcp-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--secondary);
+  font-size: 1.1rem;
+}
+
+/* DHCP List Items */
+.dhcp-list-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.dhcp-list-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dhcp-list-item.pinned {
+  border-left: 4px solid var(--success);
+  background: var(--hiddenTabBackground);
+}
+
+.dhcp-list-item.lease {
+  border-left: 4px solid var(--accent);
+}
+
+.dhcp-list-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dhcp-list-item-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dhcp-list-item-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dhcp-list-item-mac,
+.dhcp-list-item-ip,
+.dhcp-list-item-hostname,
+.dhcp-list-item-expire {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.dhcp-list-item-mac .info-label,
+.dhcp-list-item-ip .info-label,
+.dhcp-list-item-hostname .info-label,
+.dhcp-list-item-expire .info-label {
+  font-weight: 500;
+  color: var(--secondary);
+  white-space: nowrap;
+}
+
+.dhcp-list-item-mac .info-value,
+.dhcp-list-item-ip .info-value,
+.dhcp-list-item-hostname .info-value,
+.dhcp-list-item-expire .info-value {
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+}
+
+.dhcp-list-item-badge {
+  display: flex;
+  align-items: center;
+}
+
+.pinned-badge {
+  background: var(--success);
+  color: var(--background);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.lease-badge {
+  background: var(--accent);
+  color: var(--background);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.dhcp-list-item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pin-button,
+.edit-button,
+.save-button,
+.cancel-button,
+.remove-dhcp-pin {
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.pin-button {
+  background: var(--secondary);
+  color: var(--background);
+}
+
+.pin-button:hover {
+  background: var(--primaryHover);
+}
+
+.edit-button {
+  background: var(--primary);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.edit-button:hover {
+  background: var(--primaryHover);
+}
+
+.save-button {
+  background: var(--secondary);
+  color: var(--background);
+}
+
+.save-button:hover:not(:disabled) {
+  background: var(--primaryHover);
+}
+
+.save-button:disabled {
+  background: var(--secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cancel-button {
+  background: var(--secondary);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: var(--primaryHover);
+}
+
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.remove-dhcp-pin {
+  background: var(--error);
+  color: var(--background);
+}
+
+.remove-dhcp-pin:hover {
+  background: var(--primaryHover);
+}
+
+/* IP Edit Input */
+.ip-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ip-edit-input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  background: var(--background);
+  color: var(--text);
+  min-width: 140px;
+}
+
+.ip-edit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 0, 123, 255), 0.2);
+}
+
+.ip-edit-input.error {
+  border-color: var(--error);
+}
+
+.ip-error {
+  font-size: 0.75rem;
+  color: var(--error);
+  margin-top: 2px;
+}
+
+/* DHCP Cards */
+.dhcp-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.dhcp-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.dhcp-card.lease {
+  border-left: 4px solid var(--accent);
+}
+
+.dhcp-card.reservation {
+  border-left: 4px solid var(--success);
+}
+
+.dhcp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.dhcp-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.dhcp-card-title h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.type-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.type-badge.lease {
+  background: var(--accent);
+  color: var(--background);
+}
+
+.type-badge.reservation {
+  background: var(--success);
+  color: var(--background);
+}
+
+.expand-button {
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--secondary);
+  transition: all 0.2s ease;
+}
+
+.expand-button:hover {
+  background: var(--primaryHover);
+  color: var(--text);
+}
+
+.dhcp-card-content {
+  line-height: 1.6;
+}
+
+.dhcp-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 500;
+  color: var(--secondary);
+  font-size: 0.9rem;
+}
+
+.info-value {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+  text-align: right;
+}
+
+.dhcp-card-expanded {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+.dhcp-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.remove-dhcp-pin {
+  background: var(--error);
+  color: var(--background);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.remove-dhcp-pin:hover {
+  background: var(--secondary);
+}
+
+/* Status Panel */
+.status-panel {
+  background: var(--primary);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.status-panel h3 {
+  margin: 0 0 16px 0;
+  color: var(--text);
+  font-size: 1.5rem;
+}
+
+.status-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.status-item {
+  padding: 12px;
+  background: var(--hiddenTabBackground);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.status-item-label {
+  font-size: 0.875rem;
+  color: var(--secondary);
+  margin-bottom: 4px;
+}
+
+.status-item-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.status-item-value.active {
+  color: var(--success);
+}
+
+.status-item-value.inactive {
+  color: var(--error);
+}
+
+/* Configuration Panel */
+.config-panel {
+  background: var(--primary);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.config-panel h3 {
+  margin: 0 0 24px 0;
+  color: var(--text);
+  font-size: 1.5rem;
+}
+
+.config-details {
+  display: grid;
+  gap: 24px;
+}
+
+.config-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+}
+
+.config-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.config-section h4 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.config-section pre {
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+}
+
+/* Health Panel */
+.health-panel {
+  background: var(--primary);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.health-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.5rem;
+}
+
+.health-check-button {
+  background: var(--primary);
+  color: var(--background);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.health-check-button:hover:not(:disabled) {
+  background: var(--primaryHover);
+}
+
+.health-check-button:disabled {
+  background: var(--secondary);
+  cursor: not-allowed;
+}
+
+.health-details {
+  display: grid;
+  gap: 20px;
+}
+
+.health-status {
+  padding: 16px;
+  border-radius: 8px;
+  border: 2px solid;
+}
+
+.health-status.healthy {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--background);
+  opacity: 0.9;
+}
+
+.health-status.unhealthy {
+  background: var(--error);
+  border-color: var(--error);
+  color: var(--background);
+  opacity: 0.9;
+}
+
+.health-status h4 {
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+}
+
+.health-status p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dhcp-tablet {
+    padding: 16px;
+  }
+  
+  .dhcp-info-banner {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .dhcp-info-separator {
+    display: none;
+  }
+  
+  .dhcp-info-item {
+    flex: 1 1 auto;
+    min-width: fit-content;
+  }
+  
+  .dhcp-list-item-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dhcp-list-item-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dhcp-list-item-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .dhcp-list-item-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .dhcp-button-row {
+    flex-direction: column;
+  }
+  
+  .dhcp-action-button {
+    width: 100%;
+  }
+}
+
+/* Reservation Slider Styles */
+.reservation-slider-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.reservation-slider-container.expanded {
+  width: 100%;
+  background: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 12px;
+}
+
+.reservation-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.reservation-slider-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.slider-close-button {
+  background: var(--secondary);
+  color: var(--background);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.slider-close-button:hover:not(:disabled) {
+  background: var(--primaryHover);
+}
+
+.slider-close-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reservation-slider-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.slider-info {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: var(--hiddenTabBackground);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.slider-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider-info-item.recommended-item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.recommended-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider-info-label {
+  font-size: 0.875rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+.slider-info-value {
+  font-size: 1.1rem;
+  color: var(--text);
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.slider-info-item .apply-recommended-button {
+  padding: 6px 12px;
+  background: var(--accent);
+  color: var(--background);
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.slider-info-item .apply-recommended-button:hover:not(:disabled) {
+  background: var(--primaryHover);
+  opacity: 0.9;
+}
+
+.slider-info-item .apply-recommended-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.slider-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--secondary);
+}
+
+.slider-label-left {
+  font-weight: 500;
+}
+
+.slider-label-right {
+  font-weight: 500;
+}
+
+.reservation-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--hiddenTabBackground);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.reservation-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.reservation-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.reservation-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.reservation-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.reservation-slider:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.slider-constraints {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--secondary);
+  font-style: italic;
+}
+
+.slider-constraint {
+  padding: 4px 8px;
+  background: var(--hiddenTabBackground);
+  border-radius: 4px;
+}
+
+.slider-ranges {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--hiddenTabBackground);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.range-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.range-label {
+  font-size: 0.9rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+.range-value {
+  font-size: 0.9rem;
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+.slider-updating {
+  padding: 12px;
+  background: var(--accent);
+  color: var(--background);
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.manual-addition-box {
+  padding: 16px;
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  border-left: 4px solid var(--accent);
+}
+
+.manual-addition-box p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.mac-ip-input-row {
+  padding: 20px;
+  background: var(--hiddenTabBackground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  border-left: 4px solid var(--success);
+}
+
+.mac-ip-input-row h4 {
+  margin: 0 0 16px 0;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.mac-ip-inputs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.input-group label {
+  font-size: 0.875rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+.mac-input,
+.ip-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  background: var(--background);
+  color: var(--text);
+  transition: border-color 0.2s ease;
+}
+
+.mac-input:focus,
+.ip-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 0, 123, 255), 0.2);
+}
+
+.mac-input:disabled,
+.ip-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.add-reservation-button {
+  padding: 8px 20px;
+  background: var(--secondary);
+  color: var(--background);
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  height: fit-content;
+  white-space: nowrap;
+}
+
+.add-reservation-button:hover:not(:disabled) {
+  background: var(--primaryHover);
+}
+
+.add-reservation-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Add Reservation Row in List */
+.add-reservation-row .mac-input,
+.add-reservation-row .ip-input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  background: var(--background);
+  color: var(--text);
+  min-width: 180px;
+  transition: border-color 0.2s ease;
+}
+
+.add-reservation-row .mac-input:focus,
+.add-reservation-row .ip-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 0, 123, 255), 0.2);
+}
+
+.add-reservation-row .mac-input:disabled,
+.add-reservation-row .ip-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .reservation-slider-container.expanded {
+    padding: 16px;
+  }
+  
+  .slider-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .mac-ip-inputs {
+    flex-direction: column;
+  }
+  
+  .input-group {
+    min-width: 100%;
+  }
+  
+  .add-reservation-button {
+    width: 100%;
+  }
+}

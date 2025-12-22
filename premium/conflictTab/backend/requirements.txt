@@ -1,0 +1,12 @@
+# Conflict Premium Tab Python Dependencies
+# These packages INTENTIONALLY conflict with the test tab to validate conflict detection
+
+# Conflicting versions with test tab
+pandas==2.0.0
+numpy==1.23.0
+
+# Same package, different version
+httpx==0.24.0
+
+# Different package that might conflict
+jsonschema==4.20.0 

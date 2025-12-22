@@ -1,0 +1,6 @@
+# HOMESERVER Backup Cron Job
+# Schedule: {SCHEDULE}
+# This file is managed by the backup CLI - do not edit manually
+# Generated on: {TIMESTAMP}
+# Runs as root to access protected directories and keyman credentials
+{SCHEDULE} root /usr/bin/python3 {BACKUP_SCRIPT_PATH} >> {BACKUP_LOG_PATH} 2>&1

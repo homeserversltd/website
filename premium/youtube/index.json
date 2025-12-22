@@ -1,0 +1,43 @@
+{
+  "name": "youtube",
+  "version": "0.0.69",
+  "config": {
+    "repository": {
+      "url": "git@github.com:homeserversltd/youtube.git",
+      "branch": "main"
+    },
+    "git_managed": true
+  },
+  "files": {
+    "config": "homeserver.patch.json",
+    "readme": "README.md",
+    "license": "LICENSE",
+    "backend": {
+      "index": "backend/index.json",
+      "requirements": "backend/requirements.txt",
+      "init": "backend/__init__.py",
+      "routes": "backend/routes.py",
+      "youtube_manager": "backend/youtube_manager.py",
+      "subscription_manager": "backend/subscription_manager.py"
+    },
+    "frontend": {
+      "index": "frontend/index.json",
+      "package": "frontend/package.patch.json",
+      "entry": "frontend/index.tsx",
+      "types": "frontend/types.ts",
+      "styles": "frontend/PortalCard.css",
+      "DownloadForm": "frontend/components/DownloadForm.tsx",
+      "SubscriptionList": "frontend/components/SubscriptionList.tsx",
+      "ScheduleConfig": "frontend/components/ScheduleConfig.tsx",
+      "DownloadSettings": "frontend/components/DownloadSettings.tsx",
+      "LogsView": "frontend/components/LogsView.tsx",
+      "useYoutubeControls": "frontend/hooks/useYoutubeControls.ts"
+    },
+    "permissions": {
+      "sudoers": "permissions/flask-youtube"
+    },
+    "system": {
+      "dependencies": "system/dependencies.json"
+    }
+  }
+}

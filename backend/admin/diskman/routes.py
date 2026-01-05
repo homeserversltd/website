@@ -1153,7 +1153,7 @@ def get_sync_schedule():
         crontab_entries = utils.read_crontab(user='root')
         
         # Define pattern for our sync entry (matches both old rsync commands and new safe-nas-sync.sh)
-        pattern = re.compile(r'^(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+.*(rsync.*\/mnt\/nas\/.*\/mnt\/nas_backup\/|safe-nas-sync\.sh)')
+        pattern = re.compile(r'^(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+.*(?:rsync.*\/mnt\/nas\/.*\/mnt\/nas_backup\/|safe-nas-sync\.sh)')
         
         # Look for our sync entry
         schedule = None

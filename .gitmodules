@@ -26,3 +26,7 @@
 	path = premium/nasLinker
 	url = git@github.com:homeserversltd/linkerTab.git
 	branch = main
+[submodule "premium/backblazeTab"]
+	path = premium/backblazeTab
+	url = git@github.com:homeserversltd/backblazeTab.git
+	branch = main

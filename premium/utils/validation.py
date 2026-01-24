@@ -543,11 +543,16 @@ class ValidationManager:
         """Validate configuration using factoryFallback.sh."""
         try:
             if config_path:
-                # Temporarily move current config and test the new one
+                # Track whether original config existed
+                original_existed = os.path.exists(homeserver_config_path)
                 temp_backup = f"{homeserver_config_path}.installer_temp"
-                if os.path.exists(homeserver_config_path):
+                
+                # Backup original config if it exists
+                if original_existed:
                     import shutil
                     shutil.copy2(homeserver_config_path, temp_backup)
+                
+                # Copy test config to target location
                 import shutil
                 shutil.copy2(config_path, homeserver_config_path)
                 
@@ -556,11 +561,16 @@ class ValidationManager:
                                           capture_output=True, text=True, check=True)
                     valid = not result.stdout.strip().endswith('.factory')
                 finally:
-                    # Restore original config
-                    if os.path.exists(temp_backup):
+                    # Restore original config or clean up test copy
+                    if original_existed and os.path.exists(temp_backup):
+                        # Original existed: restore it
                         shutil.move(temp_backup, homeserver_config_path)
-                    elif os.path.exists(homeserver_config_path):
-                        os.remove(homeserver_config_path)
+                    elif not original_existed and os.path.exists(homeserver_config_path):
+                        # Original didn't exist and validation may have failed: only remove if validation failed
+                        # (If validation succeeded, the caller will move the temp file to final location)
+                        if not valid:
+                            os.remove(homeserver_config_path)
+                    # If original existed but backup is missing, leave the test config (safer than deleting)
                 
                 return valid
             else:

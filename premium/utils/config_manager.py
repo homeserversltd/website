@@ -159,12 +159,31 @@ class ConfigManager:
                 self.logger.info("Empty config patch, skipping")
                 return True
             
-            # Create backup
+            # Create backup (returns None if file doesn't exist)
             self.config_backup = self.create_backup(self.homeserver_config_path)
             
-            # Read current config
-            with open(self.homeserver_config_path, 'r') as f:
-                config_data = json.load(f)
+            # Read current config or use factory/default
+            if os.path.exists(self.homeserver_config_path):
+                with open(self.homeserver_config_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                # Config doesn't exist - try factory fallback or create minimal config
+                factory_config = "/etc/homeserver.factory"
+                if os.path.exists(factory_config):
+                    self.logger.info(f"Config missing, using factory config: {factory_config}")
+                    with open(factory_config, 'r') as f:
+                        config_data = json.load(f)
+                else:
+                    # Create minimal valid config structure
+                    self.logger.warning("Config missing and no factory config, creating minimal config")
+                    config_data = {
+                        "tabs": {},
+                        "global": {
+                            "cors": {
+                                "allowed_origins": []
+                            }
+                        }
+                    }
             
             # Apply patch (deep merge)
             self.deep_merge(config_data, patch_data)

@@ -483,6 +483,86 @@ class PremiumInstaller:
             logger.error(f"Configuration patches failed: {str(e)}")
             return False
     
+    def restore_config_patches(self) -> bool:
+        """Restore config patches for all installed premium tabs.
+        
+        This is a lightweight recovery mechanism that:
+        1. Detects all installed premium tabs
+        2. Finds their homeserver.patch.json files
+        3. Applies patches in alphabetical order (deterministic)
+        
+        Useful for recovery scenarios where config was lost but tabs are still installed.
+        """
+        category_logger = self._get_category_logger("restore_patches")
+        category_logger.info("Starting config patch restoration for all installed premium tabs")
+        
+        try:
+            # Get all installed tabs
+            installed_tabs = self.installation_tracker.get_installed_premium_tabs()
+            
+            if not installed_tabs:
+                category_logger.info("No installed premium tabs found - nothing to restore")
+                return True
+            
+            category_logger.info(f"Found {len(installed_tabs)} installed premium tabs")
+            
+            # Find patch files for each tab
+            patches_to_apply = []
+            premium_dir = "/var/www/homeserver/premium"
+            
+            for tab in installed_tabs:
+                tab_name = tab["name"]
+                # Try to find the tab's directory in premium folder
+                tab_path = os.path.join(premium_dir, tab_name)
+                patch_file = os.path.join(tab_path, "homeserver.patch.json")
+                
+                if os.path.exists(patch_file):
+                    patches_to_apply.append((tab_name, patch_file))
+                    category_logger.info(f"Found patch for {tab_name}: {patch_file}")
+                else:
+                    category_logger.debug(f"No patch file found for {tab_name} (expected at {patch_file})")
+            
+            if not patches_to_apply:
+                category_logger.info("No config patches found to restore")
+                return True
+            
+            # Sort by tab name for deterministic application order
+            patches_to_apply.sort(key=lambda x: x[0])
+            category_logger.info(f"Applying {len(patches_to_apply)} config patches in order: {', '.join([t[0] for t in patches_to_apply])}")
+            
+            # Apply each patch
+            # Note: config_manager can work standalone, we don't need full installation_state
+            
+            success_count = 0
+            failed_tabs = []
+            
+            for tab_name, patch_file in patches_to_apply:
+                category_logger.info(f"Applying patch for {tab_name}...")
+                try:
+                    if self.config_manager.apply_config_patch(patch_file):
+                        success_count += 1
+                        category_logger.info(f"✅ Successfully applied patch for {tab_name}")
+                    else:
+                        failed_tabs.append(tab_name)
+                        category_logger.error(f"❌ Failed to apply patch for {tab_name}")
+                except Exception as e:
+                    failed_tabs.append(tab_name)
+                    category_logger.error(f"❌ Exception applying patch for {tab_name}: {str(e)}")
+            
+            # Summary
+            if failed_tabs:
+                category_logger.error(f"Patch restoration completed with {len(failed_tabs)} failures: {', '.join(failed_tabs)}")
+                return False
+            else:
+                category_logger.info(f"✅ Successfully restored {success_count} config patches")
+                return True
+                
+        except Exception as e:
+            category_logger.error(f"Config patch restoration failed with exception: {str(e)}")
+            import traceback
+            category_logger.debug(traceback.format_exc())
+            return False
+    
     def install_premium_tabs_batch(self, tab_paths: List[str], 
                                  defer_build: bool = True,
                                  defer_service_restart: bool = True) -> bool:
@@ -889,6 +969,12 @@ EXAMPLES:
   
   # Validate all premium tabs
   python3 installer.py validate --all
+  
+  # Restore config patches for all installed tabs (recovery mechanism)
+  sudo python3 installer.py restore-patches
+  
+  # Dry run: see what patches would be applied
+  python3 installer.py restore-patches --dry-run
         """
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -938,6 +1024,12 @@ EXAMPLES:
     list_group.add_argument("--available", action="store_true", help="List available tabs in premium directory (ready to install)")
     list_group.add_argument("--installed", action="store_true", help="List currently installed tabs")
     list_group.add_argument("--all", action="store_true", help="List both available and installed tabs (default)")
+    
+    # Restore patches command
+    restore_parser = subparsers.add_parser("restore-patches", 
+                                          help="Restore config patches for all installed premium tabs (recovery mechanism)")
+    restore_parser.add_argument("--dry-run", action="store_true", 
+                               help="Show what patches would be applied without actually applying them")
     
     args = parser.parse_args()
     
@@ -1105,6 +1197,41 @@ EXAMPLES:
                     print("  No premium tabs currently installed")
             
             return 0
+        
+        elif args.command == "restore-patches":
+            # Restore config patches for all installed tabs
+            if args.dry_run:
+                print("=== DRY RUN: Config Patches That Would Be Applied ===")
+                installed_tabs = installer.get_installed_premium_tabs()
+                premium_dir = "/var/www/homeserver/premium"
+                patches_found = []
+                
+                for tab in installed_tabs:
+                    tab_name = tab["name"]
+                    tab_path = os.path.join(premium_dir, tab_name)
+                    patch_file = os.path.join(tab_path, "homeserver.patch.json")
+                    
+                    if os.path.exists(patch_file):
+                        patches_found.append((tab_name, patch_file))
+                
+                if patches_found:
+                    patches_found.sort(key=lambda x: x[0])
+                    print(f"\nFound {len(patches_found)} patches to apply:\n")
+                    for tab_name, patch_file in patches_found:
+                        print(f"  ✅ {tab_name}: {patch_file}")
+                    print(f"\nTotal: {len(patches_found)} patches would be applied")
+                else:
+                    print("\nNo config patches found for installed premium tabs")
+                
+                return 0
+            else:
+                success = installer.restore_config_patches()
+                if success:
+                    print("✅ Config patches restored successfully")
+                    return 0
+                else:
+                    print("❌ Config patch restoration failed (check logs for details)")
+                    return 1
             
     except Exception as e:
         print(f"Fatal error: {e}")

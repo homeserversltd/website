@@ -7,6 +7,7 @@ export const Input: React.FC<InputProps> = ({
   value,
   defaultValue,
   onChange,
+  onKeyDown,
   placeholder,
   label,
   error,
@@ -53,6 +54,7 @@ export const Input: React.FC<InputProps> = ({
         value={value}
         defaultValue={defaultValue}
         onChange={onChange}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         disabled={disabled}
         readOnly={readOnly}

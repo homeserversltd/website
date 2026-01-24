@@ -3,10 +3,13 @@
 .ui-collapsible {
   border: 1px solid var(--border);
   border-radius: 8px;
-  overflow: hidden;
+  /* Use overflow: visible to allow select dropdowns to extend beyond container */
+  /* Border-radius will still work as content respects it naturally */
+  overflow: visible;
   margin-bottom: 0.75rem;
   transition: all 0.2s ease;
   background: var(--background);
+  position: relative;
 }
 
 .ui-collapsible:hover {
@@ -24,6 +27,9 @@
   user-select: none;
   transition: all 0.2s ease;
   margin-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  /* Ensure header content doesn't overflow but allows select dropdowns below */
+  overflow: visible;
 }
 
 .ui-collapsible__header:hover {
@@ -67,6 +73,11 @@
   background: var(--background);
   border-top: 1px solid var(--border);
   animation: slideDown 0.3s ease;
+  /* Clip content to maintain border-radius effect while allowing select overflow */
+  border-radius: 0 0 8px 8px;
+  /* Ensure select dropdowns can overflow */
+  position: relative;
+  overflow: visible;
 }
 
 @keyframes slideDown {
@@ -247,4 +258,15 @@
   .ui-collapsible__icon--collapsed {
     transform: translateY(-50%) rotate(-90deg);
   }
+}
+
+/* Ensure select dropdowns within collapsibles can overflow */
+.ui-collapsible__content .ui-select-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.ui-collapsible__content select {
+  position: relative;
+  z-index: 10;
 }

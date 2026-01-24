@@ -60,6 +60,7 @@ export interface InputProps extends BaseComponentProps {
   value?: string | number;
   defaultValue?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   placeholder?: string;
   label?: string;
   error?: string;

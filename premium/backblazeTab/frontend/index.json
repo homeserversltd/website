@@ -1,0 +1,19 @@
+{
+  "files": [
+    {
+      "source": "frontend/index.tsx",
+      "target": "/var/www/homeserver/src/tablets/backblazeTab/index.tsx",
+      "type": "copy"
+    },
+    {
+      "source": "frontend/types.ts",
+      "target": "/var/www/homeserver/src/tablets/backblazeTab/types.ts",
+      "type": "copy"
+    },
+    {
+      "source": "frontend/backblazeTab.css",
+      "target": "/var/www/homeserver/src/tablets/backblazeTab/backblazeTab.css",
+      "type": "copy"
+    }
+  ]
+}

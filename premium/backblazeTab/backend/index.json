@@ -1,0 +1,11 @@
+{
+  "files": [
+    {
+      "source": "backend/__init__.py",
+      "target": "/var/www/homeserver/backend/__init__.py",
+      "type": "append",
+      "identifier": "backblazeTab",
+      "description": "Blueprint registration injection point for backblazeTab premium tab"
+    }
+  ]
+}

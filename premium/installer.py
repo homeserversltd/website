@@ -612,6 +612,15 @@ class PremiumInstaller:
             if tab_name == "backupTab":
                 logger.info("backupTab installed - venv setup available via UI install button")
                 logger.info("User can trigger venv installation via the backupTab UI or API endpoint")
+            # backblazeTab: Create chunks directory and set ownership to www-data
+            elif tab_name == "backblazeTab":
+                chunks_dir = "/var/www/homeserver/premium/backblazeTab/chunks"
+                logger.info(f"Creating chunks directory for backblazeTab: {chunks_dir}")
+                # Create directory
+                subprocess.run(["/bin/mkdir", "-p", chunks_dir], check=True)
+                # Set ownership to www-data:www-data
+                subprocess.run(["/bin/chown", "www-data:www-data", chunks_dir], check=True)
+                logger.info(f"Successfully created chunks directory with proper ownership: {chunks_dir}")
         except Exception as e:
             logger.warning(f"Post-install hook failed for {tab_name}: {e}")
     

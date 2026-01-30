@@ -45,26 +45,40 @@ class PremiumJSONLogger:
             with open(self.log_file, 'w') as f:
                 json.dump(initial_structure, f, indent=2)
     
+    def _default_log_structure(self) -> Dict[str, Any]:
+        """Return a fresh in-memory log structure (no file I/O)."""
+        return {
+            category: {"last_updated": None, "messages": []}
+            for category in self.VALID_CATEGORIES
+        }
+
     def _load_log_data(self) -> Dict[str, Any]:
-        """Load current log data from file."""
+        """Load current log data from file. On corrupt/missing file, reinit once and retry; never recurse."""
         try:
-            with open(self.log_file, 'r') as f:
+            with open(self.log_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            
-            # Ensure all categories exist
-            for category in self.VALID_CATEGORIES:
-                if category not in data:
-                    data[category] = {
-                        "last_updated": None,
-                        "messages": []
-                    }
-            
-            return data
-        
         except (json.JSONDecodeError, FileNotFoundError):
-            # If file is corrupted or missing, reinitialize
+            # Corrupt or missing: remove so _initialize_log_structure overwrites, then one retry
+            try:
+                if os.path.exists(self.log_file):
+                    os.remove(self.log_file)
+            except OSError:
+                pass
             self._initialize_log_structure()
-            return self._load_log_data()
+            try:
+                with open(self.log_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError):
+                return self._default_log_structure()
+
+        # Ensure all categories exist
+        for category in self.VALID_CATEGORIES:
+            if category not in data:
+                data[category] = {
+                    "last_updated": None,
+                    "messages": []
+                }
+        return data
     
     def _save_log_data(self, data: Dict[str, Any]) -> None:
         """Save log data to file."""

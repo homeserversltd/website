@@ -56,13 +56,8 @@ const LOG_LEVELS: LogLevel = {
  */
 export const initializeDebug = (config: Partial<DebugConfig> = {}): void => {
   // Check for CLIENT_DEBUG environment variable
-  const envDebug = typeof window !== 'undefined' && 
-    (window as any).CLIENT_DEBUG_MODE !== undefined ? 
-    (window as any).CLIENT_DEBUG_MODE : 
-    process.env.CLIENT_DEBUG === 'true';
-
   debugConfig = {
-    clientDebugMode: config.clientDebugMode ?? envDebug ?? false,
+    clientDebugMode: config.clientDebugMode ?? false,
     verboseDebug: config.verboseDebug ?? false,
     logPrefix: config.logPrefix ?? '[DEBUG]'
   };

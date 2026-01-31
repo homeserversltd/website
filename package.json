@@ -3,9 +3,8 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-        "start": "react-scripts start",
-        "build": "GENERATE_SOURCEMAP=false CI=true react-scripts build && (if [ -f premium/utils/post_build_tab_restore.py ]; then python3 premium/utils/post_build_tab_restore.py; else echo \"[post-build-tabs] premium utils not present, skipping\"; fi)",
-        "eject": "react-scripts eject"
+        "dev": "vite",
+        "build": "vite build && (if [ -f premium/utils/post_build_tab_restore.py ]; then python3 premium/utils/post_build_tab_restore.py; else echo \"[post-build-tabs] premium utils not present, skipping\"; fi)"
     },
     "dependencies": {
         "@floating-ui/react": "^0.25.4",
@@ -17,28 +16,20 @@
         "@types/react": "^18.2.45",
         "@types/react-dom": "^18.2.18",
         "crypto-js": "^4.2.0",
-        "eventlet": "^0.1.0",
-        "flask": "^0.2.10",
-        "nodejs": "^0.0.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "react-scripts": "5.0.1",
+        "vite": "^5.0.0",
         "recharts": "^2.8.0",
         "socket.io-client": "^4.7.4",
         "typescript": "^4.9.5",
-        "zustand": "^4.4.7"
+        "zustand": "^4.4.7",
+        "@vitejs/plugin-react": "^4.0.0",
+        "fast-deep-equal": "^3.1.3"
     },
     "devDependencies": {
-        "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
         "@types/crypto-js": "^4.2.2",
         "@types/socket.io": "^3.0.1",
-        "@types/socket.io-client": "^1.4.36",
-        "@typescript-eslint/eslint-plugin": "^5.0.0",
-        "@typescript-eslint/parser": "^5.0.0",
-        "eslint": "^8.0.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-config-react-app": "^7.0.0",
-        "prettier": "^2.8.8"
+        "@types/socket.io-client": "^1.4.36"
     },
     "browserslist": {
         "production": [

@@ -186,11 +186,11 @@
     "global": {
       "root": "sda",
       "version": {
-        "version": "0.9.101",
-        "releaseDate": "01-29-2025",
+        "version": "0.9.102",
+        "releaseDate": "01-31-2026",
         "generation": 1,
-        "buildId": "2901d697",
-        "lastUpdated": "01-29-2025"
+        "buildId": "f7d47492",
+        "lastUpdated": "01-31-2026"
       },
       "theme": {
         "name": "dark"

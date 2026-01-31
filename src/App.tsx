@@ -122,7 +122,7 @@ const loadTabletModule = async (tabId: string): Promise<any> => {
     if (alternativeTabId !== normalizedTabId && alternativeTabId !== 'fallback') {
       // console.log(`[App] Attempting to load alternative tab: ${alternativeTabId}`);
       try {
-        const alternativeModule = await import(`./tablets/${alternativeTabId}/index`);
+        const alternativeModule = await import(`./tablets/${alternativeTabId}/index.tsx`);
         moduleCache.set(alternativeTabId, alternativeModule);
         
         // Update the active tab in the store

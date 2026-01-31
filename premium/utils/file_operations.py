@@ -275,7 +275,7 @@ class FileOperationsManager:
             with open(target_path, 'w') as f:
                 f.write(new_content)
             
-            self.logger.info(f"Appended content to {target_path} with proper indentation ({blueprint_indent} spaces)")
+            self.logger.debug(f"Appended content to {target_path} with proper indentation ({blueprint_indent} spaces)")
             self.operations_history.append(operation)
             return True
             
@@ -291,10 +291,10 @@ class FileOperationsManager:
         # Check if file already exists and is identical
         if os.path.exists(target_path):
             if self.files_identical(source_path, target_path):
-                self.logger.info(f"Identical file already exists: {target_path}")
+                self.logger.debug(f"Identical file already exists: {target_path}")
                 return True
             else:
-                self.logger.info(f"Different file exists at target, will overwrite: {target_path}")
+                self.logger.debug(f"Different file exists at target, will overwrite: {target_path}")
                 # Create backup before overwriting
                 operation.backup_path = self.create_backup(target_path)
         
@@ -315,7 +315,7 @@ class FileOperationsManager:
             else:
                 self.set_permissions(target_path, "www-data", "www-data", "775")
             
-            self.logger.info(f"Copied file: {source_path} -> {target_path}")
+            self.logger.debug(f"Copied file: {source_path} -> {target_path}")
             self.operations_history.append(operation)
             return True
             

@@ -101,15 +101,18 @@ class ConfigManager:
                     result = self._run_command([self.factory_fallback_script])
                     valid = not result.stdout.strip().endswith('.factory')
                 finally:
-                    # Restore original config
+                    # Restore original config ONLY when testing a new config_path
+                    # CRITICAL: Do NOT delete homeserver.json when validating current config
                     if os.path.exists(temp_backup):
                         shutil.move(temp_backup, self.homeserver_config_path)
-                    elif os.path.exists(self.homeserver_config_path):
-                        os.remove(self.homeserver_config_path)
+                    # Note: Removed the elif that was deleting homeserver.json
+                    # If temp_backup doesn't exist but we're in this branch, 
+                    # it means we copied config_path but had no original to backup
+                    # In that case, keep the config_path as the new config
                 
                 return valid
             else:
-                # Validate current config
+                # Validate current config in-place (no modifications)
                 result = self._run_command([self.factory_fallback_script])
                 return not result.stdout.strip().endswith('.factory')
                 

@@ -238,13 +238,13 @@ class PremiumInstaller:
                                 if not self.installation_state.file_operations.perform_append_operation(operation, tab_path):
                                     logger.error(f"Failed to append backend file: {source}")
                                     return False
-                                logger.info(f"Successfully appended backend file: {source} -> {target}")
+                                logger.debug(f"Successfully appended backend file: {source} -> {target}")
                             else:
                                 # Default to copy operation
                                 if not self.installation_state.file_operations.perform_copy_operation(operation, tab_path):
                                     logger.error(f"Failed to copy backend file: {source}")
                                     return False
-                                logger.info(f"Successfully copied backend file: {source} -> {target}")
+                                logger.debug(f"Successfully copied backend file: {source} -> {target}")
                         else:
                             # Handle simple string mapping (legacy format)
                             source_path = file_config
@@ -271,7 +271,7 @@ class PremiumInstaller:
                                 logger.error(f"Failed to copy backend file: {source_path}")
                                 return False
                             
-                            logger.info(f"Successfully copied backend file: {source_path} -> {target}")
+                            logger.debug(f"Successfully copied backend file: {source_path} -> {target}")
                 
                 # Process frontend files - RESPECT THE MANIFEST STRUCTURE!
                 frontend_files = root_manifest.get("files", {}).get("frontend", {})
@@ -299,7 +299,7 @@ class PremiumInstaller:
                             logger.error(f"Failed to copy frontend file: {source_path}")
                             return False
                         
-                        logger.info(f"Successfully copied frontend file: {source_path} -> {target}")
+                        logger.debug(f"Successfully copied frontend file: {source_path} -> {target}")
                 
                 # Process permissions files
                 permissions_files = root_manifest.get("files", {}).get("permissions", {})
@@ -324,7 +324,7 @@ class PremiumInstaller:
                             logger.error(f"Failed to copy permissions file: {source_path}")
                             return False
                         
-                        logger.info(f"Successfully copied permissions file: {source_path} -> {target}")
+                        logger.debug(f"Successfully copied permissions file: {source_path} -> {target}")
                 
                 # Process root-level files (config, readme, etc.)
                 root_files = root_manifest.get("files", {})
@@ -352,7 +352,7 @@ class PremiumInstaller:
                         logger.error(f"Failed to copy root file: {source_path}")
                         return False
                     
-                    logger.info(f"Successfully copied root file: {source_path} -> {target}")
+                    logger.debug(f"Successfully copied root file: {source_path} -> {target}")
             
             # Process backend index.json for append operations (blueprint registration)
             backend_index = os.path.join(tab_path, "backend", "index.json")
@@ -390,13 +390,13 @@ class PremiumInstaller:
                                 if not self.installation_state.file_operations.perform_append_operation(operation, tab_path):
                                     logger.error(f"Failed to append backend file: {source}")
                                     return False
-                                logger.info(f"Successfully appended backend file: {source} -> {target}")
+                                logger.debug(f"Successfully appended backend file: {source} -> {target}")
                             else:
                                 # Default to copy operation
                                 if not self.installation_state.file_operations.perform_copy_operation(operation, tab_path):
                                     logger.error(f"Failed to copy backend file: {source}")
                                     return False
-                                logger.info(f"Successfully copied backend file: {source} -> {target}")
+                                logger.debug(f"Successfully copied backend file: {source} -> {target}")
             
             return True
             
@@ -1043,6 +1043,8 @@ EXAMPLES:
     
     # Create installer
     installer = PremiumInstaller()
+    if args.debug:
+        installer.logger.setLevel(logging.DEBUG)
     
     try:
         if args.command == "install":

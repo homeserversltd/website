@@ -439,16 +439,16 @@ class FileOperationsManager:
     def remove_file_or_symlink(self, target_path: str) -> bool:
         """Remove a file or symlink."""
         if not os.path.exists(target_path) and not os.path.islink(target_path):
-            self.logger.info(f"File already removed: {target_path}")
+                self.logger.debug(f"File already removed: {target_path}")
             return True
         
         try:
             if os.path.islink(target_path):
                 os.remove(target_path)
-                self.logger.info(f"Removed symlink: {target_path}")
+                self.logger.debug(f"Removed symlink: {target_path}")
             elif os.path.isfile(target_path):
                 os.remove(target_path)
-                self.logger.info(f"Removed file: {target_path}")
+                self.logger.debug(f"Removed file: {target_path}")
             else:
                 self.logger.warning(f"Path is not a file or symlink: {target_path}")
                 return False

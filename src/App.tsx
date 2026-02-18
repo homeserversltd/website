@@ -96,12 +96,8 @@ const loadTabletModule = async (tabId: string): Promise<any> => {
   }
   
   try {
-    // Use normalized tabId (without @) for import path
-    const modulePath = `./tablets/${normalizedTabId}`;
-    // console.log(`[App] Importing module from: ${modulePath}`);
-    
-    // Dynamic import
-    const module = await import(`${modulePath}/index`);
+    // Dynamic import - Vite requires extension in static part of the path
+    const module = await import(`./tablets/${normalizedTabId}/index.tsx`);
     
     // Validate module has a default export
     if (!module || !module.default || typeof module.default !== 'function') {

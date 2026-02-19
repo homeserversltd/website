@@ -123,6 +123,7 @@ copy_file "$SOURCE_DIR/config.py" "$WEBROOT/config.py" "config.py"
 copy_file "$SOURCE_DIR/requirements.txt" "$WEBROOT/requirements.txt" "requirements.txt"
 copy_file "$SOURCE_DIR/package.json" "$WEBROOT/package.json" "package.json"
 copy_file "$SOURCE_DIR/tsconfig.json" "$WEBROOT/tsconfig.json" "tsconfig.json"
+copy_file "$SOURCE_DIR/vite.config.ts" "$WEBROOT/vite.config.ts" "vite.config.ts"
 
 # Copy source directory (frontend code)
 copy_directory "$SOURCE_DIR/src" "$WEBROOT/src" "src directory (frontend code)"

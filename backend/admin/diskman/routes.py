@@ -1,7 +1,7 @@
 import os
 from flask import request, jsonify, current_app
 from backend.auth.decorators import admin_required
-from backend.utils.utils import execute_command, get_config, error_response, success_response, check_services_running, check_services_stopped, start_service, stop_service, start_all_enabled_services, stop_all_services, get_service_status, write_to_log
+from backend.utils.utils import execute_command, get_config, error_response, success_response, check_services_running, check_services_stopped, start_service, stop_service, start_all_enabled_services, stop_all_services, get_service_status, write_to_log, is_system_partition, get_partlabel, resolve_device_identifier
 from .. import bp
 from . import utils
 import time
@@ -49,9 +49,9 @@ def _is_external_mount(path: str) -> bool:
                     logger.warning(f"Path {path} resolves to root filesystem mount: {mount_source} -> {mount_target}")
                     return False
                 
-                # Treat system drive (/dev/sda*) as non-external
-                if mount_source.startswith('/dev/sda'):
-                    logger.warning(f"Path {path} is on system drive mount: {mount_source} -> {mount_target}")
+                # Treat system partitions as non-external
+                if is_system_partition(mount_source):
+                    logger.warning(f"Path {path} is on system partition mount: {mount_source} -> {mount_target}")
                     return False
                 
                 # Found the mount and it passes safety checks
@@ -129,7 +129,12 @@ def format_disk():
         # Ensure device name is properly formatted
         device_path, device_name = utils.format_device_path(device)
         current_app.logger.info(f"[DISKMAN] Formatted device path: {device_path}, device name: {device_name}")
-            
+
+        # Check if this is a system partition
+        if is_system_partition(device_path):
+            current_app.logger.error(f"[DISKMAN] Cannot format system partition: {device_path}")
+            return error_response("System partition cannot be modified", 403)
+
         # Check if device exists
         if not os.path.exists(device_path):
             current_app.logger.error(f"[DISKMAN] Device {device_path} does not exist")
@@ -217,6 +222,7 @@ def format_disk():
             
         result = {
             "device": device_path,
+            "label": get_partlabel(device_path),
             "filesystem": "xfs",
             "closed_luks": [container.get('mapper') for container in active_luks] if active_luks else []
         }
@@ -274,9 +280,14 @@ def unlock_encrypted_partition():
         
         # Ensure device name is properly formatted
         device_path, device_name = utils.format_device_path(device)
-            
+
         current_app.logger.info(f"[DISKMAN] Formatted device path: {device_path}")
-            
+
+        # Check if this is a system partition
+        if is_system_partition(device_path):
+            current_app.logger.error(f"[DISKMAN] Cannot unlock system partition: {device_path}")
+            return error_response("System partition cannot be modified", 403)
+
         # Check if device exists
         if not os.path.exists(device_path):
             current_app.logger.error(f"[DISKMAN] Device {device_path} does not exist")
@@ -298,8 +309,8 @@ def unlock_encrypted_partition():
             current_app.logger.error(f"[DISKMAN] Device {device_path} is already unlocked")
             return utils.error_response(f"Device {device_path} is already unlocked")
             
-        # Generate a mapper name based on device name
-        mapper_name = utils.generate_mapper_name(device_name)
+        # Generate a mapper name based on device path
+        mapper_name = utils.generate_mapper_name(device_path)
         current_app.logger.info(f"[DISKMAN] Using mapper name: {mapper_name}")
         
         # Get LUKS key slot information to determine which slots have keys
@@ -356,6 +367,7 @@ def unlock_encrypted_partition():
         mapper_path = f"/dev/mapper/{mapper_name}"
         result = {
             "device": device_path,
+            "label": get_partlabel(device_path),
             "mapper": mapper_path,
             "is_open": True,
             "unlocked_with": unlock_method,
@@ -403,11 +415,15 @@ def encrypt_disk():
             current_app.logger.error("[DISKMAN] Missing required parameter: device")
             return utils.error_response("Missing required parameter: device")
             
-        # Ensure device has /dev/ prefix
-        if not device.startswith('/dev/'):
-            device = f'/dev/{device}'
-            current_app.logger.info(f"[DISKMAN] Added /dev/ prefix to device path: {device}")
-            
+        # Ensure device name is properly formatted
+        device_path, device_name = utils.format_device_path(device)
+        current_app.logger.info(f"[DISKMAN] Formatted device path: {device_path}")
+
+        # Check if this is a system partition
+        if is_system_partition(device_path):
+            current_app.logger.error(f"[DISKMAN] Cannot encrypt system partition: {device_path}")
+            return error_response("System partition cannot be modified", 403)
+
         # Check if device exists
         if not os.path.exists(device):
             current_app.logger.error(f"[DISKMAN] Device {device} does not exist")
@@ -467,39 +483,39 @@ def encrypt_disk():
             current_app.logger.info(f"[DISKMAN] Successfully closed all {len(active_luks)} LUKS container(s) for {device}")
             
         # Check if device is mounted
-        if utils.check_mount_point_usage(device):
-            current_app.logger.error(f"[DISKMAN] Device {device} is currently mounted")
-            return utils.error_response(f"Device {device} is currently mounted. Please unmount first.")
-            
+        if utils.check_mount_point_usage(device_path):
+            current_app.logger.error(f"[DISKMAN] Device {device_path} is currently mounted")
+            return utils.error_response(f"Device {device_path} is currently mounted. Please unmount first.")
+
         # Wipe the partition
-        current_app.logger.info(f"[DISKMAN] Wiping device {device}")
-        success, error_message = utils.wipe_device(device)
+        current_app.logger.info(f"[DISKMAN] Wiping device {device_path}")
+        success, error_message = utils.wipe_device(device_path)
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to wipe device: {error_message}")
             return utils.error_response(error_message, 500)
             
         # Get the NAS key password
-        current_app.logger.info(f"[DISKMAN] Exporting NAS key for encrypting {device}")
+        current_app.logger.info(f"[DISKMAN] Exporting NAS key for encrypting {device_path}")
         success, passphrase, error_message = utils.export_nas_key()
-        
+
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to export NAS key: {error_message}")
             return utils.error_response(error_message, 500)
-            
+
         # Encrypt with LUKS
-        current_app.logger.info(f"[DISKMAN] Encrypting device {device} with LUKS")
-        success, error_message = utils.encrypt_luks_device(device, passphrase)
+        current_app.logger.info(f"[DISKMAN] Encrypting device {device_path} with LUKS")
+        success, error_message = utils.encrypt_luks_device(device_path, passphrase)
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to encrypt device with LUKS: {error_message}")
             return utils.error_response(error_message, 500)
             
-        # Generate a mapper name based on device name
-        mapper_name = utils.generate_mapper_name(os.path.basename(device))
+        # Generate a mapper name based on device path
+        mapper_name = utils.generate_mapper_name(device_path)
         current_app.logger.info(f"[DISKMAN] Generated mapper name: {mapper_name}")
         
         # Open the LUKS container
         current_app.logger.info(f"[DISKMAN] Opening LUKS container with mapper: {mapper_name}")
-        success, error_message = utils.open_luks_device(device, mapper_name, passphrase)
+        success, error_message = utils.open_luks_device(device_path, mapper_name, passphrase)
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to open LUKS container: {error_message}")
             return utils.error_response(error_message, 500)
@@ -518,16 +534,17 @@ def encrypt_disk():
         # Leave the LUKS container open for convenience
         current_app.logger.info(f"[DISKMAN] Leaving LUKS container {mapper_name} open for mounting")
         write_to_log('admin', f'Device {device_name} encrypted successfully', 'info')
-        
+
         result = {
-            "device": device,
+            "device": device_path,
+            "label": get_partlabel(device_path),
             "mapper": mapper_path,
             "filesystem": "xfs",
             "is_open": True
         }
-            
-        current_app.logger.info(f"[DISKMAN] Successfully encrypted device {device}")
-        return utils.success_response(f"Device {device} encrypted successfully", result)
+
+        current_app.logger.info(f"[DISKMAN] Successfully encrypted device {device_path}")
+        return utils.success_response(f"Device {device_path} encrypted successfully", result)
         
     except Exception as e:
         current_app.logger.error(f"[DISKMAN] Error encrypting disk: {str(e)}")
@@ -571,7 +588,12 @@ def mount_device():
         
         # Ensure device name is properly formatted
         device_path, device_name = utils.format_device_path(device)
-            
+
+        # Check if this is a system partition
+        if is_system_partition(device_path):
+            current_app.logger.error(f"[DISKMAN] Cannot mount system partition: {device_path}")
+            return error_response("System partition cannot be modified", 403)
+
         # Check if the mount point exists
         success, error_message = utils.ensure_mount_point_exists(mountpoint)
         if not success:
@@ -668,7 +690,8 @@ def mount_device():
             filesystem_type = utils.get_filesystem_type(mountpoint)
             
             response_data = {
-                "device": device_name,
+                "device": device_path,
+                "label": get_partlabel(device_path),
                 "mount_device": mount_device,
                 "mount_point": mountpoint,
                 "filesystem": filesystem_type,
@@ -699,7 +722,7 @@ def mount_device():
             
             write_to_log('admin', f'Device {device_name} mounted successfully at {mountpoint}', 'info')
             return utils.success_response(
-                f"Device {device_name} mounted successfully to {mountpoint}",
+                f"Device {device_path} mounted successfully to {mountpoint}",
                 response_data
             )
         else:
@@ -757,8 +780,8 @@ def unmount_device():
             current_app.logger.error("[DISKMAN] Missing required parameter: mount_point")
             return utils.error_response("Missing required parameter: mount_point")
         
+        # Will be updated with device_path and label after formatting
         response_data = {
-            "device": device,
             "mount_point": mount_point
         }
         
@@ -798,7 +821,16 @@ def unmount_device():
             
         # Ensure device name is properly formatted
         device_path, device_name = utils.format_device_path(device)
-        
+
+        # Check if this is a system partition
+        if is_system_partition(device_path):
+            current_app.logger.error(f"[DISKMAN] Cannot unmount system partition: {device_path}")
+            return error_response("System partition cannot be modified", 403)
+
+        # Update response data with device info
+        response_data["device"] = device_path
+        response_data["label"] = get_partlabel(device_path)
+
         # Execute unmountDrive.sh script
         cmd = ["/usr/bin/sudo", "/vault/scripts/unmountDrive.sh", device_path, mount_point]
         if mapper:
@@ -830,7 +862,7 @@ def unmount_device():
             current_app.logger.info(f"[DISKMAN] Unmount successful - mount point {mount_point} is no longer mounted")
             write_to_log('admin', f'Device {device_name} unmounted successfully from {mount_point}', 'info')
             return utils.success_response(
-                f"Device {device_name} unmounted successfully",
+                f"Device {device_path} unmounted successfully",
                 response_data
             )
         else:
@@ -1313,3 +1345,229 @@ def update_sync_schedule():
             'status': 'error',
             'message': f'Failed to update NAS sync schedule: {str(e)}'
         }), 500
+
+@bp.route('/api/admin/diskman/assign-nas', methods=['POST'])
+@admin_required
+def assign_nas():
+    """
+    Assign a device as primary or backup NAS by setting PARTLABEL.
+
+    Expected JSON payload:
+    {
+        "device": "string (label or path)",
+        "role": "primary" | "backup"
+    }
+
+    Returns:
+        JSON response with success and label set
+    """
+    try:
+        current_app.logger.info("[DISKMAN] Starting assign_nas operation")
+        data = request.get_json()
+
+        if not data:
+            current_app.logger.error("[DISKMAN] No JSON data provided")
+            return utils.error_response("No JSON data provided")
+
+        device = data.get('device')
+        role = data.get('role')
+
+        current_app.logger.info(f"[DISKMAN] Received assign request for device: {device}, role: {role}")
+
+        if not device or not role:
+            current_app.logger.error("[DISKMAN] Missing required parameters: device and role")
+            return utils.error_response("Missing required parameters: device and role")
+
+        if role not in ['primary', 'backup']:
+            current_app.logger.error(f"[DISKMAN] Invalid role: {role}")
+            return utils.error_response("Role must be 'primary' or 'backup'")
+
+        # Resolve device identifier
+        device_path = resolve_device_identifier(device)
+        current_app.logger.info(f"[DISKMAN] Resolved device path: {device_path}")
+
+        # Check if this is a system partition
+        if is_system_partition(device_path):
+            current_app.logger.error(f"[DISKMAN] Cannot assign system partition: {device_path}")
+            return error_response("System partition cannot be assigned", 403)
+
+        # Get disk information to find the partition
+        disk_info = utils.get_disk_info()
+        block_devices = disk_info.get("blockDevices", {}).get("blockdevices", [])
+
+        # Find the device in block devices
+        target_device = None
+        part_num = None
+
+        for bd in block_devices:
+            if bd.get("name") == os.path.basename(device_path).replace("/dev/", ""):
+                target_device = bd
+                break
+
+        if not target_device:
+            current_app.logger.error(f"[DISKMAN] Device not found in block devices: {device_path}")
+            return utils.error_response(f"Device not found: {device_path}", 404)
+
+        # Determine partition number
+        if target_device.get("children"):
+            # Use first data partition (assuming single partition disk)
+            part_num = target_device["children"][0].get("name").replace(target_device["name"], "")
+        else:
+            # Single partition disk
+            part_num = "1"
+
+        label = f"homeserver-{role}-nas"
+        disk_path = f"/dev/{target_device['name']}"
+
+        # Use sgdisk to set PARTLABEL
+        cmd = ["/usr/bin/sudo", "/usr/sbin/sgdisk", "-c", part_num, label, disk_path]
+        current_app.logger.info(f"[DISKMAN] Executing: {' '.join(cmd)}")
+        success, stdout, stderr = utils.execute_command(cmd)
+
+        if not success:
+            error_msg = stderr if stderr else "Unknown error"
+            current_app.logger.error(f"[DISKMAN] Failed to set PARTLABEL: {error_msg}")
+            return utils.error_response(f"Failed to assign NAS role: {error_msg}", 500)
+
+        current_app.logger.info(f"[DISKMAN] Successfully assigned {device_path} as {role} NAS with label {label}")
+        write_to_log('admin', f'Device {device_path} assigned as {role} NAS', 'info')
+
+        return utils.success_response(
+            f"Device {device_path} successfully assigned as {role} NAS",
+            {
+                "device": device_path,
+                "label": label,
+                "role": role
+            }
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"[DISKMAN] Error assigning NAS: {str(e)}")
+        import traceback
+        current_app.logger.error(f"[DISKMAN] Traceback: {traceback.format_exc()}")
+        return utils.error_response(str(e), 500)
+
+@bp.route('/api/admin/diskman/import-to-nas', methods=['POST'])
+@admin_required
+def import_to_nas():
+    """
+    Import data from an external drive to NAS root.
+
+    Expected JSON payload:
+    {
+        "sourceDevice": "string (label or path)"
+    }
+
+    Returns:
+        JSON response with success
+    """
+    try:
+        current_app.logger.info("[DISKMAN] Starting import_to_nas operation")
+        data = request.get_json()
+
+        if not data:
+            current_app.logger.error("[DISKMAN] No JSON data provided")
+            return utils.error_response("No JSON data provided")
+
+        source_device = data.get('sourceDevice')
+
+        current_app.logger.info(f"[DISKMAN] Received import request from source: {source_device}")
+
+        if not source_device:
+            current_app.logger.error("[DISKMAN] Missing required parameter: sourceDevice")
+            return utils.error_response("Missing required parameter: sourceDevice")
+
+        # Resolve source device
+        source_path = resolve_device_identifier(source_device)
+        current_app.logger.info(f"[DISKMAN] Resolved source path: {source_path}")
+
+        # Check if source is a system partition
+        if is_system_partition(source_path):
+            current_app.logger.error(f"[DISKMAN] Cannot import from system partition: {source_path}")
+            return error_response("Cannot import from system partition", 403)
+
+        # Check if /mnt/nas is mounted
+        if not os.path.exists("/mnt/nas") or not os.path.ismount("/mnt/nas"):
+            current_app.logger.error("[DISKMAN] NAS is not mounted at /mnt/nas")
+            return utils.error_response("NAS must be mounted at /mnt/nas to import", 400)
+
+        # Get NAS available space
+        statvfs = os.statvfs("/mnt/nas")
+        nas_free_space = statvfs.f_frsize * statvfs.f_bavail
+
+        # Get source size (rough estimate)
+        try:
+            result = subprocess.run(["/usr/bin/du", "-sb", source_path], capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                source_size = int(result.stdout.split()[0])
+            else:
+                current_app.logger.warning(f"[DISKMAN] Could not determine source size, proceeding anyway")
+                source_size = 0
+        except Exception as e:
+            current_app.logger.warning(f"[DISKMAN] Error checking source size: {e}, proceeding anyway")
+            source_size = 0
+
+        # Check space (with some buffer)
+        if source_size > 0 and source_size * 1.1 > nas_free_space:
+            current_app.logger.error(f"[DISKMAN] Insufficient space: source {source_size} bytes, NAS free {nas_free_space} bytes")
+            return utils.error_response(
+                f"Insufficient space on NAS. Source requires ~{source_size // (1024*1024*1024)}GB, NAS has ~{nas_free_space // (1024*1024*1024)}GB free",
+                400
+            )
+
+        # Create import directory
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        import_dir = f"/mnt/nas/import-{timestamp}"
+        os.makedirs(import_dir, exist_ok=True)
+
+        # Mount source if needed
+        source_mount_point = None
+        if not os.path.ismount(source_path):
+            # Try to find a mount point or mount temporarily
+            # For simplicity, assume it's a block device that needs mounting
+            source_mount_point = f"/tmp/import_source_{timestamp}"
+            os.makedirs(source_mount_point, exist_ok=True)
+
+            # Mount the source
+            mount_cmd = ["/usr/bin/sudo", "/usr/bin/mount", source_path, source_mount_point]
+            success, stdout, stderr = utils.execute_command(mount_cmd)
+            if not success:
+                # Cleanup and error
+                os.rmdir(source_mount_point)
+                return utils.error_response(f"Failed to mount source device: {stderr}", 500)
+            source_path = source_mount_point
+
+        # Copy data using rsync
+        dest_dir = import_dir
+        rsync_cmd = ["/usr/bin/rsync", "-av", "--progress", f"{source_path}/", dest_dir]
+        current_app.logger.info(f"[DISKMAN] Executing rsync: {' '.join(rsync_cmd)}")
+        success, stdout, stderr = utils.execute_command(rsync_cmd)
+
+        # Cleanup mount if we created one
+        if source_mount_point and os.path.ismount(source_mount_point):
+            umount_cmd = ["/usr/bin/sudo", "/usr/bin/umount", source_mount_point]
+            utils.execute_command(umount_cmd)
+            os.rmdir(source_mount_point)
+
+        if not success:
+            current_app.logger.error(f"[DISKMAN] Rsync failed: {stderr}")
+            return utils.error_response(f"Import failed: {stderr}", 500)
+
+        current_app.logger.info(f"[DISKMAN] Successfully imported data to {dest_dir}")
+        write_to_log('admin', f'Data imported from {source_device} to NAS import directory', 'info')
+
+        return utils.success_response(
+            "Data successfully imported to NAS",
+            {
+                "sourceDevice": source_device,
+                "importDirectory": dest_dir,
+                "log": stdout.splitlines() if stdout else []
+            }
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"[DISKMAN] Error importing to NAS: {str(e)}")
+        import traceback
+        current_app.logger.error(f"[DISKMAN] Traceback: {traceback.format_exc()}")
+        return utils.error_response(str(e), 500)

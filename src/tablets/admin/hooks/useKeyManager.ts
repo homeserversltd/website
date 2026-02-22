@@ -529,7 +529,17 @@ export const useKeyManager = (
     try {
       // Ensure device has /dev/ prefix
       const devicePath = formatDevicePath(selectedDevice);
-      
+
+      // Get device label for API call if available
+      const encryptedDevice = diskInfo?.encryptionInfo?.encrypted_devices?.find(
+        ed => ed.device === devicePath || ed.label === selectedDevice
+      );
+      const nasDevice = diskInfo?.nasCompatibleDevices?.find(
+        d => d.device === selectedDevice || d.label === selectedDevice
+      );
+      const deviceLabel = encryptedDevice?.label || nasDevice?.label;
+      const deviceToSend = deviceLabel || devicePath;
+
       // Encrypt the current password
       const encryptedCurrentPassword = encryptData(password);
       if (!encryptedCurrentPassword) {
@@ -542,7 +552,7 @@ export const useKeyManager = (
       }
 
       const request: UpdateKeyRequest = {
-        device: devicePath,
+        device: deviceToSend,
         strategy: selectedStrategy as 'replace_primary' | 'safe_rotation' | 'flexible_addition',
         current_password: encryptedCurrentPassword
       };

@@ -83,6 +83,8 @@ export interface DiskManActions {
   handleUnlock: () => Promise<void>;
   handleSync: () => Promise<void>;
   handleAutoSync: () => Promise<void>;
+  handleAssignNas: (role: 'primary' | 'backup') => Promise<void>;
+  handleImportToNas: () => Promise<void>;
 }
 
 // Add new function to check services based on action
@@ -301,23 +303,6 @@ export const useDiskMan = (): [DiskManState, DiskManActions] => {
 
     }
   }, [diskSelection.selectedDevice, states.deviceMounted, states.isDeviceLocked, states.mountPoint]);
-
-  // Special debug for sda device - only log when relevant properties change
-  useEffect(() => {
-    if (diskInfo) {
-      const sda = blockDevices.find(d => d.name === 'sda');
-      if (sda) {
-        const sdaState = {
-          isMounted: isDeviceMounted('sda', blockDevices, diskInfo),
-          isLocked: hasLockedEncryptedPartition('sda', blockDevices, diskInfo),
-          mountPoint: getDeviceMountPoint('sda', blockDevices, diskInfo),
-          nasInfo: diskInfo.nasCompatibleDevices?.find(d => d.device === 'sda'),
-          structure: sda
-        };
-
-      }
-    }
-  }, [diskInfo?.timestamp]);
 
   // Sync condition logging - only when mount status changes
   useEffect(() => {
@@ -671,7 +656,68 @@ Note: During sync, your session will not time out due to inactivity.`
     
     await openModal(syncScheduleContent, { hideActions: true, title: 'Configure Automatic Sync' });
   };
-  
+
+  // Handle NAS assignment
+  const handleAssignNas = async (role: 'primary' | 'backup'): Promise<void> => {
+    if (!diskSelection.selectedDevice) {
+      toast.error("Please select a device to assign.", { duration: TOAST_DURATION.NORMAL });
+      return;
+    }
+
+    const confirmed = await confirm(
+      `Are you sure you want to assign this device as ${role} NAS? This will set the PARTLABEL for the device.`
+    );
+
+    if (confirmed) {
+      try {
+        const response = await api.post(API_ENDPOINTS.diskman.assignNas, {
+          device: diskSelection.selectedDevice,
+          role: role
+        });
+
+        if (response.status === 'success') {
+          toast.success(`Device successfully assigned as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
+          // Trigger disk info update
+          setPendingConfirmation();
+        } else {
+          toast.error(response.message || `Failed to assign device as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
+        }
+      } catch (error) {
+        toast.error(`Failed to assign device as ${role} NAS: ${error}`, { duration: TOAST_DURATION.NORMAL });
+      }
+    }
+  };
+
+  // Handle import to NAS
+  const handleImportToNas = async (): Promise<void> => {
+    if (!diskSelection.selectedDevice) {
+      toast.error("Please select a device to import from.", { duration: TOAST_DURATION.NORMAL });
+      return;
+    }
+
+    const confirmed = await confirm(
+      `Are you sure you want to import data from this device to NAS? This will copy all data to a new directory in /mnt/nas.`
+    );
+
+    if (confirmed) {
+      try {
+        const response = await api.post(API_ENDPOINTS.diskman.importToNas, {
+          sourceDevice: diskSelection.selectedDevice
+        });
+
+        if (response.status === 'success') {
+          toast.success(`Data successfully imported to NAS.`, { duration: TOAST_DURATION.NORMAL });
+          // Trigger disk info update
+          setPendingConfirmation();
+        } else {
+          toast.error(response.message || `Failed to import data to NAS.`, { duration: TOAST_DURATION.NORMAL });
+        }
+      } catch (error) {
+        toast.error(`Failed to import data to NAS: ${error}`, { duration: TOAST_DURATION.NORMAL });
+      }
+    }
+  };
+
   const canFormat = !isAnyOperationInProgress && !!(diskSelection.selectedDevice && !isDeviceMounted(diskSelection.selectedDevice, blockDevices, diskInfo));
   const canEncrypt = !isAnyOperationInProgress && !!(diskSelection.selectedDevice && !isDeviceMounted(diskSelection.selectedDevice, blockDevices, diskInfo));
   
@@ -730,8 +776,10 @@ Note: During sync, your session will not time out due to inactivity.`
       handleEncrypt,
       handlePermissions,
       handleUnlock,
-      handleSync,
-      handleAutoSync
-    }
+  handleSync,
+  handleAutoSync,
+  handleAssignNas,
+  handleImportToNas
+}
   ];
 };

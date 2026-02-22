@@ -17,8 +17,8 @@ import {
   faClock
 } from '@fortawesome/free-solid-svg-icons';
 import { useDiskMan } from '../hooks/useDiskMan';
-import { 
-  isDeviceMounted, 
+import {
+  isDeviceMounted,
   isDeviceMountedToNonStandardLocation,
   getDeviceMountPoint,
   isDeviceAvailableForDestination,
@@ -36,7 +36,8 @@ import {
   formatSpaceUsage,
   getDeviceSpaceUsage,
   isDeviceLowOnSpace,
-  canSyncNasToBackup
+  canSyncNasToBackup,
+  getDeviceDisplayName
 } from '../utils/diskUtils';
 import './DiskManager.css';
 
@@ -266,7 +267,7 @@ export const DiskManager: React.FC = () => {
                   <FontAwesomeIcon icon={faHdd} className="disk-icon" />
                   <div className="disk-info">
                     <div className="disk-name">
-                      {device.name}
+                      {getDeviceDisplayName(device.name, diskInfo)}
                       {isNasCompatible && <span className="nas-badge">NAS capable</span>}
                       {hasEncryptedPartition && (
                         hasUnlocked 

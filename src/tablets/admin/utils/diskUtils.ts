@@ -60,18 +60,15 @@ export const isDeviceMounted = (
   blockDevices: BlockDevice[], 
   diskInfo?: AdminDiskInfo
 ): boolean => {
-  // Add debugging for sda
-
-
   // First, check if we have NAS compatible device info
   if (diskInfo?.nasCompatibleDevices) {
-    const nasDevice = diskInfo.nasCompatibleDevices.find(d => d.device === deviceName);
+    const nasDevice = diskInfo.nasCompatibleDevices.find(d => d.device === deviceName || d.label === deviceName);
     if (nasDevice) {
       if (nasDevice.is_mounted !== undefined) {
         const isTrulyMounted = nasDevice.is_mounted === true && !!nasDevice.mountpoint;
         return isTrulyMounted;
       }
-    } 
+    }
   }
 
   const device = blockDevices.find(d => d.name === deviceName);
@@ -155,10 +152,10 @@ export const isDeviceMounted = (
     }
   }
   
-  // If we got here and haven't found a mount point, check again with NAS devices 
+  // If we got here and haven't found a mount point, check again with NAS devices
   // for a clearer result in the logs
   if (diskInfo?.nasCompatibleDevices) {
-    const nasDevice = diskInfo.nasCompatibleDevices.find(d => d.device === deviceName);
+    const nasDevice = diskInfo.nasCompatibleDevices.find(d => d.device === deviceName || d.label === deviceName);
     if (nasDevice) {
       // A device is only considered mounted if it has both is_mounted=true AND a valid mountpoint
       const isTrulyMounted = nasDevice.is_mounted === true && !!nasDevice.mountpoint;
@@ -262,10 +259,10 @@ export const getDeviceMountPoint = (
   
   // Check if this device has an entry in nasCompatibleDevices
   if (diskInfo?.nasCompatibleDevices) {
-    const nasDevice = diskInfo.nasCompatibleDevices.find(d => 
-      d.device === deviceName && d.is_mounted === true && d.mountpoint !== null
+    const nasDevice = diskInfo.nasCompatibleDevices.find(d =>
+      (d.device === deviceName || d.label === deviceName) && d.is_mounted === true && d.mountpoint !== null
     );
-    
+
     if (nasDevice && nasDevice.mountpoint) {
       return nasDevice.mountpoint;
     }
@@ -389,8 +386,8 @@ export const isDeviceAvailableForDestination = (
   const isUnlockedAndReady = isDeviceUnlockedButNotMounted(deviceName, blockDevices, diskInfo);
   
   // Check for NAS compatibility
-  const isNasCompatible = diskInfo?.nasCompatibleDevices?.some(d => 
-    d.device === deviceName && d.filesystem !== null
+  const isNasCompatible = diskInfo?.nasCompatibleDevices?.some(d =>
+    (d.device === deviceName || d.label === deviceName) && d.filesystem !== null
   );
   
   // All unmounted, formatted devices are available for the selected destination
@@ -440,8 +437,8 @@ export const isDestinationAvailableForDevice = (
     }
     
     // Compare device sizes
-    const currentNasDeviceInfo = diskInfo?.nasCompatibleDevices?.find(d => d.device === nasMountedDeviceName);
-    const targetDeviceInfo = diskInfo?.nasCompatibleDevices?.find(d => d.device === deviceName);
+    const currentNasDeviceInfo = diskInfo?.nasCompatibleDevices?.find(d => d.device === nasMountedDeviceName || d.label === nasMountedDeviceName);
+    const targetDeviceInfo = diskInfo?.nasCompatibleDevices?.find(d => d.device === deviceName || d.label === deviceName);
     
     if (currentNasDeviceInfo && targetDeviceInfo) {
       // Get size values in bytes for accurate comparison
@@ -573,10 +570,10 @@ export const getEncryptedPartitionMapper = (
  * Check if a device is NAS compatible
  */
 export const isDeviceNasCompatible = (
-  deviceName: string, 
+  deviceName: string,
   diskInfo?: AdminDiskInfo
 ): boolean => {
-  return !!diskInfo?.nasCompatibleDevices?.some(d => d.device === deviceName);
+  return !!diskInfo?.nasCompatibleDevices?.some(d => d.device === deviceName || d.label === deviceName);
 };
 
 /**
@@ -598,7 +595,7 @@ export const getDeviceFilesystemType = (
   if (mountedPartition?.fstype) return mountedPartition.fstype;
   
   // Check if it's a NAS compatible device
-  const nasCompatibleDevice = diskInfo?.nasCompatibleDevices?.find(d => d.device === deviceName);
+  const nasCompatibleDevice = diskInfo?.nasCompatibleDevices?.find(d => d.device === deviceName || d.label === deviceName);
   if (nasCompatibleDevice) {
     // Use the actual filesystem type from nasCompatibleDevice if available
     if (nasCompatibleDevice.filesystem) {
@@ -680,8 +677,8 @@ export const getDeviceSpaceUsage = (
   diskInfo?: AdminDiskInfo
 ): { totalSize?: string; usedSpace?: string; availableSpace?: string; usePercent?: string } | null => {
   if (!diskInfo?.nasCompatibleDevices) return null;
-  
-  const nasDevice = diskInfo.nasCompatibleDevices.find(d => d.device === deviceName);
+
+  const nasDevice = diskInfo.nasCompatibleDevices.find(d => d.device === deviceName || d.label === deviceName);
   if (!nasDevice || !nasDevice.is_mounted) return null;
   
   return {
@@ -835,4 +832,33 @@ export const shouldSyncNasToBackup = (diskInfo?: AdminDiskInfo): {
     nasUsage,
     backupUsage
   };
+};
+
+/**
+ * Get the display name for a device, preferring label when available
+ */
+export const getDeviceDisplayName = (
+  deviceName: string,
+  diskInfo?: AdminDiskInfo
+): string => {
+  if (!diskInfo) return deviceName;
+
+  // Check encrypted devices first
+  const encryptedDevice = diskInfo.encryptionInfo?.encrypted_devices?.find(ed =>
+    ed.device === `/dev/${deviceName}` || ed.label === deviceName
+  );
+  if (encryptedDevice?.label) {
+    return encryptedDevice.label;
+  }
+
+  // Check NAS compatible devices
+  const nasDevice = diskInfo.nasCompatibleDevices?.find(d =>
+    d.device === deviceName || d.label === deviceName
+  );
+  if (nasDevice?.label) {
+    return nasDevice.label;
+  }
+
+  // Fallback to device name
+  return deviceName;
 };

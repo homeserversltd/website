@@ -48,6 +48,7 @@ export interface EncryptedDevice {
   mapper_name: string | null;
   type: string;
   uuid: string | null;
+  label?: string;
 }
 
 export interface NasCompatibleDevice {
@@ -58,6 +59,7 @@ export interface NasCompatibleDevice {
   model: string | null;
   serial: string | null;
   uuid: string | null;
+  label?: string;
   mountpoint: string | null;
   is_mounted: boolean;
   is_nas_ready: boolean;

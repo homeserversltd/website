@@ -2,26 +2,23 @@ import os
 import subprocess
 import json
 from flask import current_app, jsonify
-from backend.utils.utils import execute_command, error_response, success_response, get_config, write_to_log
+from backend.utils.utils import execute_command, error_response, success_response, get_config, write_to_log, resolve_device_identifier, get_partlabel
 from backend.monitors.disk import DiskMonitor
 
 def format_device_path(device):
     """
     Ensure device name is properly formatted by adding /dev/ prefix if needed.
-    
+
     Args:
         device (str): Device name or path
-        
+
     Returns:
         tuple: (formatted_device_path, device_name)
     """
-    if not device.startswith('/dev/'):
-        device_path = f"/dev/{device}"
-        device_name = device
-    else:
-        device_path = device
-        device_name = device.split('/')[-1]
-    
+    resolved = resolve_device_identifier(device)
+    device_path = resolved
+    device_name = os.path.basename(resolved)
+
     return device_path, device_name
 
 def format_partition_path(partition):
@@ -86,17 +83,24 @@ def export_nas_key():
     
     return True, password, ""
 
-def generate_mapper_name(partition_name):
+def generate_mapper_name(partition_name_or_path):
     """
-    Generate a LUKS mapper name based on partition name.
-    
+    Generate a LUKS mapper name based on partition name or path.
+
     Args:
-        partition_name (str): Partition name
-        
+        partition_name_or_path (str): Partition name or path
+
     Returns:
-        str: Mapper name in the format <partition_name>_crypt
+        str: Mapper name in the format <partition_name>_crypt or <partlabel>_crypt
     """
-    return f"{partition_name}_crypt"
+    if '/' in partition_name_or_path:
+        partlabel = get_partlabel(partition_name_or_path)
+        if partlabel:
+            return f"{partlabel}_crypt"
+        else:
+            return f"{os.path.basename(partition_name_or_path)}_crypt"
+    else:
+        return f"{partition_name_or_path}_crypt"
 
 def verify_mapper_exists(mapper_name):
     """

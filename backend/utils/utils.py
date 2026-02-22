@@ -131,6 +131,86 @@ def get_global_mounts() -> Dict:
     except Exception as e:
         current_app.logger.error(f'Error reading mounts config: {str(e)}')
         return {}
+
+def resolve_device_identifier(identifier: str) -> str:
+    """
+    Resolve a device identifier to a physical device path.
+
+    Args:
+        identifier: Either a PARTLABEL string or a device path
+
+    Returns:
+        str: Physical device path
+    """
+    # If identifier is a PARTLABEL, resolve via by-partlabel symlink
+    partlabel_path = f"/dev/disk/by-partlabel/{identifier}"
+    if os.path.exists(partlabel_path):
+        return os.path.realpath(partlabel_path)
+
+    # If identifier starts with /dev/, return as-is (or resolved if symlink)
+    if identifier.startswith('/dev/'):
+        return os.path.realpath(identifier) if os.path.islink(identifier) else identifier
+
+    # Otherwise treat as device name and prepend /dev/
+    return f"/dev/{identifier}"
+
+def is_system_partition(device_path: str) -> bool:
+    """
+    Check if a device path corresponds to a system partition.
+
+    Args:
+        device_path: Physical device path to check
+
+    Returns:
+        bool: True if it's a system partition
+    """
+    # Check if this is a mapper path for system partitions
+    if '/dev/mapper/' in device_path:
+        basename = os.path.basename(device_path)
+        if basename in {'homeserver-vault_crypt', 'homeserver-deploy_crypt'}:
+            return True
+
+    system_partlabels = {
+        "homeserver-boot-efi",
+        "homeserver-boot",
+        "homeserver-swap",
+        "homeserver-vault",
+        "homeserver-deploy",
+        "homeserver-root"
+    }
+
+    # Resolve to real path
+    real_path = os.path.realpath(device_path)
+
+    # Try to find which by-partlabel symlink points to this device
+    for partlabel in system_partlabels:
+        partlabel_path = f"/dev/disk/by-partlabel/{partlabel}"
+        if os.path.exists(partlabel_path) and os.path.realpath(partlabel_path) == real_path:
+            return True
+
+    return False
+
+def get_partlabel(device_path: str) -> Optional[str]:
+    """
+    Get the PARTLABEL for a given device path.
+
+    Args:
+        device_path: Device path to check
+
+    Returns:
+        Optional[str]: PARTLABEL if found, None otherwise
+    """
+    real_path = os.path.realpath(device_path)
+
+    # Check all by-partlabel symlinks
+    by_partlabel_dir = "/dev/disk/by-partlabel"
+    if os.path.exists(by_partlabel_dir):
+        for symlink in os.listdir(by_partlabel_dir):
+            symlink_path = os.path.join(by_partlabel_dir, symlink)
+            if os.path.realpath(symlink_path) == real_path:
+                return symlink
+
+    return None
     
 def validate_upload_path(path: str) -> bool:
     """
@@ -795,23 +875,6 @@ def stop_all_enabled_services() -> List[Dict[str, Any]]:
         List[Dict[str, Any]]: List of dictionaries with service stop results
     """
     return stop_all_services(enabled_only=True)
-
-def get_vault_device_pattern() -> str:
-    """
-    Get the vault device pattern from config (sda or nvme).
-    Used by key management system to identify vault devices.
-    
-    Returns:
-        str: Device pattern ('sda' or 'nvme')
-    """
-    try:
-        config = get_config()
-        root_type = config.get('global', {}).get('root', 'nvme')  # Default to nvme for backward compatibility
-        logger.debug(f"[UTILS] Root type from config: {root_type}")
-        return root_type
-    except Exception as e:
-        logger.warning(f"[UTILS] Failed to get root type from config: {e}, defaulting to nvme")
-        return 'nvme'
 
 def get_config() -> Dict:
     """

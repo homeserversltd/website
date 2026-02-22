@@ -1,7 +1,7 @@
 import os
 from flask import request, jsonify, current_app
 from backend.auth.decorators import admin_required
-from backend.utils.utils import get_service_status, execute_systemctl_command, execute_systemctl_system_command, write_to_log
+from backend.utils.utils import get_service_status, execute_systemctl_command, execute_systemctl_system_command, write_to_log, resolve_device_identifier
 from backend.monitors.harddrivetest import HardDriveTestMonitor
 from .. import bp
 from . import utils
@@ -364,9 +364,12 @@ def start_hard_drive_test():
                 "message": f"Invalid test_type. Must be one of: {', '.join(valid_test_types)}"
             }), 400
             
+        # Resolve device identifier
+        resolved_device = resolve_device_identifier(device)
+
         # Start the test
         monitor = HardDriveTestMonitor()
-        result = monitor.start_test(device, test_type)
+        result = monitor.start_test(resolved_device, test_type)
         
         # Return the result
         return jsonify(result), 200 if result.get('success') else 500

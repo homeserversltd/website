@@ -22,14 +22,15 @@ import {
   EncryptResponse,
   PinVerificationResponse
 } from '../types';
-import { 
-  isDeviceMounted, 
+import {
+  isDeviceMounted,
   hasLockedEncryptedPartition,
   hasUnlockedEncryptedPartition,
   isDeviceEncrypted,
   getDeviceMountPoint,
   TOAST_DURATION,
-  MOUNT_DESTINATIONS
+  MOUNT_DESTINATIONS,
+  getDeviceDisplayName
 } from '../utils/diskUtils';
 import { API_ENDPOINTS } from '../../../api/endpoints';
 import { api } from '../../../api/client';
@@ -206,24 +207,33 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       // Find device and destination
       const device = blockDevices.find(d => d.name === deviceName);
       const destination = MOUNT_DESTINATIONS.find(d => d.id === destinationId);
-      
+
       if (!device || !destination) {
         toast.error("Invalid device or destination selected.", { duration: TOAST_DURATION.NORMAL });
         return false;
       }
-      
+
       debug(`Mounting ${device.name} to ${destination.path}`);
-      
+
+      // Get device label for API call
+      const encryptedDevice = diskInfo?.encryptionInfo?.encrypted_devices?.find(
+        ed => ed.device === `/dev/${device.name}` || ed.label === deviceName
+      );
+      const nasDevice = diskInfo?.nasCompatibleDevices?.find(
+        d => d.device === deviceName || d.label === deviceName
+      );
+      const deviceLabel = encryptedDevice?.label || nasDevice?.label;
+
       // Find mapper name if this is an encrypted device with an unlocked partition
       let mapperName: string | null = null;
 
       // 1. Check if the device itself is in encrypted_devices and is open
       if (diskInfo?.encryptionInfo?.encrypted_devices) {
-        const encryptedDevice = diskInfo.encryptionInfo.encrypted_devices.find(
-          ed => ed.device === `/dev/${device.name}` && ed.is_open && ed.mapper_name
+        const encDevice = diskInfo.encryptionInfo.encrypted_devices.find(
+          ed => (ed.device === `/dev/${device.name}` || ed.label === deviceName) && ed.is_open && ed.mapper_name
         );
-        if (encryptedDevice) {
-          mapperName = encryptedDevice.mapper_name;
+        if (encDevice) {
+          mapperName = encDevice.mapper_name;
           debug(`Found mapper from encryption info (top-level device): ${mapperName}`);
         }
       }
@@ -244,27 +254,28 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
 
       // 3. If still not found, check for open encrypted child partitions
       if (!mapperName && diskInfo?.encryptionInfo?.encrypted_devices) {
-        const encryptedDevice = diskInfo.encryptionInfo.encrypted_devices.find(ed =>
+        const encDevice = diskInfo.encryptionInfo.encrypted_devices.find(ed =>
           ed.is_open && device.children?.some(child => ed.device === `/dev/${child.name}`)
         );
-        if (encryptedDevice && encryptedDevice.mapper_name) {
-          mapperName = encryptedDevice.mapper_name;
+        if (encDevice && encDevice.mapper_name) {
+          mapperName = encDevice.mapper_name;
           debug(`Found mapper from encryption info (child): ${mapperName}`);
         }
       }
-      
+
       // Call the API to mount the device
       const response = await api.post<MountResponse>(
         API_ENDPOINTS.diskman.mount,
         {
-          device: device.name,
+          device: deviceLabel || device.name,
           mountpoint: destination.path,
           mapper: mapperName
         }
       );
       
       if (response.status === 'success') {
-        toast.success(response.message || `Successfully mounted ${device.name} to ${destination.label}.`, { duration: TOAST_DURATION.NORMAL });
+        const displayName = getDeviceDisplayName(deviceName, diskInfo);
+        toast.success(response.message || `Successfully mounted ${displayName} to ${destination.label}.`, { duration: TOAST_DURATION.NORMAL });
         // Set pending confirmation to wait for next admin_disk_info update
         setPendingConfirmation();
         return true;
@@ -292,7 +303,16 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
         toast.error("Invalid device selected.", { duration: TOAST_DURATION.NORMAL });
         return false;
       }
-      
+
+      // Get device label for API call
+      const encryptedDevice = diskInfo?.encryptionInfo?.encrypted_devices?.find(
+        ed => ed.device === `/dev/${device.name}` || ed.label === deviceName
+      );
+      const nasDevice = diskInfo?.nasCompatibleDevices?.find(
+        d => d.device === deviceName || d.label === deviceName
+      );
+      const deviceLabel = encryptedDevice?.label || nasDevice?.label;
+
       // Check if the device is mounted
       const isMounted = isDeviceMounted(deviceName, blockDevices, diskInfo);
       
@@ -498,14 +518,15 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       const response = await api.post<UnmountResponse>(
         API_ENDPOINTS.diskman.unmount,
         {
-          device: device.name,
+          device: deviceLabel || device.name,
           mapper: mapperName,
           mount_point: mountPoint
         }
       );
       
       if (response.status === 'success') {
-        toast.success(response.message || `Successfully unmounted ${device.name}.`, { duration: TOAST_DURATION.NORMAL });
+        const displayName = getDeviceDisplayName(deviceName, diskInfo);
+        toast.success(response.message || `Successfully unmounted ${displayName}.`, { duration: TOAST_DURATION.NORMAL });
         
         // Set pending confirmation to wait for next admin_disk_info update
         setPendingConfirmation();

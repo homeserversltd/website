@@ -15,7 +15,7 @@ import json
 from typing import Dict, Any, List, Set, Tuple, Optional
 from flask import current_app
 from backend import socketio
-from backend.utils.utils import execute_command
+from backend.utils.utils import execute_command, get_partlabel
 import getpass
 import pwd
 import psutil
@@ -267,7 +267,7 @@ class HardDriveTestMonitor:
 
     def _is_usb_device(self, device: str) -> bool:
         """Check if the given device is a USB device using udevadm info.
-        Resolves mappers to physical devices, but also works for /dev/sd* and similar block devices.
+        Resolves mappers to physical devices, but also works for /dev/sd*, label-based paths, and similar block devices.
         """
         # If device is a mapper, resolve to physical device
         resolved_device = device
@@ -348,7 +348,9 @@ class HardDriveTestMonitor:
             return {
                 "success": True,
                 "message": success_msg,
-                "test_id": test_id
+                "test_id": test_id,
+                "device": device,
+                "label": get_partlabel(device)
             }
         except Exception as e:
             error_msg = f"Error starting test: {str(e)}"
@@ -370,6 +372,7 @@ class HardDriveTestMonitor:
             return {
                 "testing": is_running,
                 "device": self.current_test_device,
+                "label": get_partlabel(self.current_test_device) if self.current_test_device else None,
                 "test_type": self.current_test_type,
                 "progress": self.current_progress
             }

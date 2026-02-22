@@ -4,7 +4,7 @@ import subprocess
 import json
 from typing import Dict, Any, List
 from flask import current_app
-from backend.utils.utils import get_cached_global_mounts, should_filter_mount
+from backend.utils.utils import get_cached_global_mounts, should_filter_mount, get_partlabel
 
 class DiskMonitor:
     """
@@ -386,6 +386,7 @@ class DiskMonitor:
                 current_app.logger.debug(f"[DISK] Processing LUKS device: {device}")
                 device_info = {
                     "device": device,
+                    "label": get_partlabel(device),
                     "is_open": False,
                     "mapper_name": None,
                     "uuid": None,
@@ -410,7 +411,19 @@ class DiskMonitor:
                             device_info["mapper_name"] = mapping
                             current_app.logger.debug(f"[DISK] Found open LUKS device (direct match): {device} -> {mapping}")
                             break
-                    
+
+                    # Also check for label-based mapper names
+                    partlabel = get_partlabel(device)
+                    if partlabel:
+                        expected_mapper2 = f"{partlabel}_crypt"
+                        if mapping == expected_mapper2:
+                            # Verify the mapper exists in /dev/mapper/
+                            if mapping in existing_mappers:
+                                device_info["is_open"] = True
+                                device_info["mapper_name"] = mapping
+                                current_app.logger.debug(f"[DISK] Found open LUKS device (label match): {device} -> {mapping}")
+                                break
+
                     # Remove partial match check as it's too permissive
                 
                 # If still not found, check if any mapper device contains the device basename
@@ -987,7 +1000,7 @@ class DiskMonitor:
         Get space usage information for a specific device path.
         
         Args:
-            device_path: The device path (e.g., /dev/sda1 or /dev/mapper/encrypted_sda1)
+            device_path: The device path (e.g., /dev/sda1, label-based path, or /dev/mapper/encrypted_sda1)
             disk_usage_items: List of disk usage items from df command
             
         Returns:

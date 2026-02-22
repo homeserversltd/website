@@ -10,7 +10,7 @@ from typing import Tuple, Dict, Optional
 import psutil
 from flask import current_app, jsonify, request, Response, stream_with_context, send_file
 from . import bp
-from backend.utils.utils import write_to_log, get_global_mounts, decrypt_data, execute_command, safe_write_config, update_config, is_using_factory_config, factory_mode_error, execute_systemctl_command
+from backend.utils.utils import write_to_log, get_global_mounts, decrypt_data, execute_command, safe_write_config, update_config, is_using_factory_config, factory_mode_error, execute_systemctl_command, get_partlabel
 from .utils import (
     check_vault_mounted, 
     attempt_mount_vault, 
@@ -1031,7 +1031,7 @@ def unlock_device_with_manual_password():
             }), 400
         
         # Generate mapper name
-        mapper_name = generate_mapper_name(device_name)
+        mapper_name = generate_mapper_name(device_path)
         current_app.logger.info(f"[DISKMAN] Using mapper name: {mapper_name}")
         
         # Attempt to unlock with the provided password
@@ -1051,6 +1051,7 @@ def unlock_device_with_manual_password():
         mapper_path = f"/dev/mapper/{mapper_name}"
         result = {
             "device": device_path,
+            "label": get_partlabel(device_path),
             "mapper": mapper_path,
             "is_open": True,
             "unlocked_with": "manual_password"

@@ -1,7 +1,7 @@
 import os
 from flask import request, jsonify, current_app
 from backend.auth.decorators import admin_required
-from backend.utils.utils import execute_command, get_config, error_response, success_response, check_services_running, check_services_stopped, start_service, stop_service, start_all_enabled_services, stop_all_services, get_service_status, decrypt_data, write_to_log, get_vault_device_pattern
+from backend.utils.utils import execute_command, get_config, error_response, success_response, check_services_running, check_services_stopped, start_service, stop_service, start_all_enabled_services, stop_all_services, get_service_status, decrypt_data, write_to_log, resolve_device_identifier, get_partlabel
 from .. import bp
 from . import utils
 import time
@@ -141,6 +141,12 @@ def create_key():
             "timestamp": int(time.time())
         }
 
+        # Get vault physical path for device identification
+        config = get_config()
+        mounts = config.get('global', {}).get('mounts', {})
+        vault_label = mounts.get('vault', {}).get('device', 'homeserver-vault')
+        vault_physical = resolve_device_identifier(vault_label)
+
         # Handle vault operations if target is vault or both
         if data['target'] in ['vault', 'both']:
             logger.info("[KEYMAN] Processing vault operations")
@@ -156,16 +162,19 @@ def create_key():
                 
             # Find the vault device in the devices list
             vault_device = None
-            vault_pattern = get_vault_device_pattern()
             for device in data['devices']:
-                if vault_pattern in device:  # Looking for the system drive
+                resolved = resolve_device_identifier(device)
+                if resolved == vault_physical:
                     vault_device = device
-                    logger.info(f"[KEYMAN-DEBUG] Found vault device: {vault_device} (pattern: {vault_pattern})")
+                    logger.info(f"[KEYMAN-DEBUG] Found vault device: {vault_device} (resolved: {resolved})")
                     break
                     
             if not vault_device:
                 logger.error("[KEYMAN-DEBUG] No vault device found in devices list")
                 return error_response("No vault device found in devices list")
+
+            # Resolve vault device to physical path for keyman utils
+            vault_device = resolve_device_identifier(vault_device)
 
             # Add variable to track data['device'] vs data['devices']
             logger.info(f"[KEYMAN-DEBUG] data['device'] exists: {'device' in data}")
@@ -278,17 +287,16 @@ def create_key():
                 logger.info(f"[KEYMAN-DEBUG] Starting operations for device: {device} at {time.strftime('%H:%M:%S')}")
                 
                 # Skip vault device in 'both' mode if we can identify it
-                vault_pattern = get_vault_device_pattern()
-                if data['target'] == 'both' and vault_pattern in device:
-                    logger.info(f"[KEYMAN-DEBUG] Skipping vault device {device} in external device processing (pattern: {vault_pattern})")
+                resolved_device = resolve_device_identifier(device)
+                if data['target'] == 'both' and resolved_device == vault_physical:
+                    logger.info(f"[KEYMAN-DEBUG] Skipping vault device {device} in external device processing (resolved: {resolved_device})")
                     continue
-                
+
                 # Check if this is secondary device (not vault or primary)
-                vault_pattern = get_vault_device_pattern()
-                is_secondary = (data['target'] == 'both' or data['target'] == 'external') and vault_pattern not in device
+                is_secondary = (data['target'] == 'both' or data['target'] == 'external') and resolved_device != vault_physical
                 if is_secondary:
-                    logger.info(f"[KEYMAN-DEBUG] Processing secondary device: {device} (vault pattern: {vault_pattern})")
-                
+                    logger.info(f"[KEYMAN-DEBUG] Processing secondary device: {device} (resolved: {resolved_device})")
+
                 if not device or not device.startswith('/dev/'):
                     devices_results.append({
                         "device": device,
@@ -312,7 +320,7 @@ def create_key():
                         })
                         continue
                 elif data['strategy'] == 'flexible_addition':
-                    slots_success, slots_message, slots_info = utils.get_key_slots(device)
+                    slots_success, slots_message, slots_info = utils.get_key_slots(resolved_device)
                     if slots_success and slots_info.get('used', 0) > 0 and not device_password:
                         logger.error(f"[KEYMAN-DEBUG] Missing device password for initialized device {device}")
                         devices_results.append({
@@ -331,20 +339,20 @@ def create_key():
                     
                     if data['strategy'] == 'replace_primary':
                         success, message = utils.replace_device_key(
-                            device=device,
+                            device=resolved_device,
                             slot=0,
                             new_password=nas_password,
                             existing_password=device_password
                         )
                     elif data['strategy'] == 'safe_rotation':
                         success, message = utils.replace_device_key(
-                            device=device,
+                            device=resolved_device,
                             slot=1,
                             new_password=nas_password,
                             existing_password=device_password
                         )
                     else:  # flexible_addition
-                        slots_success, slots_message, slots_info = utils.get_key_slots(device)
+                        slots_success, slots_message, slots_info = utils.get_key_slots(resolved_device)
                         if not slots_success:
                             devices_results.append({
                                 "device": device,
@@ -361,9 +369,9 @@ def create_key():
                                     "message": "No slots available and no flexible option provided"
                                 })
                                 continue
-                            
+
                             success, message = utils.add_key_to_full_device(
-                                device=device,
+                                device=resolved_device,
                                 new_password=nas_password,
                                 existing_password=device_password,
                                 flexible_option=data['flexibleOption'],
@@ -371,7 +379,7 @@ def create_key():
                             )
                         else:
                             success, message = utils.add_key_to_device(
-                                device=device,
+                                device=resolved_device,
                                 new_password=nas_password,
                                 existing_password=device_password
                             )
@@ -391,6 +399,7 @@ def create_key():
                 # Record the result
                 devices_results.append({
                     "device": device,
+                    "label": get_partlabel(resolved_device),
                     "success": success,
                     "message": message,
                     "operation_time": f"{operation_time:.2f} seconds"

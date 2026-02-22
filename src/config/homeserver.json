@@ -184,13 +184,12 @@
       "starred": "portals"
     },
     "global": {
-      "root": "sda",
       "version": {
-        "version": "0.9.104",
-        "releaseDate": "02-19-2026",
+        "version": "0.9.105",
+        "releaseDate": "02-22-2026",
         "generation": 1,
-        "buildId": "3b10b2ac",
-        "lastUpdated": "02-19-2026"
+        "buildId": "8b2316e4",
+        "lastUpdated": "02-22-2026"
       },
       "theme": {
         "name": "dark"
@@ -206,37 +205,37 @@
       },
       "mounts": {
         "vault": {
-          "device": "sda4",
+          "device": "homeserver-vault",
           "mountPoint": "/vault",
           "encrypted": true
         },
         "deploy": {
-          "device": "sda5",
+          "device": "homeserver-deploy",
           "mountPoint": "/deploy",
           "encrypted": true
         },
         "root": {
-          "device": "sda6",
+          "device": "homeserver-root",
           "mountPoint": "/",
           "encrypted": false
         },
         "boot": {
-          "device": "sda2",
+          "device": "homeserver-boot",
           "mountPoint": "/boot",
           "encrypted": false
         },
         "boot-efi": {
-          "device": "sda1",
+          "device": "homeserver-boot-efi",
           "mountPoint": "/boot/efi",
           "encrypted": false
         },
         "nas": {
-          "device": "sdb",
+          "device": "homeserver-primary-nas",
           "mountPoint": "/mnt/nas",
           "encrypted": true
         },
         "nas-backup": {
-          "device": "sdc",
+          "device": "homeserver-backup-nas",
           "mountPoint": "/mnt/nas_backup",
           "encrypted": true
         }

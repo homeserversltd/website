@@ -10,7 +10,7 @@ from flask import current_app
 import psutil
 from collections import defaultdict
 import json
-from backend.utils.utils import get_cached_global_mounts
+from backend.utils.utils import get_cached_global_mounts, get_partlabel
 # Initialize global state here
 prev_net_counters = psutil.net_io_counters()
 prev_disk_counters = {}
@@ -134,6 +134,7 @@ def get_mount_info() -> Dict[str, Dict[str, str]]:
             
             mount_info[mount_point] = {
                 'device': actual_device,
+                'label': get_partlabel(partition.device),
                 'is_encrypted': is_encrypted,
                 'fstype': partition.fstype,
                 'dm_device': dm_device,
@@ -546,6 +547,7 @@ def collect_disk_usage() -> Dict:
                         "percent": usage.percent,
                         "mountpoint": mount_point,
                         "device": device_info['device'],
+                        "label": get_partlabel('/dev/' + device_info['device']) if not device_info['device'].startswith('mapper/') else None,
                         "configured_path": mount_point
                     }
                     

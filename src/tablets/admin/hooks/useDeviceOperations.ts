@@ -98,6 +98,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
   useEffect(() => {
     const currentTimestamp = getLastUpdated('admin_disk_info', 'admin');
     if (currentTimestamp && isPendingConfirmation && currentTimestamp > lastKnownUpdateTimestamp.current) {
+      console.log('[DiskMan] admin_disk_info pulse received, clearing pending confirmation', { currentTimestamp, lastKnown: lastKnownUpdateTimestamp.current });
       debug('Received disk info update, clearing pending confirmation state');
       setIsPendingConfirmation(false);
       lastKnownUpdateTimestamp.current = currentTimestamp;
@@ -109,6 +110,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
   
   // Helper function to set pending confirmation state
   const setPendingConfirmation = () => {
+    console.log('[DiskMan] setPendingConfirmation called – UI will block until next admin_disk_info pulse');
     setIsPendingConfirmation(true);
     debug('Setting pending confirmation state');
   };

@@ -6,6 +6,7 @@ import {
   isDeviceMountedToNonStandardLocation,
   getDeviceMountPoint,
   getDeviceForMountPoint,
+  getDeviceNasRole,
   MOUNT_DESTINATIONS,
   TOAST_DURATION,
   hasLockedEncryptedPartition,
@@ -83,6 +84,17 @@ export const useDiskSelection = (
             setSelectedDestination(null);
           }
         }
+      }
+    }
+    
+    // When disk info updates (e.g. after assign NAS), sync selected destination to the device's role
+    // so the UI doesn't stay in limbo (e.g. "NAS" highlighted when device was just assigned as backup)
+    if (selectedDevice) {
+      const nasRole = getDeviceNasRole(selectedDevice, diskInfo);
+      if (nasRole === 'primary' && selectedDestination !== 'nas') {
+        setSelectedDestination('nas');
+      } else if (nasRole === 'backup' && selectedDestination !== 'nas_backup') {
+        setSelectedDestination('nas_backup');
       }
     }
   }, [diskInfo?.timestamp, selectedDevice, selectedDestination, blockDevices]);

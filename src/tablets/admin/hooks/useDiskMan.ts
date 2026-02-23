@@ -667,6 +667,8 @@ Note: During sync, your session will not time out due to inactivity.`
       return;
     }
 
+    console.log('[DiskMan] Assign button pressed', { role, device: diskSelection.selectedDevice });
+
     const confirmed = await confirm(
       `Are you sure you want to assign this device as ${role} NAS? This will set the PARTLABEL for the device.`
     );
@@ -676,15 +678,19 @@ Note: During sync, your session will not time out due to inactivity.`
         const response = await api.post(API_ENDPOINTS.diskman.assignNas, {
           device: diskSelection.selectedDevice,
           role: role
-        });
+        }) as { status?: string; message?: string };
+
+        console.log('[DiskMan] Assign NAS response', { role, status: response?.status });
 
         if (response.status === 'success') {
           toast.success(`Device successfully assigned as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
-          deviceActions.setPendingConfirmation();
+          // Do not set pending confirmation: backend sends admin_disk_info immediately, and if that
+          // broadcast arrives before this HTTP response, the clear-pending effect never runs again → UI locks.
         } else {
           toast.error(response.message || `Failed to assign device as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
         }
       } catch (error) {
+        console.warn('[DiskMan] Assign NAS error', { role, error });
         toast.error(`Failed to assign device as ${role} NAS: ${error}`, { duration: TOAST_DURATION.NORMAL });
       }
     }

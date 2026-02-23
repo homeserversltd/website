@@ -1614,13 +1614,45 @@ def import_to_nas():
             current_app.logger.error("[DISKMAN] NAS is not mounted at /mnt/nas")
             return utils.error_response("NAS must be mounted at /mnt/nas to import", 400)
 
+        # Resolve effective source: use existing mount if device (or partition) is already mounted, else mount once
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        effective_source = source_path
+        source_mount_point = None
+        if source_path.startswith("/dev/"):
+            existing = utils.get_mount_point_for_device(source_path)
+            if existing:
+                current_app.logger.info(f"[DISKMAN] Using existing mount for source: {existing}")
+                effective_source = existing
+            else:
+                source_mount_point = f"/tmp/import_source_{timestamp}"
+                os.makedirs(source_mount_point, exist_ok=True)
+                mount_cmd = ["/usr/bin/sudo", "/usr/bin/mount", source_path, source_mount_point]
+                success, stdout, stderr = utils.execute_command(mount_cmd)
+                if not success:
+                    # Device may already be mounted (e.g. partition); try to find mount point again
+                    tmp_mp = source_mount_point
+                    existing = utils.get_mount_point_for_device(source_path)
+                    if existing:
+                        current_app.logger.info(f"[DISKMAN] Mount failed (already mounted), using existing: {existing}")
+                        effective_source = existing
+                        source_mount_point = None
+                    try:
+                        os.rmdir(tmp_mp)
+                    except OSError:
+                        pass
+                    if not existing:
+                        return utils.error_response(f"Failed to mount source device: {stderr}", 500)
+                else:
+                    effective_source = source_mount_point
+
         # Get NAS available space
         statvfs = os.statvfs("/mnt/nas")
         nas_free_space = statvfs.f_frsize * statvfs.f_bavail
 
-        # Get source size (rough estimate)
+        # Get source size (rough estimate) from effective source (directory)
         try:
-            result = subprocess.run(["/usr/bin/du", "-sb", source_path], capture_output=True, text=True, timeout=30)
+            result = subprocess.run(["/usr/bin/du", "-sb", effective_source], capture_output=True, text=True, timeout=30)
             if result.returncode == 0:
                 source_size = int(result.stdout.split()[0])
             else:
@@ -1633,44 +1665,34 @@ def import_to_nas():
         # Check space (with some buffer)
         if source_size > 0 and source_size * 1.1 > nas_free_space:
             current_app.logger.error(f"[DISKMAN] Insufficient space: source {source_size} bytes, NAS free {nas_free_space} bytes")
+            if source_mount_point and os.path.ismount(source_mount_point):
+                utils.execute_command(["/usr/bin/sudo", "/usr/bin/umount", source_mount_point])
+                os.rmdir(source_mount_point)
             return utils.error_response(
                 f"Insufficient space on NAS. Source requires ~{source_size // (1024*1024*1024)}GB, NAS has ~{nas_free_space // (1024*1024*1024)}GB free",
                 400
             )
 
         # Create import directory (sudo: www-data cannot create under /mnt/nas)
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         import_dir = f"/mnt/nas/import-{timestamp}"
         success, stdout, stderr = utils.execute_command(["/usr/bin/sudo", "/usr/bin/mkdir", "-p", import_dir])
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to create import directory: {stderr}")
+            if source_mount_point and os.path.ismount(source_mount_point):
+                utils.execute_command(["/usr/bin/sudo", "/usr/bin/umount", source_mount_point])
+                os.rmdir(source_mount_point)
             return utils.error_response(f"Failed to create import directory: {stderr}", 500)
         success, stdout, stderr = utils.execute_command(["/usr/bin/sudo", "/usr/bin/chown", "www-data:www-data", import_dir])
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to set ownership on import directory: {stderr}")
-            return utils.error_response(f"Failed to set ownership on import directory: {stderr}", 500)
-
-        # Mount source if needed
-        source_mount_point = None
-        if not os.path.ismount(source_path):
-            # Try to find a mount point or mount temporarily
-            # For simplicity, assume it's a block device that needs mounting
-            source_mount_point = f"/tmp/import_source_{timestamp}"
-            os.makedirs(source_mount_point, exist_ok=True)
-
-            # Mount the source
-            mount_cmd = ["/usr/bin/sudo", "/usr/bin/mount", source_path, source_mount_point]
-            success, stdout, stderr = utils.execute_command(mount_cmd)
-            if not success:
-                # Cleanup and error
+            if source_mount_point and os.path.ismount(source_mount_point):
+                utils.execute_command(["/usr/bin/sudo", "/usr/bin/umount", source_mount_point])
                 os.rmdir(source_mount_point)
-                return utils.error_response(f"Failed to mount source device: {stderr}", 500)
-            source_path = source_mount_point
+            return utils.error_response(f"Failed to set ownership on import directory: {stderr}", 500)
 
         # Copy data using rsync
         dest_dir = import_dir
-        rsync_cmd = ["/usr/bin/rsync", "-av", "--progress", f"{source_path}/", dest_dir]
+        rsync_cmd = ["/usr/bin/rsync", "-av", "--progress", f"{effective_source}/", dest_dir]
         current_app.logger.info(f"[DISKMAN] Executing rsync: {' '.join(rsync_cmd)}")
         success, stdout, stderr = utils.execute_command(rsync_cmd)
 

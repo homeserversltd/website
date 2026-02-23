@@ -549,6 +549,47 @@ def verify_mount(mount_point):
     
     return success
 
+
+def get_mount_point_for_device(device_path):
+    """
+    Return the current mount point for a block device or any of its partitions, if mounted.
+
+    Args:
+        device_path (str): Block device path (e.g. /dev/sdc, /dev/nvme0n1)
+
+    Returns:
+        str or None: Mount point path if the device (or a partition of it) is mounted, else None
+    """
+    if not device_path or not device_path.startswith("/dev/"):
+        return None
+    # Exact source first
+    success, stdout, _ = execute_command(
+        ["/usr/bin/sudo", "/usr/bin/findmnt", "-S", device_path, "-n", "-o", "TARGET"]
+    )
+    if success and stdout and stdout.strip():
+        return stdout.strip()
+    # Enumerate all mounts and find device or partition of same disk
+    success, stdout, _ = execute_command(
+        ["/usr/bin/sudo", "/usr/bin/findmnt", "-n", "-o", "SOURCE,TARGET"]
+    )
+    if not success or not stdout:
+        return None
+    base = device_path.rstrip("/")
+    for line in stdout.strip().splitlines():
+        parts = line.split(None, 1)
+        if len(parts) < 2:
+            continue
+        source, target = parts[0], parts[1]
+        if source == device_path or source == base:
+            return target
+        # Partition of same disk: /dev/sdc1 for /dev/sdc, /dev/nvme0n1p1 for /dev/nvme0n1
+        if source.startswith(base) and len(source) > len(base):
+            suffix = source[len(base):]
+            if suffix.isdigit() or (suffix.startswith("p") and suffix[1:].isdigit()):
+                return target
+    return None
+
+
 def wipe_device(device_path):
     """
     Wipe a device using wipefs.

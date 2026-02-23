@@ -7,8 +7,11 @@
 #   1. Cleans existing build artifacts to ensure fresh builds
 #   2. Copies application files from source to webroot
 #   3. Sets appropriate ownership and permissions
-#   4. Installs npm dependencies
-#   5. Builds the production frontend bundle
+#   4. Ensures Python venv exists and installs backend requirements
+#   5. Ensures crypto secret.key exists (siteSecretKey.sh)
+#   6. Installs npm dependencies
+#   7. Builds the production frontend bundle
+#   8. Restarts gunicorn when webroot is /var/www/homeserver
 #
 # Usage: ./build_frontend.sh [source_dir] [webroot_dir]
 #   source_dir:  Source directory containing application files (default: current dir)
@@ -174,8 +177,40 @@ find "$WEBROOT" -type f -not -path "*/node_modules/*" -exec chmod 755 {} \;
 echo "✓ Permissions set (npm-managed directories preserved)"
 echo ""
 
-# Step 4: Install npm dependencies
-echo "=== STEP 4: Installing npm dependencies ==="
+# Step 4: Ensure Python venv exists and install backend requirements
+echo "=== STEP 4: Ensuring Python venv and backend requirements ==="
+if [ ! -f "$WEBROOT/venv/bin/gunicorn" ]; then
+    echo "Venv missing or incomplete; creating venv and installing requirements..."
+    python3 -m venv "$WEBROOT/venv"
+    "$WEBROOT/venv/bin/pip" install -r "$WEBROOT/requirements.txt"
+    chown -R www-data:www-data "$WEBROOT/venv"
+    echo "✓ Venv created and requirements installed"
+else
+    echo "Venv present; skipping (run pip install -r requirements.txt manually if backend deps changed)"
+fi
+echo ""
+
+# Step 5: Ensure crypto secret.key exists (required for /api/crypto/getKey and admin auth)
+echo "=== STEP 5: Ensuring crypto secret.key exists ==="
+SITE_SECRET_KEY_SH="/usr/local/sbin/siteSecretKey.sh"
+KEY_FILE="$WEBROOT/src/config/secret.key"
+if [ ! -f "$KEY_FILE" ]; then
+    if [ -f "$SITE_SECRET_KEY_SH" ]; then
+        [ ! -x "$SITE_SECRET_KEY_SH" ] && chmod +x "$SITE_SECRET_KEY_SH"
+        "$SITE_SECRET_KEY_SH" generate
+        chown root:www-data "$KEY_FILE"
+        chmod 640 "$KEY_FILE"
+        echo "✓ secret.key created via siteSecretKey.sh"
+    else
+        echo "WARNING: $SITE_SECRET_KEY_SH not found; secret.key not created. Admin auth and /api/crypto/getKey will fail until key exists."
+    fi
+else
+    echo "secret.key already exists; skipping"
+fi
+echo ""
+
+# Step 6: Install npm dependencies
+echo "=== STEP 6: Installing npm dependencies ==="
 
 cd "$WEBROOT"
 echo "Changed to directory: $(pwd)"
@@ -189,14 +224,26 @@ else
 fi
 echo ""
 
-# Step 5: Build production frontend
-echo "=== STEP 5: Building production frontend ==="
+# Step 7: Build production frontend
+echo "=== STEP 7: Building production frontend ==="
 
 echo "Running: npm run build"
 
 if npm run build; then
     echo "✓ npm run build completed successfully"
     echo ""
+
+    # Step 8: Restart gunicorn when building into production webroot
+    if [ "$WEBROOT" = "/var/www/homeserver" ] && command -v systemctl >/dev/null 2>&1; then
+        echo "=== STEP 8: Restarting gunicorn ==="
+        if systemctl restart gunicorn.service 2>/dev/null; then
+            systemctl is-active --quiet gunicorn.service && echo "✓ gunicorn restarted and active" || echo "WARNING: gunicorn restarted but not active"
+        else
+            echo "WARNING: could not restart gunicorn (not root or service missing)"
+        fi
+        echo ""
+    fi
+
     echo "=== BUILD SUCCESS! ==="
     echo "HOMESERVER frontend has been successfully built and deployed"
     echo "Build artifacts are ready in: $WEBROOT/build"

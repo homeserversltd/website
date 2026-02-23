@@ -680,8 +680,7 @@ Note: During sync, your session will not time out due to inactivity.`
 
         if (response.status === 'success') {
           toast.success(`Device successfully assigned as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
-          // Trigger disk info update
-          setPendingConfirmation();
+          deviceActions.setPendingConfirmation();
         } else {
           toast.error(response.message || `Failed to assign device as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
         }
@@ -710,8 +709,7 @@ Note: During sync, your session will not time out due to inactivity.`
 
         if (response.status === 'success') {
           toast.success(`Data successfully imported to NAS.`, { duration: TOAST_DURATION.NORMAL });
-          // Trigger disk info update
-          setPendingConfirmation();
+          deviceActions.setPendingConfirmation();
         } else {
           toast.error(response.message || `Failed to import data to NAS.`, { duration: TOAST_DURATION.NORMAL });
         }

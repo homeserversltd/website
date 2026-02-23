@@ -66,6 +66,7 @@ export interface DeviceOperationsActions {
   syncDevices: () => Promise<boolean>;
   getSyncSchedule: () => Promise<SyncScheduleConfig | null>;
   setSyncSchedule: (schedule: SyncScheduleConfig) => Promise<boolean>;
+  setPendingConfirmation: () => void;
 }
 
 export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsActions] => {
@@ -927,7 +928,8 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       performUnmount,
       syncDevices,
       getSyncSchedule,
-      setSyncSchedule
+      setSyncSchedule,
+      setPendingConfirmation
     }
   ];
 }; 

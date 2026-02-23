@@ -19,6 +19,55 @@ from backend.broadcasts.events import trigger_immediate_broadcast
 logger = logging.getLogger('homeserver')
 
 
+def _try_mount_after_assign(partition_path, target_disk, mountpoint, run_setup_nas=False):
+    """
+    After assign_nas set PARTLABEL, try to mount the device to the given slot and optionally run setup NAS.
+    Used only when the slot is not already mounted (no primary/backup already in operation).
+    Returns (mount_ok, setup_ok, message). Non-fatal: assign already succeeded.
+    """
+    mount_ok = False
+    setup_ok = False
+    try:
+        if utils.check_mount_point_usage(mountpoint):
+            current_app.logger.info(f"[DISKMAN] Assign overload: {mountpoint} already in use, skipping auto-mount")
+            return False, False, "mount point already in use"
+        success, err = utils.ensure_mount_point_exists(mountpoint)
+        if not success:
+            current_app.logger.warning(f"[DISKMAN] Assign overload: could not ensure mount point {mountpoint}: {err}")
+            return False, False, err
+        disk_info = utils.get_disk_info()
+        encrypted_devices = disk_info.get("encryptionInfo", {}).get("encrypted_devices", [])
+        ed = next((e for e in encrypted_devices if e.get("device") == partition_path), None)
+        mapper = ed.get("mapper_name") if (ed and ed.get("is_open")) else None
+        if mapper and not utils.verify_mapper_exists(mapper):
+            mapper = None
+        mount_device = f"/dev/mapper/{mapper}" if mapper else partition_path
+        current_app.logger.info(f"[DISKMAN] Assign overload: mounting {mount_device} to {mountpoint} (mapper={mapper})")
+        success, _out, err_msg = utils.execute_mount_script(mount_device, mountpoint, mapper, "mount")
+        if not success:
+            current_app.logger.warning(f"[DISKMAN] Assign overload: mount failed: {err_msg}")
+            return False, False, err_msg
+        if not utils.verify_mount(mountpoint):
+            current_app.logger.warning("[DISKMAN] Assign overload: mount verification failed")
+            return False, False, "mount verification failed"
+        mount_ok = True
+        if run_setup_nas:
+            current_app.logger.info("[DISKMAN] Assign overload: running setupNAS.sh")
+            result = subprocess.run(
+                ["/usr/bin/sudo", "/usr/bin/bash", "/usr/local/sbin/setupNAS.sh"],
+                capture_output=True, text=True, check=False
+            )
+            setup_ok = result.returncode == 0
+            if not setup_ok:
+                current_app.logger.warning(f"[DISKMAN] Assign overload: setupNAS.sh failed with code {result.returncode}")
+            else:
+                write_to_log('admin', 'Permissions applied (setupNAS.sh) after assign primary NAS', 'info')
+        return mount_ok, setup_ok, ""
+    except Exception as e:
+        current_app.logger.warning(f"[DISKMAN] Assign overload exception: {e}")
+        return mount_ok, setup_ok, str(e)
+
+
 def _is_external_mount(path: str) -> bool:
     """Check if path is on an external mount (not root filesystem)."""
     try:
@@ -1504,6 +1553,25 @@ def assign_nas():
 
         current_app.logger.info(f"[DISKMAN] Successfully assigned {device_path} as {role} NAS with label {label}")
         write_to_log('admin', f'Device {device_path} assigned as {role} NAS', 'info')
+
+        # Overload: if slot is not already in use, auto-mount (and for primary, run setup NAS) so one click = fully ready
+        partition_path = f"/dev/{target_disk['name']}{part_num}"
+        if role == "primary":
+            if not os.path.exists("/mnt/nas") or not os.path.ismount("/mnt/nas"):
+                mount_ok, setup_ok, _ = _try_mount_after_assign(partition_path, target_disk, "/mnt/nas", run_setup_nas=True)
+                if mount_ok:
+                    current_app.logger.info("[DISKMAN] Assign primary: auto-mounted and ran setup NAS")
+                elif setup_ok is False and mount_ok:
+                    current_app.logger.warning("[DISKMAN] Assign primary: auto-mounted but setup NAS failed")
+            else:
+                current_app.logger.info("[DISKMAN] Assign primary: /mnt/nas already mounted, skipping auto-mount")
+        elif role == "backup":
+            if not os.path.exists("/mnt/nas_backup") or not os.path.ismount("/mnt/nas_backup"):
+                mount_ok, _, _ = _try_mount_after_assign(partition_path, target_disk, "/mnt/nas_backup", run_setup_nas=False)
+                if mount_ok:
+                    current_app.logger.info("[DISKMAN] Assign backup: auto-mounted to /mnt/nas_backup")
+            else:
+                current_app.logger.info("[DISKMAN] Assign backup: /mnt/nas_backup already mounted, skipping auto-mount")
 
         trigger_immediate_broadcast('admin_disk_info')
 

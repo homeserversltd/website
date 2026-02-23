@@ -18,8 +18,8 @@ import {
   ConfirmModalResult,
   ConfirmModalOptions
 } from '../types';
-import { 
-  isDeviceMounted, 
+import {
+  isDeviceMounted,
   isDeviceMountedToNonStandardLocation,
   getDeviceMountPoint,
   getDeviceForMountPoint,
@@ -34,6 +34,8 @@ import {
   canSyncNasToBackup,
   isDeviceNasCompatible,
   getDeviceNasRole,
+  NAS_PRIMARY_PARTLABEL,
+  NAS_BACKUP_PARTLABEL,
 } from '../utils/diskUtils';
 import { API_ENDPOINTS } from '../../../api/endpoints';
 import { api } from '../../../api/client';
@@ -788,8 +790,10 @@ Note: During sync, your session will not time out due to inactivity.`
     diskInfo &&
     isDeviceNasCompatible(diskSelection.selectedDevice, diskInfo)
   );
-  const canAssignPrimaryNas = !isAnyOperationInProgress && selectedDeviceHasPartition() && selectedIsNasCompatible;
-  const canAssignBackupNas = !isAnyOperationInProgress && selectedDeviceHasPartition() && selectedIsNasCompatible;
+  const primarySlotOccupied = diskInfo?.nasCompatibleDevices?.some(device => device.label === NAS_PRIMARY_PARTLABEL);
+  const backupSlotOccupied = diskInfo?.nasCompatibleDevices?.some(device => device.label === NAS_BACKUP_PARTLABEL);
+  const canAssignPrimaryNas = !isAnyOperationInProgress && selectedDeviceHasPartition() && selectedIsNasCompatible && !primarySlotOccupied;
+  const canAssignBackupNas = !isAnyOperationInProgress && selectedDeviceHasPartition() && selectedIsNasCompatible && !backupSlotOccupied;
   const selectedNasRole = diskSelection.selectedDevice
     ? getDeviceNasRole(diskSelection.selectedDevice, diskInfo)
     : null;

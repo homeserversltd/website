@@ -253,6 +253,7 @@ def format_disk():
         write_to_log('admin', f'Device {device_name} formatted successfully', 'info')
         if active_luks:
             current_app.logger.info(f"[DISKMAN] Operation summary: Closed {len(active_luks)} LUKS container(s), wiped and formatted device")
+        trigger_immediate_broadcast('admin_disk_info')
         return utils.success_response(f"Device {device_path} formatted successfully", result)
         
     except Exception as e:
@@ -402,6 +403,7 @@ def unlock_encrypted_partition():
         }
         
         current_app.logger.info(f"[DISKMAN] Successfully unlocked device {device_path}")
+        trigger_immediate_broadcast('admin_disk_info')
         return utils.success_response(f"Device {device_path} unlocked successfully", result)
         
     except Exception as e:
@@ -762,6 +764,7 @@ def mount_device():
                         response_data["scriptManagedServicesNote"] = "Some script-managed services require a reboot to start properly."
             
             write_to_log('admin', f'Device {device_name} mounted successfully at {mountpoint}', 'info')
+            trigger_immediate_broadcast('admin_disk_info')
             return utils.success_response(
                 f"Device {device_path} mounted successfully to {mountpoint}",
                 response_data
@@ -902,6 +905,7 @@ def unmount_device():
             # and the mapper no longer exists (if applicable)
             current_app.logger.info(f"[DISKMAN] Unmount successful - mount point {mount_point} is no longer mounted")
             write_to_log('admin', f'Device {device_name} unmounted successfully from {mount_point}', 'info')
+            trigger_immediate_broadcast('admin_disk_info')
             return utils.success_response(
                 f"Device {device_path} unmounted successfully",
                 response_data

@@ -566,6 +566,24 @@ export const getEncryptedPartitionMapper = (
   return null;
 };
 
+/** PARTLABELs used for NAS role assignment (must match backend) */
+export const NAS_PRIMARY_PARTLABEL = 'homeserver-primary-nas';
+export const NAS_BACKUP_PARTLABEL = 'homeserver-backup-nas';
+
+/**
+ * Get NAS role for a device (primary, backup, or none) from PARTLABEL or current mountpoint.
+ */
+export const getDeviceNasRole = (
+  deviceName: string,
+  diskInfo?: AdminDiskInfo
+): 'primary' | 'backup' | null => {
+  const entry = diskInfo?.nasCompatibleDevices?.find(d => d.device === deviceName || d.label === deviceName);
+  if (!entry) return null;
+  if (entry.label === NAS_PRIMARY_PARTLABEL || entry.mountpoint === '/mnt/nas') return 'primary';
+  if (entry.label === NAS_BACKUP_PARTLABEL || entry.mountpoint === '/mnt/nas_backup') return 'backup';
+  return null;
+};
+
 /**
  * Check if a device is NAS compatible
  */

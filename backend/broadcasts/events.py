@@ -294,6 +294,39 @@ class BroadcastManager:
         
         return filtered_data
 
+
+def trigger_immediate_broadcast(broadcast_type: str) -> None:
+    """
+    Fetch fresh data and emit to all current subscribers.
+    Use after an action that changes disk/device state (e.g. assign NAS) so the UI updates without refresh.
+    """
+    try:
+        if broadcast_type not in broadcast_manager.broadcasters:
+            return
+        broadcaster_func = broadcast_manager.broadcasters[broadcast_type]
+        data = broadcaster_func()
+        if data is None:
+            return
+        subscribers = broadcast_manager.get_subscribers(broadcast_type)
+        if not subscribers:
+            return
+        admin_auth = get_socket_auth_manager()
+        for sid in list(subscribers):
+            if broadcast_type in broadcast_manager.admin_only_broadcasts:
+                if not admin_auth.validate_socket(sid):
+                    continue
+            data_to_send = (
+                broadcast_manager.filter_admin_data(broadcast_type, data, sid)
+                if broadcast_type in broadcast_manager.broadcasts_with_admin_fields
+                else data
+            )
+            socketio.server.emit(broadcast_type, data_to_send, room=sid)
+        broadcast_manager.last_broadcast_data[broadcast_type] = data
+        current_app.logger.debug(f"[BROADCAST] Immediate broadcast sent for {broadcast_type} to {len(subscribers)} subscribers")
+    except Exception as e:
+        current_app.logger.error(f"[BROADCAST] Error in trigger_immediate_broadcast({broadcast_type}): {e}")
+
+
 def generic_broadcaster(broadcast_type, app):
     """Generic broadcaster function with proper app context."""
     def run_with_context():

@@ -114,6 +114,24 @@
   margin-left: 8px;
 }
 
+.nas-role-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+.nas-role-primary {
+  background-color: var(--success);
+  color: var(--background);
+}
+
+.nas-role-backup {
+  background-color: var(--info);
+  color: var(--background);
+}
+
 .encrypt-icon {
   color: var(--warning);
   margin-left: 8px;

@@ -751,7 +751,16 @@ Note: During sync, your session will not time out due to inactivity.`
   };
   const canAssignPrimaryNas = !isAnyOperationInProgress && selectedDeviceHasPartition();
   const canAssignBackupNas = !isAnyOperationInProgress && selectedDeviceHasPartition();
-  const canImportToNas = !isAnyOperationInProgress && !!diskSelection.selectedDevice;
+  // Import to NAS: only when NAS is mounted and selected device is a connected drive that is not NAS primary or NAS backup
+  const nasPrimaryDevice = diskInfo?.nasCompatibleDevices?.find(d => d.mountpoint === '/mnt/nas' && d.is_mounted)?.device ?? null;
+  const nasBackupDevice = diskInfo?.nasCompatibleDevices?.find(d => d.mountpoint === '/mnt/nas_backup' && d.is_mounted)?.device ?? null;
+  const selectedIsNotNasRole = diskSelection.selectedDevice != null &&
+    diskSelection.selectedDevice !== nasPrimaryDevice &&
+    diskSelection.selectedDevice !== nasBackupDevice;
+  const canImportToNas = !isAnyOperationInProgress &&
+    !!states.nasIsMounted &&
+    !!diskSelection.selectedDevice &&
+    selectedIsNotNasRole;
 
   // Return state and actions
   return [

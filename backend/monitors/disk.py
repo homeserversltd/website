@@ -606,6 +606,7 @@ class DiskMonitor:
                         "mapper": None,
                         "size": device.get("size"),
                         "uuid": device.get("uuid"),
+                        "label": get_partlabel(device_path),
                         "mountpoint": device_info["mountpoint"],
                         "is_mounted": bool(device_info["mountpoint"]),
                         "is_nas_ready": True,
@@ -653,6 +654,7 @@ class DiskMonitor:
                             "mapper": mapper_path.split("/")[-1] if mapper_path else None,
                             "size": device.get("size"),
                             "uuid": encrypted_dev.get("uuid") if encrypted_dev else device.get("uuid"),
+                            "label": get_partlabel(device_path),
                             "mountpoint": mountpoint,
                             "is_mounted": mountpoint is not None,
                             "is_nas_ready": True,
@@ -706,6 +708,7 @@ class DiskMonitor:
                                 partition = None
                                 if encrypted_dev:
                                     partition = encrypted_dev.get("device", "").split("/")[-1]
+                                partition_path = encrypted_dev.get("device") if encrypted_dev else child_path
                                 
                                 nas_compatible = {
                                     "device": device_name,
@@ -713,6 +716,7 @@ class DiskMonitor:
                                     "mapper": child_name,
                                     "size": device.get("size"),
                                     "uuid": encrypted_dev.get("uuid") if encrypted_dev else None,
+                                    "label": get_partlabel(partition_path) if partition_path else None,
                                     "mountpoint": mountpoint,
                                     "is_mounted": mountpoint is not None,
                                     "is_nas_ready": True,
@@ -760,6 +764,7 @@ class DiskMonitor:
                                         "mapper": mapper_path.split("/")[-1],
                                         "size": device.get("size"),
                                         "uuid": child.get("uuid"),
+                                        "label": get_partlabel(child_path),
                                         "mountpoint": mountpoint,
                                         "is_mounted": mountpoint is not None,
                                         "is_nas_ready": True,
@@ -768,6 +773,32 @@ class DiskMonitor:
                                     }
                                     nas_compatible_devices.append(nas_compatible)
                                     current_app.logger.debug(f"[DISK] Added encrypted partition: {child_name} with filesystem {filesystem}")
+                            continue
+                        
+                        # Non-encrypted partition: check blkid for NAS-compatible filesystem (e.g. xfs/ext4 with PARTLABEL)
+                        child_blkid = blkid_info.get(child_path, {})
+                        child_fstype = child_blkid.get('type')
+                        if child_fstype and child_fstype in nas_compatible_filesystems:
+                            child_mount_info = next((dev for dev in mounted_fs_devices if dev["device"] == child_path), None)
+                            child_mountpoint = child_mount_info["mountpoint"] if child_mount_info else None
+                            space_usage = {}
+                            if child_mountpoint:
+                                space_usage = self._get_device_space_usage(child_path, disk_usage)
+                            nas_compatible = {
+                                "device": device_name,
+                                "partition": child_name,
+                                "mapper": None,
+                                "size": device.get("size"),
+                                "uuid": child.get("uuid"),
+                                "label": get_partlabel(child_path),
+                                "mountpoint": child_mountpoint,
+                                "is_mounted": child_mountpoint is not None,
+                                "is_nas_ready": True,
+                                "filesystem": child_fstype,
+                                **space_usage
+                            }
+                            nas_compatible_devices.append(nas_compatible)
+                            current_app.logger.debug(f"[DISK] Added non-encrypted partition: {child_name} with filesystem {child_fstype}")
         
             return nas_compatible_devices
             

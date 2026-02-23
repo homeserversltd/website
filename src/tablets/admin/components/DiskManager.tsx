@@ -26,6 +26,7 @@ import {
   isDestinationAvailableForDevice,
   isDeviceEncrypted,
   isDeviceNasCompatible,
+  getDeviceNasRole,
   getDeviceFilesystemType,
   hasLockedEncryptedPartition,
   hasUnlockedEncryptedPartition,
@@ -209,8 +210,9 @@ export const DiskManager: React.FC = () => {
                 diskInfo
               );
               
-              // Check if this device is NAS compatible
+              // Check if this device is NAS compatible and its role (primary/backup)
               const isNasCompatible = isDeviceNasCompatible(device.name, diskInfo);
+              const nasRole = getDeviceNasRole(device.name, diskInfo);
               
               // Check if this device is encrypted
               const hasEncryptedPartition = isDeviceEncrypted(device.name, blockDevices, diskInfo);
@@ -274,7 +276,9 @@ export const DiskManager: React.FC = () => {
                   <div className="disk-info">
                     <div className="disk-name">
                       {getDeviceDisplayName(device.name, diskInfo)}
-                      {isNasCompatible && <span className="nas-badge">NAS capable</span>}
+                      {nasRole === 'primary' && <span className="nas-role-badge nas-role-primary">Primary NAS</span>}
+                      {nasRole === 'backup' && <span className="nas-role-badge nas-role-backup">NAS Backup</span>}
+                      {isNasCompatible && !nasRole && <span className="nas-badge">NAS capable</span>}
                       {hasEncryptedPartition && (
                         hasUnlocked 
                           ? <FontAwesomeIcon icon={faUnlock} className="encrypt-icon unlocked" title="Encrypted (Unlocked)" /> 

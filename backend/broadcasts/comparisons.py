@@ -166,6 +166,9 @@ def compare_admin_disk_info(old_data: Dict, new_data: Dict) -> bool:
                 new_device = next((dev for dev in new_nas_compatible if dev.get('device') == device_name), None)
                 if new_device and old_device.get('is_mounted') != new_device.get('is_mounted'):
                     return True
+                # Check if PARTLABEL (role) changed (e.g. Assign as NAS Backup / Primary NAS)
+                if new_device and old_device.get('label') != new_device.get('label'):
+                    return True
     except (AttributeError, KeyError, TypeError) as e:
         # If there's an error comparing NAS compatibility, broadcast anyway
         return True

@@ -13,6 +13,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from backend.monitors.sync import SyncMonitor
+from backend.broadcasts.events import trigger_immediate_broadcast
 
 # Get logger
 logger = logging.getLogger('homeserver')
@@ -1456,6 +1457,8 @@ def assign_nas():
 
         current_app.logger.info(f"[DISKMAN] Successfully assigned {device_path} as {role} NAS with label {label}")
         write_to_log('admin', f'Device {device_path} assigned as {role} NAS', 'info')
+
+        trigger_immediate_broadcast('admin_disk_info')
 
         return utils.success_response(
             f"Device {device_path} successfully assigned as {role} NAS",

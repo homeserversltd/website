@@ -33,20 +33,7 @@ if ('serviceWorker' in navigator) {
         if (error.message.includes('SSL certificate') || 
             error.message.includes('SecurityError') ||
             error.message.includes('unknown error occurred when fetching the script')) {
-          console.warn('🔒 SSL Certificate Required for Offline Features');
-          console.warn('================================================');
-          console.warn('The "unknown error occurred when fetching the script" message');
-          console.warn('is caused by an uninstalled SSL certificate.');
-          console.warn('');
-          console.warn('To fix this and enable offline fallback functionality:');
-          console.warn('1. Go to Admin Mode (top-right corner)');
-          console.warn('2. Click "Install HomeServer SSL Certificate"');
-          console.warn('3. Follow the step-by-step instructions for your browser/OS');
-          console.warn('4. Refresh this page after installation');
-          console.warn('');
-          console.warn('Note: The main application works fine without this,');
-          console.warn('but offline fallback will be disabled.');
-          console.warn('================================================');
+          console.warn('SSL cert not installed — offline fallback disabled. Fix: Admin → Install HomeServer SSL Certificate → follow steps → refresh.');
         } else {
           debug('Fallback service worker registration failed:', error.message);
         }

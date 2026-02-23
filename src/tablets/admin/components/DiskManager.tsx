@@ -14,7 +14,8 @@ import {
   faUnlock,
   faCogs,
   faSync,
-  faClock
+  faClock,
+  faCopy
 } from '@fortawesome/free-solid-svg-icons';
 import { useDiskMan } from '../hooks/useDiskMan';
 import {
@@ -81,6 +82,9 @@ export const DiskManager: React.FC = () => {
       canUnlock,
       canSync,
       canAutoSync,
+      canAssignPrimaryNas,
+      canAssignBackupNas,
+      canImportToNas,
       isPendingConfirmation
     },
     {
@@ -93,7 +97,9 @@ export const DiskManager: React.FC = () => {
       handlePermissions,
       handleUnlock,
       handleSync,
-      handleAutoSync
+      handleAutoSync,
+      handleAssignNas,
+      handleImportToNas
     }
   ] = useDiskMan();
   
@@ -521,6 +527,44 @@ export const DiskManager: React.FC = () => {
               <FontAwesomeIcon icon={faShieldAlt} />
             )}
             {isEncrypting ? 'Encrypting...' : 'Encrypt'}
+          </button>
+        )}
+
+        {showTooltip(
+          canAssignPrimaryNas
+            ? "Set PARTLABEL so this partition is used as primary NAS (/mnt/nas). Uses homeserver-primary-nas."
+            : "Set PARTLABEL for primary NAS. Only available when the device has at least one partition (Format or create a partition first).",
+          <button 
+            className={`action-button assign-primary ${!canAssignPrimaryNas ? 'disabled' : ''}`}
+            onClick={canAssignPrimaryNas ? () => handleAssignNas('primary') : undefined}
+            disabled={!canAssignPrimaryNas}
+          >
+            <FontAwesomeIcon icon={faServer} />
+            Assign as primary NAS
+          </button>
+        )}
+        {showTooltip(
+          canAssignBackupNas
+            ? "Set PARTLABEL so this partition is used as NAS Backup (/mnt/nas_backup). Uses homeserver-backup-nas."
+            : "Set PARTLABEL for NAS Backup. Only available when the device has at least one partition (Format or create a partition first).",
+          <button 
+            className={`action-button assign-backup ${!canAssignBackupNas ? 'disabled' : ''}`}
+            onClick={canAssignBackupNas ? () => handleAssignNas('backup') : undefined}
+            disabled={!canAssignBackupNas}
+          >
+            <FontAwesomeIcon icon={faServer} />
+            Assign as NAS Backup
+          </button>
+        )}
+        {showTooltip(
+          "Copy all data from the selected device into a new import directory on /mnt/nas. NAS must be mounted first.",
+          <button 
+            className={`action-button import-nas ${!canImportToNas ? 'disabled' : ''}`}
+            onClick={canImportToNas ? handleImportToNas : undefined}
+            disabled={!canImportToNas}
+          >
+            <FontAwesomeIcon icon={faCopy} />
+            Import to NAS
           </button>
         )}
 

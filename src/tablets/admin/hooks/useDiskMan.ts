@@ -69,6 +69,9 @@ export interface DiskManState {
   canUnlock: boolean;
   canSync: boolean;
   canAutoSync: boolean;
+  canAssignPrimaryNas: boolean;
+  canAssignBackupNas: boolean;
+  canImportToNas: boolean;
   isPendingConfirmation: boolean;
 }
 
@@ -740,7 +743,17 @@ Note: During sync, your session will not time out due to inactivity.`
   // A device can be synced if both NAS and NAS Backup are mounted
   // Updated to use diskUsage data directly instead of getDeviceMountPoint
   const canAutoSync = canSync; // Same conditions as manual sync
-  
+
+  // Assign NAS: only when selected device has at least one partition (backend also enforces)
+  const selectedDeviceHasPartition = (): boolean => {
+    if (!diskSelection.selectedDevice) return false;
+    const dev = blockDevices.find((d: BlockDevice) => d.name === diskSelection.selectedDevice);
+    if (!dev) return false;
+    return !!(dev.children && dev.children.length > 0);
+  };
+  const canAssignPrimaryNas = !isAnyOperationInProgress && selectedDeviceHasPartition();
+  const canAssignBackupNas = !isAnyOperationInProgress && selectedDeviceHasPartition();
+  const canImportToNas = !isAnyOperationInProgress && !!diskSelection.selectedDevice;
 
   // Return state and actions
   return [
@@ -765,7 +778,10 @@ Note: During sync, your session will not time out due to inactivity.`
       isPendingConfirmation: deviceState.isPendingConfirmation,
       
       // Computed capabilities
-      ...states
+      ...states,
+      canAssignPrimaryNas,
+      canAssignBackupNas,
+      canImportToNas
     },
     {
       handleDeviceSelect: diskSelectionActions.handleDeviceSelect,

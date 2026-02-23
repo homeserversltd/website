@@ -533,6 +533,33 @@ def wipe_device(device_path):
     
     return True, ""
 
+
+def create_gpt_one_partition(disk_path):
+    """
+    Create a new GPT on the disk and add one partition (type Linux filesystem, rest of disk).
+    Call udevadm trigger so the new partition node appears.
+    
+    Args:
+        disk_path (str): Whole-disk path, e.g. /dev/sdb or /dev/nvme0n1
+        
+    Returns:
+        tuple: (success, error_message)
+    """
+    success, _, stderr = execute_command(
+        ["/usr/bin/sudo", "/usr/sbin/sgdisk", "-o", disk_path]
+    )
+    if not success:
+        return False, f"Failed to create GPT: {stderr or 'Unknown error'}"
+    success, _, stderr = execute_command(
+        ["/usr/bin/sudo", "/usr/sbin/sgdisk", "-n", "1:0:0", "-t", "1:8300", disk_path]
+    )
+    if not success:
+        return False, f"Failed to create partition: {stderr or 'Unknown error'}"
+    execute_command(
+        ["/usr/bin/sudo", "/usr/bin/udevadm", "trigger", "--subsystem-match=block", "--action=change"]
+    )
+    return True, ""
+
 def get_nas_config(section=None):
     """
     Get NAS-related configuration from the global config.

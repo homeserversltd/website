@@ -210,10 +210,31 @@ def format_disk():
             current_app.logger.error(f"[DISKMAN] Failed to wipe device: {error_message}")
             return utils.error_response(error_message, 500)
         current_app.logger.info(f"[DISKMAN] Successfully wiped device {device_path}")
-            
+
+        # Whole-disk format: create GPT with one partition so Assign (PARTLABEL) can be used later
+        format_target = device_path
+        is_whole_disk = (
+            re.match(r"^sd[a-z]+$", device_name) is not None or
+            re.match(r"^nvme\d+n\d+$", device_name) is not None
+        )
+        if is_whole_disk:
+            current_app.logger.info(f"[DISKMAN] Whole-disk target: creating GPT with one partition")
+            success, error_message = utils.create_gpt_one_partition(device_path)
+            if not success:
+                current_app.logger.error(f"[DISKMAN] Failed to create GPT/partition: {error_message}")
+                return utils.error_response(error_message, 500)
+            part_suffix = "p1" if "nvme" in device_name else "1"
+            format_target = f"/dev/{device_name}{part_suffix}"
+            for _ in range(10):
+                if os.path.exists(format_target):
+                    break
+                time.sleep(0.5)
+            if not os.path.exists(format_target):
+                return utils.error_response("Partition did not appear after creating GPT; try again.", 500)
+
         # Format with XFS
-        current_app.logger.info(f"[DISKMAN] Formatting device {device_path} with XFS")
-        success, error_message = utils.format_xfs(device_path)
+        current_app.logger.info(f"[DISKMAN] Formatting device {format_target} with XFS")
+        success, error_message = utils.format_xfs(format_target)
         
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to format device with XFS: {error_message}")
@@ -221,13 +242,13 @@ def format_disk():
             return utils.error_response(error_message, 500)
             
         result = {
-            "device": device_path,
-            "label": get_partlabel(device_path),
+            "device": format_target,
+            "label": get_partlabel(format_target),
             "filesystem": "xfs",
             "closed_luks": [container.get('mapper') for container in active_luks] if active_luks else []
         }
         
-        current_app.logger.info(f"[DISKMAN] Successfully formatted device {device_path} with XFS")
+        current_app.logger.info(f"[DISKMAN] Successfully formatted device {format_target} with XFS")
         write_to_log('admin', f'Device {device_name} formatted successfully', 'info')
         if active_luks:
             current_app.logger.info(f"[DISKMAN] Operation summary: Closed {len(active_luks)} LUKS container(s), wiped and formatted device")
@@ -1391,36 +1412,38 @@ def assign_nas():
             current_app.logger.error(f"[DISKMAN] Cannot assign system partition: {device_path}")
             return error_response("System partition cannot be assigned", 403)
 
-        # Get disk information to find the partition
+        # Get disk information and resolve disk + partition number (supports selecting disk or partition)
         disk_info = utils.get_disk_info()
         block_devices = disk_info.get("blockDevices", {}).get("blockdevices", [])
+        device_name = os.path.basename(device_path).replace("/dev/", "")
 
-        # Find the device in block devices
-        target_device = None
-        part_num = None
+        target_disk, is_partition, partition_device = utils.find_target_device_in_block_devices(device_name, block_devices)
 
-        for bd in block_devices:
-            if bd.get("name") == os.path.basename(device_path).replace("/dev/", ""):
-                target_device = bd
-                break
-
-        if not target_device:
+        if not target_disk:
             current_app.logger.error(f"[DISKMAN] Device not found in block devices: {device_path}")
             return utils.error_response(f"Device not found: {device_path}", 404)
 
-        # Determine partition number
-        if target_device.get("children"):
-            # Use first data partition (assuming single partition disk)
-            part_num = target_device["children"][0].get("name").replace(target_device["name"], "")
+        # Require at least one partition (unformatted / no-partition-table drives cannot be assigned)
+        if is_partition and partition_device:
+            part_num = partition_device.get("name", "").replace(target_disk["name"], "")
+        elif target_disk.get("children"):
+            part_num = target_disk["children"][0].get("name", "").replace(target_disk["name"], "")
         else:
-            # Single partition disk
-            part_num = "1"
+            current_app.logger.error(f"[DISKMAN] Device has no partition: {device_path}")
+            return utils.error_response(
+                "Device has no partition. Create a partition first (e.g. use Format, or create a GPT partition with one partition), then assign.",
+                400
+            )
 
-        label = f"homeserver-{role}-nas"
-        disk_path = f"/dev/{target_device['name']}"
+        if not part_num or not part_num.isdigit():
+            current_app.logger.error(f"[DISKMAN] No partition number for device: {device_path}")
+            return utils.error_response("Could not determine partition number; create a partition first, then assign.", 400)
 
-        # Use sgdisk to set PARTLABEL
-        cmd = ["/usr/bin/sudo", "/usr/sbin/sgdisk", "-c", part_num, label, disk_path]
+        label = "homeserver-primary-nas" if role == "primary" else "homeserver-backup-nas"
+        disk_path = f"/dev/{target_disk['name']}"
+
+        # Use sgdisk to set PARTLABEL (-c takes one argument: partnum:label)
+        cmd = ["/usr/bin/sudo", "/usr/sbin/sgdisk", "-c", f"{part_num}:{label}", disk_path]
         current_app.logger.info(f"[DISKMAN] Executing: {' '.join(cmd)}")
         success, stdout, stderr = utils.execute_command(cmd)
 
@@ -1428,6 +1451,8 @@ def assign_nas():
             error_msg = stderr if stderr else "Unknown error"
             current_app.logger.error(f"[DISKMAN] Failed to set PARTLABEL: {error_msg}")
             return utils.error_response(f"Failed to assign NAS role: {error_msg}", 500)
+
+        utils.execute_command(["/usr/bin/sudo", "/usr/bin/udevadm", "trigger", "--subsystem-match=block", "--action=change"])
 
         current_app.logger.info(f"[DISKMAN] Successfully assigned {device_path} as {role} NAS with label {label}")
         write_to_log('admin', f'Device {device_path} assigned as {role} NAS', 'info')

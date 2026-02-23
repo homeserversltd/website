@@ -1438,7 +1438,10 @@ def assign_nas():
 
         if not part_num or not part_num.isdigit():
             current_app.logger.error(f"[DISKMAN] No partition number for device: {device_path}")
-            return utils.error_response("Could not determine partition number; create a partition first, then assign.", 400)
+            return utils.error_response(
+                "This device has no partition (e.g. whole-disk encryption). Use Format to create a partition table and one partition, then assign.",
+                400
+            )
 
         label = "homeserver-primary-nas" if role == "primary" else "homeserver-backup-nas"
         disk_path = f"/dev/{target_disk['name']}"
@@ -1474,6 +1477,69 @@ def assign_nas():
         import traceback
         current_app.logger.error(f"[DISKMAN] Traceback: {traceback.format_exc()}")
         return utils.error_response(str(e), 500)
+
+
+@bp.route('/api/admin/diskman/unassign-nas', methods=['POST'])
+@admin_required
+def unassign_nas():
+    """
+    Unassign a device from its NAS role by clearing PARTLABEL (set to 'data').
+    Device must currently have homeserver-primary-nas or homeserver-backup-nas.
+    """
+    try:
+        current_app.logger.info("[DISKMAN] Starting unassign_nas operation")
+        data = request.get_json()
+        if not data:
+            return utils.error_response("No JSON data provided")
+        device = data.get("device")
+        if not device:
+            return utils.error_response("Missing required parameter: device")
+        device_path = resolve_device_identifier(device)
+        current_app.logger.info(f"[DISKMAN] Unassign device: {device_path}")
+        if is_system_partition(device_path):
+            return error_response("System partition cannot be unassigned", 403)
+        disk_info = utils.get_disk_info()
+        block_devices = disk_info.get("blockDevices", {}).get("blockdevices", [])
+        device_name = os.path.basename(device_path).replace("/dev/", "")
+        target_disk, is_partition, partition_device = utils.find_target_device_in_block_devices(device_name, block_devices)
+        if not target_disk:
+            return utils.error_response(f"Device not found: {device_path}", 404)
+        if is_partition and partition_device:
+            part_num = partition_device.get("name", "").replace(target_disk["name"], "")
+        elif target_disk.get("children"):
+            part_num = target_disk["children"][0].get("name", "").replace(target_disk["name"], "")
+        else:
+            return utils.error_response("Device has no partition.", 400)
+        if not part_num or not part_num.isdigit():
+            return utils.error_response("Could not determine partition number.", 400)
+        partition_path = f"/dev/{target_disk['name']}{part_num}"
+        current_label = get_partlabel(partition_path) or ""
+        if current_label not in ("homeserver-primary-nas", "homeserver-backup-nas"):
+            return utils.error_response(
+                f"Device is not assigned as NAS (current PARTLABEL: {current_label or '(none)'}). Nothing to unassign.",
+                400
+            )
+        disk_path = f"/dev/{target_disk['name']}"
+        clear_label = "data"
+        cmd = ["/usr/bin/sudo", "/usr/sbin/sgdisk", "-c", f"{part_num}:{clear_label}", disk_path]
+        current_app.logger.info(f"[DISKMAN] Executing unassign: {' '.join(cmd)}")
+        success, stdout, stderr = utils.execute_command(cmd)
+        if not success:
+            error_msg = stderr if stderr else "Unknown error"
+            current_app.logger.error(f"[DISKMAN] Failed to clear PARTLABEL: {error_msg}")
+            return utils.error_response(f"Failed to unassign: {error_msg}", 500)
+        utils.execute_command(["/usr/bin/sudo", "/usr/bin/udevadm", "trigger", "--subsystem-match=block", "--action=change"])
+        current_app.logger.info(f"[DISKMAN] Successfully unassigned {device_path}")
+        write_to_log('admin', f'Device {device_path} unassigned from NAS', 'info')
+        trigger_immediate_broadcast('admin_disk_info')
+        return utils.success_response(
+            f"Device {device_path} successfully unassigned from NAS",
+            {"device": device_path}
+        )
+    except Exception as e:
+        current_app.logger.error(f"[DISKMAN] Error unassigning NAS: {str(e)}")
+        return utils.error_response(str(e), 500)
+
 
 @bp.route('/api/admin/diskman/import-to-nas', methods=['POST'])
 @admin_required

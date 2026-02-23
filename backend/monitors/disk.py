@@ -617,52 +617,12 @@ class DiskMonitor:
                     current_app.logger.debug(f"[DISK] Added direct-formatted device: {device_name}")
                     continue
                 
-                # Check if device is encrypted
+                # Check if device is encrypted (whole-disk LUKS: LUKS on raw disk, no partition)
+                # Do not add to nas_compatible_devices: we cannot set PARTLABEL on a raw disk,
+                # so Assign would fail. Only partitioned+LUKS devices are assignable.
                 if device_path in encrypted_device_paths:
-                    mapper_path = encrypted_to_mapper.get(device_path)
-                    filesystem = None
-                    mountpoint = None
-                    
-                    # First check if it's mounted
-                    if mapper_path:
-                        mapper_info = next((dev for dev in mounted_fs_devices if dev["device"] == mapper_path), None)
-                        if mapper_info:
-                            filesystem = mapper_info["fstype"]
-                            mountpoint = mapper_info["mountpoint"]
-                    
-                    # If not mounted or no filesystem found, check the mapper device from batch blkid data
-                    if mapper_path and not filesystem:
-                        mapper_blkid = blkid_info.get(mapper_path, {})
-                        filesystem = mapper_blkid.get('type')
-                    
-                    # If still no filesystem found and the mapper exists, try lsblk
-                    if mapper_path and not filesystem:
-                        fstype_output = self._execute_command(f"/usr/bin/sudo /usr/bin/lsblk -n -o FSTYPE {mapper_path}")
-                        if not fstype_output.startswith("Error") and fstype_output.strip():
-                            filesystem = fstype_output.strip().lower()
-                    
-                    if filesystem in nas_compatible_filesystems:
-                        # Get space usage information if device is mounted
-                        space_usage = {}
-                        if mountpoint and mapper_path:
-                            space_usage = self._get_device_space_usage(mapper_path, disk_usage)
-                        
-                        encrypted_dev = next((dev for dev in encrypted_devices if dev.get("device") == device_path), None)
-                        nas_compatible = {
-                            "device": device_name,
-                            "partition": None,
-                            "mapper": mapper_path.split("/")[-1] if mapper_path else None,
-                            "size": device.get("size"),
-                            "uuid": encrypted_dev.get("uuid") if encrypted_dev else device.get("uuid"),
-                            "label": get_partlabel(device_path),
-                            "mountpoint": mountpoint,
-                            "is_mounted": mountpoint is not None,
-                            "is_nas_ready": True,
-                            "filesystem": filesystem,
-                            **space_usage  # Include space usage information
-                        }
-                        nas_compatible_devices.append(nas_compatible)
-                        current_app.logger.debug(f"[DISK] Added encrypted device: {device_name} with filesystem {filesystem}")
+                    current_app.logger.debug(f"[DISK] Skipping whole-disk encrypted device {device_name} (no partition; not assignable)")
+                    continue
                 
                 # Check children (partitions and mappers)
                 if "children" in device:

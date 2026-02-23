@@ -32,6 +32,8 @@ import {
   TOAST_DURATION,
   isDeviceUnlockedButNotMounted,
   canSyncNasToBackup,
+  isDeviceNasCompatible,
+  getDeviceNasRole,
 } from '../utils/diskUtils';
 import { API_ENDPOINTS } from '../../../api/endpoints';
 import { api } from '../../../api/client';
@@ -71,6 +73,7 @@ export interface DiskManState {
   canAutoSync: boolean;
   canAssignPrimaryNas: boolean;
   canAssignBackupNas: boolean;
+  canUnassignNas: boolean;
   canImportToNas: boolean;
   isPendingConfirmation: boolean;
 }
@@ -87,6 +90,7 @@ export interface DiskManActions {
   handleSync: () => Promise<void>;
   handleAutoSync: () => Promise<void>;
   handleAssignNas: (role: 'primary' | 'backup') => Promise<void>;
+  handleUnassignNas: () => Promise<void>;
   handleImportToNas: () => Promise<void>;
 }
 
@@ -696,6 +700,31 @@ Note: During sync, your session will not time out due to inactivity.`
     }
   };
 
+  const handleUnassignNas = async (): Promise<void> => {
+    if (!diskSelection.selectedDevice) {
+      toast.error("Please select a device to unassign.", { duration: TOAST_DURATION.NORMAL });
+      return;
+    }
+    const role = selectedNasRole === 'primary' ? 'primary NAS' : 'NAS Backup';
+    const confirmed = await confirm(
+      `Unassign this device from ${role}? This will clear the PARTLABEL so it is no longer used as ${role}.`
+    );
+    if (confirmed) {
+      try {
+        const response = await api.post(API_ENDPOINTS.diskman.unassignNas, {
+          device: diskSelection.selectedDevice
+        }) as { status?: string; message?: string };
+        if (response.status === 'success') {
+          toast.success(`Device unassigned from ${role}.`, { duration: TOAST_DURATION.NORMAL });
+        } else {
+          toast.error(response.message ?? `Failed to unassign device.`, { duration: TOAST_DURATION.NORMAL });
+        }
+      } catch (error) {
+        toast.error(`Failed to unassign device: ${error}`, { duration: TOAST_DURATION.NORMAL });
+      }
+    }
+  };
+
   // Handle import to NAS
   const handleImportToNas = async (): Promise<void> => {
     if (!diskSelection.selectedDevice) {
@@ -711,8 +740,7 @@ Note: During sync, your session will not time out due to inactivity.`
       try {
         const response = await api.post(API_ENDPOINTS.diskman.importToNas, {
           sourceDevice: diskSelection.selectedDevice
-        });
-
+        }) as { status?: string; message?: string };
         if (response.status === 'success') {
           toast.success(`Data successfully imported to NAS.`, { duration: TOAST_DURATION.NORMAL });
           deviceActions.setPendingConfirmation();
@@ -748,15 +776,24 @@ Note: During sync, your session will not time out due to inactivity.`
   // Updated to use diskUsage data directly instead of getDeviceMountPoint
   const canAutoSync = canSync; // Same conditions as manual sync
 
-  // Assign NAS: only when selected device has at least one partition (backend also enforces)
+  // Assign NAS: only when selected device is NAS-capable (XFS/EXT4, encrypted to spec) and has a partition
   const selectedDeviceHasPartition = (): boolean => {
     if (!diskSelection.selectedDevice) return false;
     const dev = blockDevices.find((d: BlockDevice) => d.name === diskSelection.selectedDevice);
     if (!dev) return false;
     return !!(dev.children && dev.children.length > 0);
   };
-  const canAssignPrimaryNas = !isAnyOperationInProgress && selectedDeviceHasPartition();
-  const canAssignBackupNas = !isAnyOperationInProgress && selectedDeviceHasPartition();
+  const selectedIsNasCompatible = !!(
+    diskSelection.selectedDevice &&
+    diskInfo &&
+    isDeviceNasCompatible(diskSelection.selectedDevice, diskInfo)
+  );
+  const canAssignPrimaryNas = !isAnyOperationInProgress && selectedDeviceHasPartition() && selectedIsNasCompatible;
+  const canAssignBackupNas = !isAnyOperationInProgress && selectedDeviceHasPartition() && selectedIsNasCompatible;
+  const selectedNasRole = diskSelection.selectedDevice
+    ? getDeviceNasRole(diskSelection.selectedDevice, diskInfo)
+    : null;
+  const canUnassignNas = !isAnyOperationInProgress && !!selectedNasRole;
   // Import to NAS: only when NAS is mounted and selected device is a connected drive that is not NAS primary or NAS backup
   const nasPrimaryDevice = diskInfo?.nasCompatibleDevices?.find(d => d.mountpoint === '/mnt/nas' && d.is_mounted)?.device ?? null;
   const nasBackupDevice = diskInfo?.nasCompatibleDevices?.find(d => d.mountpoint === '/mnt/nas_backup' && d.is_mounted)?.device ?? null;
@@ -794,6 +831,7 @@ Note: During sync, your session will not time out due to inactivity.`
       ...states,
       canAssignPrimaryNas,
       canAssignBackupNas,
+      canUnassignNas,
       canImportToNas
     },
     {
@@ -808,6 +846,7 @@ Note: During sync, your session will not time out due to inactivity.`
   handleSync,
   handleAutoSync,
   handleAssignNas,
+  handleUnassignNas,
   handleImportToNas
 }
   ];

@@ -85,6 +85,7 @@ export const DiskManager: React.FC = () => {
       canAutoSync,
       canAssignPrimaryNas,
       canAssignBackupNas,
+      canUnassignNas,
       canImportToNas,
       isPendingConfirmation
     },
@@ -100,6 +101,7 @@ export const DiskManager: React.FC = () => {
       handleSync,
       handleAutoSync,
       handleAssignNas,
+      handleUnassignNas,
       handleImportToNas
     }
   ] = useDiskMan();
@@ -537,7 +539,7 @@ export const DiskManager: React.FC = () => {
         {showTooltip(
           canAssignPrimaryNas
             ? "Set PARTLABEL so this partition is used as primary NAS (/mnt/nas). Uses homeserver-primary-nas."
-            : "Set PARTLABEL for primary NAS. Only available when the device has at least one partition (Format or create a partition first).",
+            : "Set PARTLABEL for primary NAS. Only available when the device is NAS-capable (XFS/EXT4, encrypted to spec) and has a partition.",
           <button 
             className={`action-button assign-primary ${!canAssignPrimaryNas ? 'disabled' : ''}`}
             onClick={canAssignPrimaryNas ? () => handleAssignNas('primary') : undefined}
@@ -550,7 +552,7 @@ export const DiskManager: React.FC = () => {
         {showTooltip(
           canAssignBackupNas
             ? "Set PARTLABEL so this partition is used as NAS Backup (/mnt/nas_backup). Uses homeserver-backup-nas."
-            : "Set PARTLABEL for NAS Backup. Only available when the device has at least one partition (Format or create a partition first).",
+            : "Set PARTLABEL for NAS Backup. Only available when the device is NAS-capable (XFS/EXT4, encrypted to spec) and has a partition.",
           <button 
             className={`action-button assign-backup ${!canAssignBackupNas ? 'disabled' : ''}`}
             onClick={canAssignBackupNas ? () => handleAssignNas('backup') : undefined}
@@ -558,6 +560,19 @@ export const DiskManager: React.FC = () => {
           >
             <FontAwesomeIcon icon={faServer} />
             Assign as NAS Backup
+          </button>
+        )}
+        {showTooltip(
+          canUnassignNas
+            ? "Clear this device's NAS role (PARTLABEL) so it is no longer used as primary or backup NAS."
+            : "Unassign is only available when the selected device is currently assigned as primary or NAS Backup.",
+          <button 
+            className={`action-button unassign-nas ${!canUnassignNas ? 'disabled' : ''}`}
+            onClick={canUnassignNas ? handleUnassignNas : undefined}
+            disabled={!canUnassignNas}
+          >
+            <FontAwesomeIcon icon={faUnlink} />
+            Unassign drive
           </button>
         )}
         {showTooltip(

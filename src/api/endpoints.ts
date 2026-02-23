@@ -127,6 +127,7 @@ export type DiskManagementEndpoints = {
   getSyncSchedule: string;
   setSyncSchedule: string;
   assignNas: string;
+  unassignNas: string;
   importToNas: string;
   vaultDevice: string;
   cryptoTest: string;
@@ -345,6 +346,7 @@ export const API_ENDPOINTS: APIEndpoints = {
       getSyncSchedule: '/admin/diskman/sync-schedule',
       setSyncSchedule: '/admin/diskman/sync-schedule-update',
       assignNas: '/admin/diskman/assign-nas',
+      unassignNas: '/admin/diskman/unassign-nas',
       importToNas: '/admin/diskman/import-to-nas',
       cryptoTest: '/admin/crypto/test',
     },

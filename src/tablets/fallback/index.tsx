@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useStore } from '../../store';
 import { fallbackManager } from '../../utils/fallbackManager';
 import { socketClient } from '../../components/WebSocket/client';
-import { getSafeImagePath, FALLBACK_EMBEDDED_LOGO } from '../../utils/imageCache';
+import { getCachedImage, FALLBACK_EMBEDDED_LOGO } from '../../utils/imageCache';
 import { getCachedVersionInfo, VersionInfo, initVersionCache } from '../../utils/versionCache';
 import './FallbackTablet.css';
 
@@ -61,12 +61,15 @@ const FallbackTablet: React.FC<FallbackProps> = ({
     setIsFallbackOnlyAccessibleTab(shouldShowSimplified);
   };
 
-  // Get cached logo and version info on component mount
+  // When the logo URL fails to load (e.g. connection lost, test server missing asset), use embedded logo
+  const handleLogoError = () => setLogoSrc(FALLBACK_EMBEDDED_LOGO);
+
+  // Get cached logo and version info on component mount.
+  // Use only cached data URL or embedded logo—never the path—so the logo works when connection is lost.
   useEffect(() => {
     try {
-      // Use the cached image path if available, otherwise use the original path
-      const cachedLogoPath = getSafeImagePath('/android-chrome-192x192.png');
-      setLogoSrc(cachedLogoPath || FALLBACK_EMBEDDED_LOGO);
+      const cachedLogo = getCachedImage('/android-chrome-192x192.png');
+      setLogoSrc(cachedLogo || FALLBACK_EMBEDDED_LOGO);
       
       // Initialize version cache
       initVersionCache().then(versionInfo => {
@@ -259,7 +262,7 @@ const FallbackTablet: React.FC<FallbackProps> = ({
       return (
         <div className="fallback-tablet simplified-view websocket-disconnected">
           <div className="status-container">
-            <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" />
+            <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" onError={handleLogoError} />
             <h3>Restricted Access Mode - Connection Lost</h3>
             <p>The WebSocket connection to the server has been lost.</p>
             <p>To access all system features, please switch to Admin Mode.</p>
@@ -284,7 +287,7 @@ const FallbackTablet: React.FC<FallbackProps> = ({
     return (
       <div className="fallback-tablet simplified-view">
         <div className="status-container">
-          <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" />
+          <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" onError={handleLogoError} />
           <h3>Restricted Access Mode</h3>
           <p>To access all system features, please switch to Admin Mode.</p>
           <small>Product of HOMESERVER LLC</small>
@@ -302,7 +305,7 @@ const FallbackTablet: React.FC<FallbackProps> = ({
     return (
       <div className="fallback-tablet websocket-disconnected">
         <div className="status-container">
-          <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" />
+          <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" onError={handleLogoError} />
           <h2>Connection Lost</h2>
           <p>The WebSocket connection to the server has been lost.</p>
           <p>This could be due to client timeout, network issues, or server restart.</p>
@@ -344,7 +347,7 @@ const FallbackTablet: React.FC<FallbackProps> = ({
     return (
       <div className="fallback-tablet">
         <div className="status-container">
-          <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" />
+          <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" onError={handleLogoError} />
           <h3>System Fallback Mode</h3>
           <p>The system is operating in fallback mode.</p>
           
@@ -382,7 +385,7 @@ const FallbackTablet: React.FC<FallbackProps> = ({
   return (
     <div className="fallback-tablet">
       <div className="error-container">
-        <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" />
+        <img src={logoSrc} alt="HomeServer Logo" className="fallback-logo" onError={handleLogoError} />
         <h2>System Recovery Mode</h2>
         
         {fallbackReason && (

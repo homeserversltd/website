@@ -446,9 +446,9 @@ def encrypt_disk():
             current_app.logger.error(f"[DISKMAN] Cannot encrypt system partition: {device_path}")
             return error_response("System partition cannot be modified", 403)
 
-        # Check if device exists
-        if not os.path.exists(device):
-            current_app.logger.error(f"[DISKMAN] Device {device} does not exist")
+        # Check if device exists (use resolved path, not raw request value)
+        if not os.path.exists(device_path):
+            current_app.logger.error(f"[DISKMAN] Device {device_path} does not exist")
             return utils.error_response(f"Device {device} does not exist")
             
         # Get disk information to check encryption status
@@ -458,17 +458,17 @@ def encrypt_disk():
         # Track any active LUKS containers
         active_luks = []
         
-        # First check if the device itself is encrypted
-        device_encrypted = next((ed for ed in encrypted_devices if ed.get("device") == device), None)
+        # First check if the device itself is encrypted (compare using resolved path)
+        device_encrypted = next((ed for ed in encrypted_devices if ed.get("device") == device_path), None)
         if device_encrypted and device_encrypted.get("is_open"):
-            current_app.logger.info(f"[DISKMAN] Found active LUKS container on device {device} -> {device_encrypted.get('mapper_name')}")
+            current_app.logger.info(f"[DISKMAN] Found active LUKS container on device {device_path} -> {device_encrypted.get('mapper_name')}")
             active_luks.append({
-                'partition': device,
+                'partition': device_path,
                 'mapper': device_encrypted.get('mapper_name')
             })
         
         # Then check if any partitions are encrypted
-        device_name = os.path.basename(device)
+        device_name = os.path.basename(device_path)
         for partition in disk_info.get("blockDevices", {}).get("blockdevices", []):
             if partition.get("name") == device_name and partition.get("children"):
                 current_app.logger.debug(f"[DISKMAN] Found partitions for {device_name}: {[child.get('name') for child in partition.get('children', [])]}")

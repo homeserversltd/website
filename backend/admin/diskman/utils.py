@@ -53,13 +53,15 @@ def get_disk_info():
 def export_nas_key():
     """
     Export NAS key password from the vault using exportNAS.sh script.
+    Runs via sudo with full paths; script is invoked through bash so it works
+    when www-data cannot stat /vault (0700) or when the script is not +x.
     
     Returns:
         tuple: (success, password, error_message)
     """
     current_app.logger.info("[DISKMAN] Exporting NAS key")
     success, stdout, stderr = execute_command(
-        ["/usr/bin/sudo", "/vault/scripts/exportNAS.sh"]
+        ["/usr/bin/sudo", "/usr/bin/bash", "/vault/scripts/exportNAS.sh"]
     )
     
     current_app.logger.info(f"[DISKMAN] Export key command result - success: {success}")

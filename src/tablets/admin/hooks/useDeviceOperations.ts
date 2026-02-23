@@ -637,7 +637,8 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       }
     } catch (error) {
       logger.error('Error encrypting device:', error);
-      toast.error(`Failed to encrypt device: ${error instanceof Error ? error.message : 'Unknown error'}`, { duration: TOAST_DURATION.NORMAL });
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(message, { duration: TOAST_DURATION.LONG });
       return false;
     } finally {
       stopEncrypting();

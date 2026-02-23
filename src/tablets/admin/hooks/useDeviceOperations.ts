@@ -94,19 +94,22 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
   const [isPendingConfirmation, setIsPendingConfirmation] = useState(false);
   const lastKnownUpdateTimestamp = useRef<number>(0);
   
-  // Track when admin_disk_info updates
+  // Clear pending confirmation when admin_disk_info updates after we set pending.
+  // Depend on both timestamp and isPendingConfirmation so we run when: (1) broadcast
+  // arrives (timestamp changes) or (2) we just set pending (isPendingConfirmation
+  // changes). Without (2), a race can leave pending true and the effect never re-running.
+  const adminDiskInfoTimestamp = getLastUpdated('admin_disk_info', 'admin');
   useEffect(() => {
-    const currentTimestamp = getLastUpdated('admin_disk_info', 'admin');
+    const currentTimestamp = adminDiskInfoTimestamp;
     if (currentTimestamp && isPendingConfirmation && currentTimestamp > lastKnownUpdateTimestamp.current) {
       console.log('[DiskMan] admin_disk_info pulse received, clearing pending confirmation', { currentTimestamp, lastKnown: lastKnownUpdateTimestamp.current });
       debug('Received disk info update, clearing pending confirmation state');
       setIsPendingConfirmation(false);
       lastKnownUpdateTimestamp.current = currentTimestamp;
     } else if (currentTimestamp && !isPendingConfirmation) {
-      // Keep track of the last timestamp even when not pending
       lastKnownUpdateTimestamp.current = currentTimestamp;
     }
-  }, [getLastUpdated('admin_disk_info', 'admin')]);
+  }, [adminDiskInfoTimestamp, isPendingConfirmation]);
   
   // Helper function to set pending confirmation state
   const setPendingConfirmation = () => {

@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "vite",
-        "build": "vite build && (if [ -f premium/utils/post_build_tab_restore.py ]; then python3 premium/utils/post_build_tab_restore.py; else echo \"[post-build-tabs] premium utils not present, skipping\"; fi)"
+        "build": "vite build && (for f in android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png favicon-16x16.png favicon-32x32.png favicon.ico fallback.html fallback-sw.js; do [ -f \"public/$f\" ] && cp \"public/$f\" \"build/$f\"; done) && (if [ -f premium/utils/post_build_tab_restore.py ]; then python3 premium/utils/post_build_tab_restore.py; else echo \"[post-build-tabs] premium utils not present, skipping\"; fi)"
     },
     "dependencies": {
         "@floating-ui/react": "^0.25.4",

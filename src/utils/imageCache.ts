@@ -120,6 +120,14 @@ export const isImageCached = (imagePath: string): boolean => {
 };
 
 /**
+ * Remove a cached image (e.g. when it fails to load and is likely corrupt/truncated).
+ */
+export const clearCachedImage = (imagePath: string): void => {
+  const cacheKey = IMAGE_CACHE_PREFIX + imagePath.replace(/\//g, '_');
+  localStorage.removeItem(cacheKey);
+};
+
+/**
  * Safely get image path or cached version
  * Returns either the cached data URL or the original path if not cached
  */

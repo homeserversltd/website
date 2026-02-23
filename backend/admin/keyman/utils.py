@@ -37,7 +37,7 @@ def export_nas_key() -> tuple[bool, str, str | None]:
     Returns (success, message, password)
     """
     try:
-        cmd = ["/usr/bin/sudo", "/vault/scripts/exportNAS.sh"]
+        cmd = ["/usr/bin/sudo", "/usr/bin/bash", "/vault/scripts/exportNAS.sh"]
         success, stdout, stderr = execute_command(cmd)
         if not success:
             if "Key system not initialized" in stderr:

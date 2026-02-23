@@ -133,14 +133,6 @@ export function useTailscaleStatus() {
       setStatus(prevStatus => {
         const newStatus = { ...latestStatusData };
         
-        console.log('[TAIL] Broadcast update received:', {
-          prevLoginUrl: prevStatus.loginUrl,
-          newLoginUrl: newStatus.loginUrl,
-          pendingOperation: pendingConnectionOperation.current,
-          prevStatus: prevStatus.status,
-          newStatus: newStatus.status
-        });
-        
         // If we have a manually set loginUrl and the broadcast data doesn't have one,
         // preserve the manual one (this prevents the flash/disappear issue)
         if (prevStatus.loginUrl && !newStatus.loginUrl && 
@@ -219,14 +211,6 @@ export function useTailscaleStatus() {
         // Preserve manually set loginUrl when updating from broadcast data
         setStatus(prevStatus => {
           const newStatus = { ...updatedData };
-          
-          console.log('[TAIL] Polling update received:', {
-            prevLoginUrl: prevStatus.loginUrl,
-            newLoginUrl: newStatus.loginUrl,
-            pendingOperation: pendingConnectionOperation.current,
-            prevStatus: prevStatus.status,
-            newStatus: newStatus.status
-          });
           
           // If we have a manually set loginUrl and the broadcast data doesn't have one,
           // preserve the manual one (this prevents the flash/disappear issue)

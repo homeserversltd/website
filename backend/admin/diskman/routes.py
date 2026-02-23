@@ -972,10 +972,6 @@ def apply_permissions():
             app_args = [str(a) for a in requested_apps if isinstance(a, str) and a]
             cmd.extend(app_args)
 
-        # Pass app's config path so script uses same config (survives sudo; env would be stripped)
-        config_path = current_app.config.get('HOMESERVER_CONFIG') or ''
-        if config_path and os.path.isfile(config_path):
-            cmd.insert(1, f'HOMESERVER_CONFIG={config_path}')
         current_app.logger.info(f"[DISKMAN] Executing: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
@@ -1647,9 +1643,15 @@ def import_to_nas():
                 source_mount_point = f"/tmp/import_source_{timestamp}"
                 os.makedirs(source_mount_point, exist_ok=True)
                 mount_cmd = ["/usr/bin/sudo", "/usr/bin/mount", source_path, source_mount_point]
+                current_app.logger.info(
+                    f"[DISKMAN] No existing mount for {source_path}; attempting mount to {source_mount_point}"
+                )
                 success, stdout, stderr = utils.execute_command(mount_cmd)
                 if not success:
-                    # Device may already be mounted (e.g. partition); try to find mount point again
+                    current_app.logger.warning(
+                        f"[DISKMAN] Mount failed: stdout={stdout!r} stderr={stderr!r}; re-checking for existing mount"
+                    )
+                    # Device may already be mounted (e.g. partition or LUKS); try to find mount point again
                     tmp_mp = source_mount_point
                     existing = utils.get_mount_point_for_device(source_path)
                     if existing:
@@ -1661,7 +1663,14 @@ def import_to_nas():
                     except OSError:
                         pass
                     if not existing:
-                        return utils.error_response(f"Failed to mount source device: {stderr}", 500)
+                        err_msg = stderr.strip() if stderr else "Unknown error"
+                        if "already mounted" in err_msg.lower() or "mount point busy" in err_msg.lower():
+                            err_msg = (
+                                "Device or a partition is already mounted but could not be detected. "
+                                "Unmount the drive first, or use the mounted path. Original: " + err_msg
+                            )
+                        current_app.logger.error(f"[DISKMAN] Import mount failed and no existing mount found: {err_msg}")
+                        return utils.error_response(f"Failed to mount source device: {err_msg}", 500)
                 else:
                     effective_source = source_mount_point
 

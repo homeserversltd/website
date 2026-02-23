@@ -358,7 +358,7 @@ def format_xfs(mapper_path):
         tuple: (success, error_message)
     """
     success, _, stderr = execute_command(
-        ["/usr/bin/sudo", "/usr/sbin/mkfs.xfs", mapper_path]
+        ["/usr/bin/sudo", "/usr/sbin/mkfs.xfs", "-f", mapper_path]
     )
     
     if not success:
@@ -564,6 +564,19 @@ def verify_mount(mount_point):
     return success
 
 
+def _dm_source_to_mapper_name(source):
+    """Resolve /dev/dm-N to mapper name (e.g. sdc1_crypt) from /sys, or None."""
+    if not source.startswith("/dev/dm-"):
+        return None
+    dm_name = os.path.basename(source)
+    sys_path = f"/sys/block/{dm_name}/dm/name"
+    try:
+        with open(sys_path, "r") as f:
+            return f.read().strip()
+    except (OSError, IOError):
+        return None
+
+
 def get_mount_point_for_device(device_path):
     """
     Return the current mount point for a block device or any of its partitions, if mounted.
@@ -576,41 +589,68 @@ def get_mount_point_for_device(device_path):
     """
     if not device_path or not device_path.startswith("/dev/"):
         return None
-    # Exact source first
-    success, stdout, _ = execute_command(
+    base = device_path.rstrip("/")
+    disk_base = os.path.basename(base)
+
+    # Exact source first (whole device mounted)
+    success, stdout, stderr = execute_command(
         ["/usr/bin/sudo", "/usr/bin/findmnt", "-S", device_path, "-n", "-o", "TARGET"]
     )
     if success and stdout and stdout.strip():
+        current_app.logger.info(
+            f"[DISKMAN] get_mount_point_for_device({device_path}): exact findmnt match -> {stdout.strip()}"
+        )
         return stdout.strip()
+    current_app.logger.info(
+        f"[DISKMAN] get_mount_point_for_device({device_path}): no exact match, scanning all mounts"
+    )
+
     # Enumerate all mounts and find device or partition of same disk
     success, stdout, _ = execute_command(
         ["/usr/bin/sudo", "/usr/bin/findmnt", "-n", "-o", "SOURCE,TARGET"]
     )
     if not success or not stdout:
+        current_app.logger.warning(
+            f"[DISKMAN] get_mount_point_for_device({device_path}): findmnt list failed or empty"
+        )
         return None
-    base = device_path.rstrip("/")
-    disk_base = os.path.basename(base)
-    for line in stdout.strip().splitlines():
+    lines = stdout.strip().splitlines()
+    for line in lines:
         parts = line.split(None, 1)
         if len(parts) < 2:
             continue
         source, target = parts[0], parts[1]
         if source == device_path or source == base:
+            current_app.logger.info(
+                f"[DISKMAN] get_mount_point_for_device({device_path}): matched source {source} -> {target}"
+            )
             return target
         # Partition of same disk: /dev/sdc1 for /dev/sdc, /dev/nvme0n1p1 for /dev/nvme0n1
         if source.startswith(base) and len(source) > len(base):
             suffix = source[len(base):]
             if suffix.isdigit() or (suffix.startswith("p") and suffix[1:].isdigit()):
+                current_app.logger.info(
+                    f"[DISKMAN] get_mount_point_for_device({device_path}): matched partition {source} -> {target}"
+                )
                 return target
-        # LUKS mapper: /dev/mapper/sdc1_crypt belongs to /dev/sdc; mapper name is <disk><part>_crypt
+        # LUKS mapper: /dev/mapper/sdc1_crypt belongs to /dev/sdc
+        mapper_name = None
         if source.startswith("/dev/mapper/"):
             mapper_name = os.path.basename(source)
-            if mapper_name.endswith("_crypt"):
-                rest = mapper_name[:-6]
-                if rest.startswith(disk_base) and len(rest) > len(disk_base):
-                    suffix = rest[len(disk_base):]
-                    if suffix.isdigit() or (suffix.startswith("p") and suffix[1:].isdigit()):
-                        return target
+        elif source.startswith("/dev/dm-"):
+            mapper_name = _dm_source_to_mapper_name(source)
+        if mapper_name and mapper_name.endswith("_crypt"):
+            rest = mapper_name[:-6]
+            if rest.startswith(disk_base) and len(rest) > len(disk_base):
+                suffix = rest[len(disk_base):]
+                if suffix.isdigit() or (suffix.startswith("p") and suffix[1:].isdigit()):
+                    current_app.logger.info(
+                        f"[DISKMAN] get_mount_point_for_device({device_path}): matched mapper {source} (name={mapper_name}) -> {target}"
+                    )
+                    return target
+    current_app.logger.warning(
+        f"[DISKMAN] get_mount_point_for_device({device_path}): no partition or mapper match in {len(lines)} mount entries"
+    )
     return None
 
 

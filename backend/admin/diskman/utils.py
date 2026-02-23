@@ -272,23 +272,59 @@ def close_luks_device(mapper_name, device_path=None):
                 current_app.logger.error(f"[DISKMAN] {error_msg}")
                 return False, error_msg
 
-        # Call unmountDrive.sh to handle the unmount and LUKS closure
-        success, stdout, stderr = execute_command(
-            ["/usr/bin/sudo", "/vault/scripts/unmountDrive.sh", device_path, "/dummy", mapper_name]
-        )
-        
-        if not success:
-            error_msg = f"Failed to close LUKS container: {stderr or stdout}"
-            current_app.logger.error(f"[DISKMAN] {error_msg}")
-            return False, error_msg
-            
-        # Double check the mapper is actually gone
+        # Discover actual mount point for the mapper so closeNAS.sh unmounts the right path (avoids "mapper still exists" when /dummy was used)
         mapper_path = f"/dev/mapper/{mapper_name}"
+        mount_point = "/dummy"
         if os.path.exists(mapper_path):
-            error_msg = f"LUKS container closure failed: Mapper {mapper_name} still exists after unmountDrive.sh"
-            current_app.logger.error(f"[DISKMAN] {error_msg}")
-            return False, error_msg
-            
+            mnt_ok, mnt_out, _ = execute_command(
+                ["/usr/bin/sudo", "/usr/bin/findmnt", "-n", "-o", "TARGET", mapper_path]
+            )
+            if mnt_ok and mnt_out and mnt_out.strip():
+                mount_point = mnt_out.strip()
+                current_app.logger.info(f"[DISKMAN] Resolved mount point for {mapper_name}: {mount_point}")
+
+        # Call unmountDrive.sh via bash (full path) so it works when www-data cannot access /vault
+        success, stdout, stderr = execute_command(
+            ["/usr/bin/sudo", "/usr/bin/bash", "/vault/scripts/unmountDrive.sh", device_path, mount_point, mapper_name]
+        )
+        mapper_path = f"/dev/mapper/{mapper_name}"
+
+        # If script failed or mapper still exists (timing/race), unmount then cryptsetup close as fallback
+        if not success or os.path.exists(mapper_path):
+            if os.path.exists(mapper_path):
+                current_app.logger.info(f"[DISKMAN] Mapper still exists after unmountDrive.sh; unmounting and closing for {mapper_name}")
+                # Try to unmount wherever the mapper is mounted so cryptsetup close can succeed
+                mnt_ok, mnt_out, _ = execute_command(
+                    ["/usr/bin/sudo", "/usr/bin/findmnt", "-n", "-o", "TARGET", mapper_path]
+                )
+                if mnt_ok and mnt_out and mnt_out.strip():
+                    umount_pt = mnt_out.strip()
+                    execute_command(["/usr/bin/sudo", "/usr/bin/umount", "-f", umount_pt])
+                    execute_command(["/usr/bin/sudo", "/usr/bin/umount", "-l", umount_pt])
+                close_ok, _, close_stderr = execute_command(
+                    ["/usr/bin/sudo", "/usr/sbin/cryptsetup", "close", mapper_name]
+                )
+            else:
+                close_ok = True
+            if close_ok and not os.path.exists(mapper_path):
+                current_app.logger.info(f"[DISKMAN] Successfully closed {mapper_name} via fallback")
+                return True, ""
+            if os.path.exists(mapper_path):
+                close_ok, _, _ = execute_command(
+                    ["/usr/bin/sudo", "/usr/sbin/cryptsetup", "close", mapper_name]
+                )
+                if close_ok and not os.path.exists(mapper_path):
+                    current_app.logger.info(f"[DISKMAN] Successfully closed {mapper_name} via second close attempt")
+                    return True, ""
+            if not success and not close_ok:
+                error_msg = f"Failed to close LUKS container: {stderr or stdout}"
+                current_app.logger.error(f"[DISKMAN] {error_msg}")
+                return False, error_msg
+            if os.path.exists(mapper_path):
+                error_msg = f"LUKS container closure failed: Mapper {mapper_name} still exists after unmountDrive.sh and cryptsetup close"
+                current_app.logger.error(f"[DISKMAN] {error_msg}")
+                return False, error_msg
+
         current_app.logger.info(f"[DISKMAN] Successfully closed {mapper_name}")
         return True, ""
             
@@ -349,9 +385,7 @@ def execute_mount_script(mount_device, mountpoint, mapper=None, operation="mount
     Returns:
         tuple: (success, output, error_message)
     """
-    cmd = ["/usr/bin/sudo", "/vault/scripts/mountDrive.sh", operation, mount_device, mountpoint]
-    
-    # Add mapper if provided
+    cmd = ["/usr/bin/sudo", "/usr/bin/bash", "/vault/scripts/mountDrive.sh", operation, mount_device, mountpoint]
     if mapper:
         cmd.append(mapper)
         

@@ -520,6 +520,15 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       
       debug(`Unmounting ${device.name} from ${mountPoint}${mapperName ? ` (mapper: ${mapperName})` : ''}`);
       
+      // Resolve label for API (backend accepts label or device name)
+      const encryptedDeviceForLabel = diskInfo?.encryptionInfo?.encrypted_devices?.find(ed =>
+        ed.device === `/dev/${device.name}` || (ed.is_open && device.children?.some(child => ed.device === `/dev/${child.name}`))
+      );
+      const nasDeviceForLabel = diskInfo?.nasCompatibleDevices?.find(d =>
+        d.device === device.name && d.mountpoint === mountPoint
+      );
+      const deviceLabel = encryptedDeviceForLabel?.label || nasDeviceForLabel?.label;
+
       // Call the API to unmount the device
       const response = await api.post<UnmountResponse>(
         API_ENDPOINTS.diskman.unmount,
@@ -531,7 +540,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       );
       
       if (response.status === 'success') {
-        const displayName = getDeviceDisplayName(deviceName, diskInfo);
+        const displayName = getDeviceDisplayName(device.name, diskInfo);
         toast.success(response.message || `Successfully unmounted ${displayName}.`, { duration: TOAST_DURATION.NORMAL });
         
         // Set pending confirmation to wait for next admin_disk_info update

@@ -509,63 +509,82 @@ def encrypt_disk():
             current_app.logger.error(f"[DISKMAN] Device {device_path} is currently mounted")
             return utils.error_response(f"Device {device_path} is currently mounted. Please unmount first.")
 
-        # Wipe the partition
+        # Wipe the device
         current_app.logger.info(f"[DISKMAN] Wiping device {device_path}")
         success, error_message = utils.wipe_device(device_path)
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to wipe device: {error_message}")
             return utils.error_response(error_message, 500)
-            
+
+        # Whole-disk: create GPT + one partition so the result is partition-based LUKS (NAS-capable, assignable)
+        encrypt_target = device_path
+        is_whole_disk = (
+            re.match(r"^sd[a-z]+$", device_name) is not None or
+            re.match(r"^nvme\d+n\d+$", device_name) is not None
+        )
+        if is_whole_disk:
+            current_app.logger.info(f"[DISKMAN] Whole-disk encrypt: creating GPT with one partition first")
+            success, error_message = utils.create_gpt_one_partition(device_path)
+            if not success:
+                current_app.logger.error(f"[DISKMAN] Failed to create GPT/partition: {error_message}")
+                return utils.error_response(error_message, 500)
+            part_suffix = "p1" if "nvme" in device_name else "1"
+            encrypt_target = f"/dev/{device_name}{part_suffix}"
+            for _ in range(10):
+                if os.path.exists(encrypt_target):
+                    break
+                time.sleep(0.5)
+            if not os.path.exists(encrypt_target):
+                return utils.error_response("Partition did not appear after creating GPT; try again.", 500)
+
         # Get the NAS key password
-        current_app.logger.info(f"[DISKMAN] Exporting NAS key for encrypting {device_path}")
+        current_app.logger.info(f"[DISKMAN] Exporting NAS key for encrypting {encrypt_target}")
         success, passphrase, error_message = utils.export_nas_key()
 
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to export NAS key: {error_message}")
             return utils.error_response(error_message, 500)
 
-        # Encrypt with LUKS
-        current_app.logger.info(f"[DISKMAN] Encrypting device {device_path} with LUKS")
-        success, error_message = utils.encrypt_luks_device(device_path, passphrase)
+        # Encrypt the partition (or existing partition) with LUKS
+        current_app.logger.info(f"[DISKMAN] Encrypting device {encrypt_target} with LUKS")
+        success, error_message = utils.encrypt_luks_device(encrypt_target, passphrase)
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to encrypt device with LUKS: {error_message}")
             return utils.error_response(error_message, 500)
-            
-        # Generate a mapper name based on device path
-        mapper_name = utils.generate_mapper_name(device_path)
+
+        mapper_name = utils.generate_mapper_name(encrypt_target)
         current_app.logger.info(f"[DISKMAN] Generated mapper name: {mapper_name}")
-        
-        # Open the LUKS container
+
         current_app.logger.info(f"[DISKMAN] Opening LUKS container with mapper: {mapper_name}")
-        success, error_message = utils.open_luks_device(device_path, mapper_name, passphrase)
+        success, error_message = utils.open_luks_device(encrypt_target, mapper_name, passphrase)
         if not success:
             current_app.logger.error(f"[DISKMAN] Failed to open LUKS container: {error_message}")
             return utils.error_response(error_message, 500)
-            
-        # Format with XFS
+
         mapper_path = f"/dev/mapper/{mapper_name}"
         current_app.logger.info(f"[DISKMAN] Formatting {mapper_path} with XFS")
         success, error_message = utils.format_xfs(mapper_path)
-        
+
         if not success:
-            # Close the LUKS container if formatting fails
             current_app.logger.error(f"[DISKMAN] Failed to format with XFS: {error_message}")
             utils.close_luks_device(mapper_name)
             return utils.error_response(error_message, 500)
-            
-        # Leave the LUKS container open for convenience
+
         current_app.logger.info(f"[DISKMAN] Leaving LUKS container {mapper_name} open for mounting")
         write_to_log('admin', f'Device {device_name} encrypted successfully', 'info')
 
+        trigger_immediate_broadcast('admin_disk_info')
+
         result = {
             "device": device_path,
-            "label": get_partlabel(device_path),
+            "partition": encrypt_target,
+            "label": get_partlabel(encrypt_target),
             "mapper": mapper_path,
             "filesystem": "xfs",
             "is_open": True
         }
 
-        current_app.logger.info(f"[DISKMAN] Successfully encrypted device {device_path}")
+        current_app.logger.info(f"[DISKMAN] Successfully encrypted device {encrypt_target}")
         return utils.success_response(f"Device {device_path} encrypted successfully", result)
         
     except Exception as e:
@@ -853,8 +872,8 @@ def unmount_device():
         response_data["device"] = device_path
         response_data["label"] = get_partlabel(device_path)
 
-        # Execute unmountDrive.sh script
-        cmd = ["/usr/bin/sudo", "/vault/scripts/unmountDrive.sh", device_path, mount_point]
+        # Execute unmountDrive.sh via bash (full path) so it works when www-data cannot access /vault
+        cmd = ["/usr/bin/sudo", "/usr/bin/bash", "/vault/scripts/unmountDrive.sh", device_path, mount_point]
         if mapper:
             cmd.append(mapper)
             
@@ -923,13 +942,17 @@ def apply_permissions():
         if requested_apps and not isinstance(requested_apps, list):
             return error_response("'applications' must be an array of application names")
 
-        # Build command
-        cmd = ["/usr/bin/sudo", "/usr/local/sbin/setupNAS.sh"]
+        # Build command (bash explicit: script may not be +x; matches vault script pattern)
+        cmd = ["/usr/bin/sudo", "/usr/bin/bash", "/usr/local/sbin/setupNAS.sh"]
         if requested_apps:
             # Only include string app names
             app_args = [str(a) for a in requested_apps if isinstance(a, str) and a]
             cmd.extend(app_args)
 
+        # Pass app's config path so script uses same config (survives sudo; env would be stripped)
+        config_path = current_app.config.get('HOMESERVER_CONFIG') or ''
+        if config_path and os.path.isfile(config_path):
+            cmd.insert(1, f'HOMESERVER_CONFIG={config_path}')
         current_app.logger.info(f"[DISKMAN] Executing: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
@@ -946,6 +969,8 @@ def apply_permissions():
             write_to_log('admin', 'Permissions applied successfully to NAS directories (setupNAS.sh)', 'info')
             return success_response("Permissions applied successfully", details)
         else:
+            for line in all_lines:
+                current_app.logger.error(f"[DISKMAN] setupNAS.sh: {line}")
             current_app.logger.error(f"[DISKMAN] setupNAS.sh failed with code {result.returncode}")
             write_to_log('admin', 'Failed to apply some permissions to NAS directories (setupNAS.sh)', 'error')
             return error_response("Failed to apply permissions via setupNAS.sh", status_code=500, details=details)
@@ -1609,11 +1634,18 @@ def import_to_nas():
                 400
             )
 
-        # Create import directory
+        # Create import directory (sudo: www-data cannot create under /mnt/nas)
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         import_dir = f"/mnt/nas/import-{timestamp}"
-        os.makedirs(import_dir, exist_ok=True)
+        success, stdout, stderr = utils.execute_command(["/usr/bin/sudo", "/usr/bin/mkdir", "-p", import_dir])
+        if not success:
+            current_app.logger.error(f"[DISKMAN] Failed to create import directory: {stderr}")
+            return utils.error_response(f"Failed to create import directory: {stderr}", 500)
+        success, stdout, stderr = utils.execute_command(["/usr/bin/sudo", "/usr/bin/chown", "www-data:www-data", import_dir])
+        if not success:
+            current_app.logger.error(f"[DISKMAN] Failed to set ownership on import directory: {stderr}")
+            return utils.error_response(f"Failed to set ownership on import directory: {stderr}", 500)
 
         # Mount source if needed
         source_mount_point = None

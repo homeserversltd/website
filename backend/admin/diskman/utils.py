@@ -575,6 +575,7 @@ def get_mount_point_for_device(device_path):
     if not success or not stdout:
         return None
     base = device_path.rstrip("/")
+    disk_base = os.path.basename(base)
     for line in stdout.strip().splitlines():
         parts = line.split(None, 1)
         if len(parts) < 2:
@@ -587,6 +588,15 @@ def get_mount_point_for_device(device_path):
             suffix = source[len(base):]
             if suffix.isdigit() or (suffix.startswith("p") and suffix[1:].isdigit()):
                 return target
+        # LUKS mapper: /dev/mapper/sdc1_crypt belongs to /dev/sdc; mapper name is <disk><part>_crypt
+        if source.startswith("/dev/mapper/"):
+            mapper_name = os.path.basename(source)
+            if mapper_name.endswith("_crypt"):
+                rest = mapper_name[:-6]
+                if rest.startswith(disk_base) and len(rest) > len(disk_base):
+                    suffix = rest[len(disk_base):]
+                    if suffix.isdigit() or (suffix.startswith("p") and suffix[1:].isdigit()):
+                        return target
     return None
 
 

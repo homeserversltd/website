@@ -77,7 +77,6 @@ export interface DiskManState {
   canAssignBackupNas: boolean;
   canUnassignNas: boolean;
   canImportToNas: boolean;
-  isPendingConfirmation: boolean;
 }
 
 export interface DiskManActions {
@@ -154,7 +153,6 @@ export const useDiskMan = (): [DiskManState, DiskManActions] => {
     deviceState.isSyncing ||
     deviceState.isLoadingSchedule ||
     deviceState.isUpdatingSchedule ||
-    deviceState.isPendingConfirmation ||
     serviceState.isCheckingServices ||
     serviceState.isManagingServices
   );
@@ -745,7 +743,6 @@ Note: During sync, your session will not time out due to inactivity.`
         }) as { status?: string; message?: string };
         if (response.status === 'success') {
           toast.success(`Data successfully imported to NAS.`, { duration: TOAST_DURATION.NORMAL });
-          deviceActions.setPendingConfirmation();
         } else {
           toast.error(response.message || `Failed to import data to NAS.`, { duration: TOAST_DURATION.NORMAL });
         }
@@ -829,8 +826,7 @@ Note: During sync, your session will not time out due to inactivity.`
       isUpdatingSchedule: deviceState.isUpdatingSchedule,
       isCheckingServices: serviceState.isCheckingServices,
       isManagingServices: serviceState.isManagingServices,
-      isPendingConfirmation: deviceState.isPendingConfirmation,
-      
+
       // Computed capabilities
       ...states,
       canAssignPrimaryNas,

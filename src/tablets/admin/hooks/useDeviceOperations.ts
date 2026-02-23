@@ -35,7 +35,7 @@ import {
 import { API_ENDPOINTS } from '../../../api/endpoints';
 import { api } from '../../../api/client';
 import { socketClient, disableInactivityTimeout, enableInactivityTimeout } from '../../../components/WebSocket';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import SyncResultsModal from '../components/modals/SyncResultsModal';
 import { PasswordInputModal } from '../components/modals/PasswordInputModal';
 import { encryptData, encryptDataAsync } from '../../../utils/secureTransmission';
@@ -52,7 +52,6 @@ export interface DeviceOperationsState {
   isSyncing: boolean;
   isLoadingSchedule: boolean;
   isUpdatingSchedule: boolean;
-  isPendingConfirmation: boolean;
 }
 
 export interface DeviceOperationsActions {
@@ -66,7 +65,6 @@ export interface DeviceOperationsActions {
   syncDevices: () => Promise<boolean>;
   getSyncSchedule: () => Promise<SyncScheduleConfig | null>;
   setSyncSchedule: (schedule: SyncScheduleConfig) => Promise<boolean>;
-  setPendingConfirmation: () => void;
 }
 
 export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsActions] => {
@@ -77,7 +75,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
   const { confirm } = useConfirmModal({ title: 'Confirm Action' });
   
   // Broadcast data
-  const { getBroadcastData, getLastUpdated } = useBroadcastData();
+  const { getBroadcastData } = useBroadcastData();
   
   // Loading states for actions
   const { isLoading: isMounting, startLoading: startMounting, stopLoading: stopMounting } = useLoading();
@@ -89,34 +87,6 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
   const { isLoading: isSyncing, startLoading: startSyncing, stopLoading: stopSyncing } = useLoading();
   const { isLoading: isLoadingSchedule, startLoading: startLoadingSchedule, stopLoading: stopLoadingSchedule } = useLoading();
   const { isLoading: isUpdatingSchedule, startLoading: startUpdatingSchedule, stopLoading: stopUpdatingSchedule } = useLoading();
-  
-  // Track if we're waiting for backend confirmation
-  const [isPendingConfirmation, setIsPendingConfirmation] = useState(false);
-  const lastKnownUpdateTimestamp = useRef<number>(0);
-  
-  // Clear pending confirmation when admin_disk_info updates after we set pending.
-  // Depend on both timestamp and isPendingConfirmation so we run when: (1) broadcast
-  // arrives (timestamp changes) or (2) we just set pending (isPendingConfirmation
-  // changes). Without (2), a race can leave pending true and the effect never re-running.
-  const adminDiskInfoTimestamp = getLastUpdated('admin_disk_info', 'admin');
-  useEffect(() => {
-    const currentTimestamp = adminDiskInfoTimestamp;
-    if (currentTimestamp && isPendingConfirmation && currentTimestamp > lastKnownUpdateTimestamp.current) {
-      console.log('[DiskMan] admin_disk_info pulse received, clearing pending confirmation', { currentTimestamp, lastKnown: lastKnownUpdateTimestamp.current });
-      debug('Received disk info update, clearing pending confirmation state');
-      setIsPendingConfirmation(false);
-      lastKnownUpdateTimestamp.current = currentTimestamp;
-    } else if (currentTimestamp && !isPendingConfirmation) {
-      lastKnownUpdateTimestamp.current = currentTimestamp;
-    }
-  }, [adminDiskInfoTimestamp, isPendingConfirmation]);
-  
-  // Helper function to set pending confirmation state
-  const setPendingConfirmation = () => {
-    console.log('[DiskMan] setPendingConfirmation called – UI will block until next admin_disk_info pulse');
-    setIsPendingConfirmation(true);
-    debug('Setting pending confirmation state');
-  };
 
   const { open: openModal, close: closeModal } = useModal();
 
@@ -169,7 +139,6 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
 
           if (response.status === 'success') {
             toast.success(response.message || `Successfully unlocked device ${deviceName}.`, { duration: TOAST_DURATION.NORMAL });
-            setPendingConfirmation();
             closeModal(); // Close the modal on success
             resolve(true);
           } else {
@@ -282,8 +251,6 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       if (response.status === 'success') {
         const displayName = getDeviceDisplayName(deviceName, diskInfo);
         toast.success(response.message || `Successfully mounted ${displayName} to ${destination.label}.`, { duration: TOAST_DURATION.NORMAL });
-        // Set pending confirmation to wait for next admin_disk_info update
-        setPendingConfirmation();
         return true;
       } else {
         toast.error(response.message || `Failed to mount device.`, { duration: TOAST_DURATION.NORMAL });
@@ -542,11 +509,6 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       if (response.status === 'success') {
         const displayName = getDeviceDisplayName(device.name, diskInfo);
         toast.success(response.message || `Successfully unmounted ${displayName}.`, { duration: TOAST_DURATION.NORMAL });
-        
-        // Set pending confirmation to wait for next admin_disk_info update
-        setPendingConfirmation();
-        
-        // Even if verification fails, mark the operation as pending confirmation
         return true;
       } else {
         toast.error(response.message || `Failed to unmount device.`, { duration: TOAST_DURATION.NORMAL });
@@ -587,10 +549,6 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
           : response.message || `Successfully formatted ${device}.`;
           
         toast.success(message, { duration: TOAST_DURATION.NORMAL });
-        
-        // Set pending confirmation to wait for next admin_disk_info update
-        setPendingConfirmation();
-        
         return true;
       } else {
         // Show error message
@@ -638,10 +596,6 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
           : response.message || `Successfully encrypted ${device}.`;
         
         toast.success(message, { duration: TOAST_DURATION.NORMAL });
-        
-        // Set pending confirmation to wait for next admin_disk_info update
-        setPendingConfirmation();
-        
         return true;
       } else {
         toast.error(response.message || `Failed to encrypt device.`, { duration: TOAST_DURATION.NORMAL });
@@ -751,10 +705,6 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       
       if (response.status === 'success') {
         toast.success(response.message || `Successfully unlocked device ${deviceName}.`, { duration: TOAST_DURATION.NORMAL });
-        
-        // Set pending confirmation to wait for next admin_disk_info update
-        setPendingConfirmation();
-        
         return true;
       } else {
         // Handle manual password requirement
@@ -930,8 +880,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       isUnlocking,
       isSyncing,
       isLoadingSchedule,
-      isUpdatingSchedule,
-      isPendingConfirmation
+      isUpdatingSchedule
     },
     {
       mountDevice,
@@ -943,8 +892,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       performUnmount,
       syncDevices,
       getSyncSchedule,
-      setSyncSchedule,
-      setPendingConfirmation
+      setSyncSchedule
     }
   ];
 }; 

@@ -899,10 +899,15 @@ def unmount_device():
         response_data["mount_point_still_mounted"] = mount_still_exists
         if mapper:
             response_data["mapper_still_exists"] = mapper_exists
-            
-        if success and not mount_still_exists and (not mapper or not mapper_exists):
-            # Success if the script returned 0, the mount point is no longer mounted,
-            # and the mapper no longer exists (if applicable)
+
+        # Success if mount is gone and mapper is gone (if applicable), regardless of script exit code.
+        # Script may exit non-zero due to timing (e.g. mapper node not yet removed) while close actually succeeded.
+        state_ok = not mount_still_exists and (not mapper or not mapper_exists)
+        if state_ok:
+            if not success:
+                current_app.logger.warning(
+                    f"[DISKMAN] Unmount script returned non-zero but state is correct (mount gone, mapper gone) - treating as success"
+                )
             current_app.logger.info(f"[DISKMAN] Unmount successful - mount point {mount_point} is no longer mounted")
             write_to_log('admin', f'Device {device_name} unmounted successfully from {mount_point}', 'info')
             trigger_immediate_broadcast('admin_disk_info')
@@ -910,14 +915,17 @@ def unmount_device():
                 f"Device {device_path} unmounted successfully",
                 response_data
             )
-        else:
-            error_msg = stderr if stderr else "Unknown error occurred"
-            current_app.logger.error(f"[DISKMAN] Unmount operation failed: {error_msg}")
-            return utils.error_response(
-                f"Failed to unmount device: {error_msg}",
-                500,
-                response_data
-            )
+
+        # Failure: mount or mapper still present. Surface script output (script logs to stdout).
+        error_msg = stderr.strip() if stderr else (stdout.strip() if stdout else "Unknown error occurred")
+        if not error_msg:
+            error_msg = "Unknown error occurred"
+        current_app.logger.error(f"[DISKMAN] Unmount operation failed: {error_msg}")
+        return utils.error_response(
+            f"Failed to unmount device: {error_msg}",
+            500,
+            response_data
+        )
         
     except Exception as e:
         current_app.logger.error(f"[DISKMAN] Exception occurred: {str(e)}")

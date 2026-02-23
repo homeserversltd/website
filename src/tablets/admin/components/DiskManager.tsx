@@ -86,8 +86,7 @@ export const DiskManager: React.FC = () => {
       canAssignPrimaryNas,
       canAssignBackupNas,
       canUnassignNas,
-      canImportToNas,
-      isPendingConfirmation
+      canImportToNas
     },
     {
       handleDeviceSelect,
@@ -118,8 +117,7 @@ export const DiskManager: React.FC = () => {
     isLoadingSchedule ||
     isUpdatingSchedule ||
     isCheckingServices || 
-    isManagingServices ||
-    isPendingConfirmation;
+    isManagingServices;
   
   // Log important state changes when data updates
   useEffect(() => {

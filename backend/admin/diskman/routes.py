@@ -773,6 +773,7 @@ def mount_device():
                         response_data["scriptManagedServicesNote"] = "Some script-managed services require a reboot to start properly."
             
             write_to_log('admin', f'Device {device_name} mounted successfully at {mountpoint}', 'info')
+            time.sleep(0.5)  # Let mount table / lsblk settle before broadcasting disk info
             trigger_immediate_broadcast('admin_disk_info')
             return utils.success_response(
                 f"Device {device_path} mounted successfully to {mountpoint}",
@@ -919,6 +920,7 @@ def unmount_device():
                 )
             current_app.logger.info(f"[DISKMAN] Unmount successful - mount point {mount_point} is no longer mounted")
             write_to_log('admin', f'Device {device_name} unmounted successfully from {mount_point}', 'info')
+            time.sleep(0.5)  # Let mount table / lsblk settle before broadcasting disk info
             trigger_immediate_broadcast('admin_disk_info')
             return utils.success_response(
                 f"Device {device_path} unmounted successfully",

@@ -35,7 +35,7 @@ import {
 import { API_ENDPOINTS } from '../../../api/endpoints';
 import { api } from '../../../api/client';
 import { socketClient, disableInactivityTimeout, enableInactivityTimeout } from '../../../components/WebSocket';
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import SyncResultsModal from '../components/modals/SyncResultsModal';
 import { PasswordInputModal } from '../components/modals/PasswordInputModal';
 import { encryptData, encryptDataAsync } from '../../../utils/secureTransmission';
@@ -52,6 +52,7 @@ export interface DeviceOperationsState {
   isSyncing: boolean;
   isLoadingSchedule: boolean;
   isUpdatingSchedule: boolean;
+  isPendingConfirmation: boolean;
 }
 
 export interface DeviceOperationsActions {
@@ -65,6 +66,7 @@ export interface DeviceOperationsActions {
   syncDevices: () => Promise<boolean>;
   getSyncSchedule: () => Promise<SyncScheduleConfig | null>;
   setSyncSchedule: (schedule: SyncScheduleConfig) => Promise<boolean>;
+  setPendingConfirmation: () => void;
 }
 
 export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsActions] => {
@@ -75,7 +77,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
   const { confirm } = useConfirmModal({ title: 'Confirm Action' });
   
   // Broadcast data
-  const { getBroadcastData } = useBroadcastData();
+  const { getBroadcastData, getLastUpdated } = useBroadcastData();
   
   // Loading states for actions
   const { isLoading: isMounting, startLoading: startMounting, stopLoading: stopMounting } = useLoading();
@@ -87,6 +89,27 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
   const { isLoading: isSyncing, startLoading: startSyncing, stopLoading: stopSyncing } = useLoading();
   const { isLoading: isLoadingSchedule, startLoading: startLoadingSchedule, stopLoading: stopLoadingSchedule } = useLoading();
   const { isLoading: isUpdatingSchedule, startLoading: startUpdatingSchedule, stopLoading: stopUpdatingSchedule } = useLoading();
+
+  const [isPendingConfirmation, setIsPendingConfirmation] = useState(false);
+  const lastKnownUpdateTimestamp = useRef<number>(0);
+  const adminDiskInfoTimestamp = getLastUpdated('admin_disk_info', 'admin');
+  useEffect(() => {
+    const currentTimestamp = adminDiskInfoTimestamp;
+    if (currentTimestamp && isPendingConfirmation && currentTimestamp > lastKnownUpdateTimestamp.current) {
+      setIsPendingConfirmation(false);
+      lastKnownUpdateTimestamp.current = currentTimestamp;
+    } else if (currentTimestamp && !isPendingConfirmation) {
+      lastKnownUpdateTimestamp.current = currentTimestamp;
+    }
+  }, [adminDiskInfoTimestamp, isPendingConfirmation]);
+  const setPendingConfirmation = () => setIsPendingConfirmation(true);
+
+  // Safety: if pulse never arrives (e.g. backend/subscription issue), unblock after 15s
+  useEffect(() => {
+    if (!isPendingConfirmation) return;
+    const t = setTimeout(() => setIsPendingConfirmation(false), 15000);
+    return () => clearTimeout(t);
+  }, [isPendingConfirmation]);
 
   const { open: openModal, close: closeModal } = useModal();
 
@@ -139,6 +162,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
 
           if (response.status === 'success') {
             toast.success(response.message || `Successfully unlocked device ${deviceName}.`, { duration: TOAST_DURATION.NORMAL });
+            setPendingConfirmation();
             closeModal(); // Close the modal on success
             resolve(true);
           } else {
@@ -251,6 +275,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       if (response.status === 'success') {
         const displayName = getDeviceDisplayName(deviceName, diskInfo);
         toast.success(response.message || `Successfully mounted ${displayName} to ${destination.label}.`, { duration: TOAST_DURATION.NORMAL });
+        setPendingConfirmation();
         return true;
       } else {
         toast.error(response.message || `Failed to mount device.`, { duration: TOAST_DURATION.NORMAL });
@@ -509,6 +534,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       if (response.status === 'success') {
         const displayName = getDeviceDisplayName(device.name, diskInfo);
         toast.success(response.message || `Successfully unmounted ${displayName}.`, { duration: TOAST_DURATION.NORMAL });
+        setPendingConfirmation();
         return true;
       } else {
         toast.error(response.message || `Failed to unmount device.`, { duration: TOAST_DURATION.NORMAL });
@@ -543,15 +569,13 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       });
       
       if (response.status === 'success') {
-        // Show success message
         const message = response.details?.closed_luks?.length
           ? `Successfully closed LUKS containers and formatted ${device} with XFS.`
           : response.message || `Successfully formatted ${device}.`;
-          
         toast.success(message, { duration: TOAST_DURATION.NORMAL });
+        setPendingConfirmation();
         return true;
       } else {
-        // Show error message
         const errorMessage = response.details?.failed_mapper
           ? `Failed to close LUKS container ${response.details.failed_mapper}. Cannot proceed with format.`
           : response.message || `Failed to format device.`;
@@ -590,12 +614,11 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       );
 
       if (response.status === 'success') {
-        // Show success message with mapper details if available
         const message = response.details?.mapper 
           ? `Successfully encrypted ${device}. Created encrypted device at ${response.details.mapper}`
           : response.message || `Successfully encrypted ${device}.`;
-        
         toast.success(message, { duration: TOAST_DURATION.NORMAL });
+        setPendingConfirmation();
         return true;
       } else {
         toast.error(response.message || `Failed to encrypt device.`, { duration: TOAST_DURATION.NORMAL });
@@ -705,6 +728,7 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       
       if (response.status === 'success') {
         toast.success(response.message || `Successfully unlocked device ${deviceName}.`, { duration: TOAST_DURATION.NORMAL });
+        setPendingConfirmation();
         return true;
       } else {
         // Handle manual password requirement
@@ -880,7 +904,8 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       isUnlocking,
       isSyncing,
       isLoadingSchedule,
-      isUpdatingSchedule
+      isUpdatingSchedule,
+      isPendingConfirmation
     },
     {
       mountDevice,
@@ -892,7 +917,8 @@ export const useDeviceOperations = (): [DeviceOperationsState, DeviceOperationsA
       performUnmount,
       syncDevices,
       getSyncSchedule,
-      setSyncSchedule
+      setSyncSchedule,
+      setPendingConfirmation
     }
   ];
 }; 

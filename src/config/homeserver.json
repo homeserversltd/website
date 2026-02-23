@@ -117,7 +117,7 @@
             {
               "name": "Calibre Web",
               "description": "E-book manager",
-              "services": ["calibre-web"],
+              "services": ["calibre-web", "calibre-simple-watch"],
               "type": "systemd",
               "port": 8083,
               "localURL": "https://books.home.arpa",
@@ -185,11 +185,11 @@
     },
     "global": {
       "version": {
-        "version": "0.9.105",
-        "releaseDate": "02-22-2026",
+        "version": "0.9.106",
+        "releaseDate": "02-23-2026",
         "generation": 1,
-        "buildId": "8b2316e4",
-        "lastUpdated": "02-22-2026"
+        "buildId": "02bc69ef",
+        "lastUpdated": "02-23-2026"
       },
       "theme": {
         "name": "dark"

@@ -18,6 +18,9 @@ from backend.broadcasts.events import trigger_immediate_broadcast
 # Get logger
 logger = logging.getLogger('homeserver')
 
+# Services that do not require NAS; excluded from "must stop" when unmounting /mnt/nas
+NAS_INDEPENDENT_SERVICES = frozenset({'mkdocs', 'gogs'})
+
 
 def _try_mount_after_assign(partition_path, target_disk, mountpoint, run_setup_nas=False):
     """
@@ -892,17 +895,21 @@ def unmount_device():
         if mount_point == "/mnt/nas":
             current_app.logger.info("[DISKMAN] NAS drive unmount requested - checking for running services")
             
-            # Check for running services
+            # Check for running services; exclude NAS-independent (mkdocs, gogs)
             has_running, running_services = check_services_running(enabled_only=False)
+            running_services = [s for s in running_services if s['name'] not in NAS_INDEPENDENT_SERVICES]
+            has_running = len(running_services) > 0
             response_data["hasRunningServices"] = has_running
             response_data["runningServices"] = running_services
             
-            # If auto-stop is requested and there are running services, stop them
+            # If auto-stop is requested and there are running services, stop only NAS-dependent ones
             if stop_services and has_running:
-                current_app.logger.info("[DISKMAN] Stopping services before NAS unmount")
-                
-                # Stop all services regardless of enabled status
-                service_results = stop_all_services(enabled_only=False)
+                current_app.logger.info("[DISKMAN] Stopping NAS-dependent services before unmount")
+                results = []
+                for svc in running_services:
+                    success, message = stop_service(svc['name'])
+                    results.append({'name': svc['name'], 'success': success, 'message': message, 'isScriptManaged': svc.get('isScriptManaged', False), 'needsReboot': svc.get('isScriptManaged', False)})
+                service_results = {'results': results, 'metadata': {'scriptManagedCount': sum(1 for s in running_services if s.get('isScriptManaged')), 'standardServicesCount': len(running_services) - sum(1 for s in running_services if s.get('isScriptManaged')), 'totalCount': len(running_services), 'rebootRecommended': any(s.get('isScriptManaged') for s in running_services), 'rebootNote': 'Some script-managed services may require a system reboot for complete cleanup' if any(s.get('isScriptManaged') for s in running_services) else ''}}
                 response_data["serviceStopResults"] = service_results
                 
                 # Add a note about script-managed services
@@ -1070,8 +1077,12 @@ def check_services_status():
         current_app.logger.info(f"[DISKMAN] Checking services status for {action} operation")
         
         if action == 'unmount':
-            # For unmounting, check for running services
+            # For unmounting, check for running services; exclude NAS-independent (mkdocs, gogs)
+            current_app.logger.info("[DISKMAN] check-services action=unmount calling check_services_running(enabled_only=False)")
             has_running, running_services = check_services_running(enabled_only=False)
+            running_services = [s for s in running_services if s['name'] not in NAS_INDEPENDENT_SERVICES]
+            has_running = len(running_services) > 0
+            current_app.logger.info(f"[DISKMAN] check-services unmount result: has_running={has_running} count={len(running_services)} names={[s.get('name') for s in running_services]}")
             
             return success_response(
                 "Service status check completed",
@@ -1129,6 +1140,7 @@ def manage_services():
         
         # Get specific services if provided
         specified_services = data.get('services', [])
+        current_app.logger.info(f"[DISKMAN] manage_services action={action} specified_services={specified_services!r}")
         
         # Handle service management based on action
         if action == 'start':

@@ -447,9 +447,13 @@ def get_service_names_from_config() -> List[str]:
         for portal in portals:
             portal_services = portal.get('services', [])
             services.extend(portal_services)
+            if portal_services:
+                current_app.logger.info(f"[SERVICES] Portal '{portal.get('name', '')}' -> services: {portal_services}")
         
         # Remove duplicates by converting to a set then back to a list
-        return list(set(services))
+        deduped = list(set(services))
+        current_app.logger.info(f"[SERVICES] Config service names (deduped): {sorted(deduped)}")
+        return deduped
     except Exception as e:
         current_app.logger.error(f"Error getting service names: {str(e)}")
         return []
@@ -457,14 +461,9 @@ def get_service_names_from_config() -> List[str]:
 def get_normalized_service_name(service_name: str) -> str:
     """
     Normalize a service name to match the format used in the portal service mapping.
-    
-    Args:
-        service_name (str): The service name to normalize
-        
-    Returns:
-        str: Normalized service name
+    Must match portals.utils key building: lower, strip spaces and hyphens only (keep dots for e.g. php8.2-fpm).
     """
-    return service_name.lower().replace(' ', '').replace('-', '').replace('.', '')
+    return service_name.lower().replace(' ', '').replace('-', '')
 
 def get_systemd_service_name(service_name: str) -> str:
     """
@@ -487,11 +486,9 @@ def get_systemd_service_name(service_name: str) -> str:
         # Get service mappings
         service_map = get_service_mappings()
         
-        # Normalize service name
+        # Prefer exact match first (e.g. calibre-web -> calibre-web.service), then normalized, else raw name
         normalized_service = get_normalized_service_name(service_name)
-        
-        # Get the actual service name
-        systemd_service = service_map.get(normalized_service, normalized_service)
+        systemd_service = service_map.get(service_name) or service_map.get(normalized_service) or service_name
         if not systemd_service.endswith('.service'):
             systemd_service = f"{systemd_service}.service"
             
@@ -564,6 +561,8 @@ def get_service_status(service_name: str) -> Dict[str, Any]:
         # Check if service is active
         is_active, status_output = execute_systemctl_command('is-active', service_with_suffix)
         
+        current_app.logger.info(f"[SERVICES] get_service_status: name={service_name} systemd={service_with_suffix} is_enabled={is_enabled} is_active={is_active} status_output={status_output!r}")
+        
         return {
             'name': service_name,
             'systemdName': service_with_suffix,
@@ -610,11 +609,14 @@ def check_services_running(enabled_only: bool = True) -> Tuple[bool, List[Dict[s
             - List of running services information
     """
     all_services = get_all_services_status()
+    current_app.logger.info(f"[SERVICES] check_services_running enabled_only={enabled_only} total_checked={len(all_services)} names={[s['name'] for s in all_services]}")
     
     if enabled_only:
         running_services = [svc for svc in all_services if svc['isEnabled'] and svc['isActive']]
     else:
         running_services = [svc for svc in all_services if svc['isActive']]
+    
+    current_app.logger.info(f"[SERVICES] check_services_running running_count={len(running_services)} running_names={[s['name'] for s in running_services]}")
     
     # Count by type for metadata
     script_managed_count = sum(1 for svc in running_services if svc.get('isScriptManaged', False))
@@ -737,7 +739,7 @@ def stop_service(service_name: str) -> Tuple[bool, str]:
         # Get the systemd service name
         service_with_suffix = get_systemd_service_name(service_name)
             
-        current_app.logger.info(f"Stopping service: {service_with_suffix}")
+        current_app.logger.info(f"[SERVICES] Stopping service: name={service_name!r} systemd={service_with_suffix}")
         success, output = execute_systemctl_command('stop', service_with_suffix)
         
         if success:

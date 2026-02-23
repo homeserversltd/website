@@ -26,8 +26,9 @@ def get_service_mappings() -> Dict[str, str]:
                 # Use the first service as the primary mapping
                 service_map[portal_name] = services[0]
                 
-                # Also add the service name itself as a key
+                # Also add the service name itself as a key (exact and normalized for hyphenated names like calibre-web)
                 for service in services:
+                    service_map[service] = service
                     service_name = service.lower().replace('-', '')
                     service_map[service_name] = service
         

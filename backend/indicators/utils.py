@@ -55,14 +55,17 @@ def collect_services_status() -> List[Dict]:
             if not services:
                 continue
                 
-            # Check status for each service associated with the portal
+            # Check status for each service; portal status is driven by primary (first) service only
             service_statuses = []
-            is_running = True  # Will be set to False if any service is not running
+            primary_running = None
             
-            for service in services:
+            for i, service in enumerate(services):
                 running, status = get_service_full_status(service, port)
                 service_statuses.append(f"{service}: {status}")
-                is_running = is_running and running
+                if i == 0:
+                    primary_running = running
+            
+            is_running = primary_running if primary_running is not None else False
             
             # Create status indicator for the service
             indicator = {

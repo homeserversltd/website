@@ -1640,11 +1640,28 @@ def import_to_nas():
                 current_app.logger.info(f"[DISKMAN] Using existing mount for source: {existing}")
                 effective_source = existing
             else:
+                # Whole disk (e.g. /dev/sdb) cannot be mounted directly; use first partition
+                mount_source = source_path
+                if utils.is_whole_disk(source_path):
+                    first_part = utils.get_first_partition_path(source_path)
+                    if first_part:
+                        current_app.logger.info(
+                            f"[DISKMAN] Whole-disk source {source_path}; using first partition {first_part} for mount"
+                        )
+                        mount_source = first_part
+                    else:
+                        current_app.logger.error(
+                            f"[DISKMAN] No partition found on disk {source_path}; cannot import"
+                        )
+                        return utils.error_response(
+                            "No partition found on this disk. Format the drive or select a partition, then try Import again.",
+                            400
+                        )
                 source_mount_point = f"/tmp/import_source_{timestamp}"
                 os.makedirs(source_mount_point, exist_ok=True)
-                mount_cmd = ["/usr/bin/sudo", "/usr/bin/mount", source_path, source_mount_point]
+                mount_cmd = ["/usr/bin/sudo", "/usr/bin/mount", mount_source, source_mount_point]
                 current_app.logger.info(
-                    f"[DISKMAN] No existing mount for {source_path}; attempting mount to {source_mount_point}"
+                    f"[DISKMAN] No existing mount for {source_path}; attempting mount of {mount_source} to {source_mount_point}"
                 )
                 success, stdout, stderr = utils.execute_command(mount_cmd)
                 if not success:
@@ -1668,6 +1685,11 @@ def import_to_nas():
                             err_msg = (
                                 "Device or a partition is already mounted but could not be detected. "
                                 "Unmount the drive first, or use the mounted path. Original: " + err_msg
+                            )
+                        elif "wrong fs type" in err_msg.lower() or "bad superblock" in err_msg.lower():
+                            err_msg = (
+                                "Could not mount the partition (wrong fs type or encrypted). "
+                                "If the drive is LUKS-encrypted, unlock and mount it in Disk Manager first, then run Import again. Original: " + err_msg
                             )
                         current_app.logger.error(f"[DISKMAN] Import mount failed and no existing mount found: {err_msg}")
                         return utils.error_response(f"Failed to mount source device: {err_msg}", 500)
@@ -1724,11 +1746,19 @@ def import_to_nas():
         current_app.logger.info(f"[DISKMAN] Executing rsync: {' '.join(rsync_cmd)}")
         success, stdout, stderr = utils.execute_command(rsync_cmd)
 
-        # Cleanup mount if we created one
+        # Cleanup mount if we created one (umount requires flask-disk: umount /tmp/import_source_*)
         if source_mount_point and os.path.ismount(source_mount_point):
             umount_cmd = ["/usr/bin/sudo", "/usr/bin/umount", source_mount_point]
-            utils.execute_command(umount_cmd)
-            os.rmdir(source_mount_point)
+            umount_ok, _, umount_err = utils.execute_command(umount_cmd)
+            if not umount_ok:
+                current_app.logger.warning(
+                    f"[DISKMAN] Import cleanup: umount of {source_mount_point} failed: {umount_err}; mount left in place"
+                )
+            else:
+                try:
+                    os.rmdir(source_mount_point)
+                except OSError as e:
+                    current_app.logger.warning(f"[DISKMAN] Import cleanup: rmdir {source_mount_point} failed: {e}")
 
         if not success:
             current_app.logger.error(f"[DISKMAN] Rsync failed: {stderr}")

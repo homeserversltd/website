@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import json
 from flask import current_app, jsonify
@@ -562,6 +563,46 @@ def verify_mount(mount_point):
     )
     
     return success
+
+
+def is_whole_disk(device_path):
+    """
+    Return True if device_path is a whole-disk device (e.g. /dev/sdb, /dev/nvme0n1), not a partition.
+    """
+    if not device_path or not device_path.startswith("/dev/"):
+        return False
+    name = os.path.basename(device_path.rstrip("/"))
+    return bool(
+        (len(name) >= 3 and name.startswith("sd") and name[2:].isalpha()) or
+        (name.startswith("nvme") and len(name) > 4 and re.match(r"^nvme\d+n\d+$", name) is not None)
+    )
+
+
+def get_first_partition_path(disk_path):
+    """
+    Return the path of the first partition on the given whole disk (e.g. /dev/sdb -> /dev/sdb1),
+    or None if no partition exists. Uses /sys/block/<disk>/ to enumerate partition names.
+    """
+    if not disk_path or not disk_path.startswith("/dev/"):
+        return None
+    disk_name = os.path.basename(disk_path.rstrip("/"))
+    sys_block = f"/sys/block/{disk_name}"
+    if not os.path.isdir(sys_block):
+        return None
+    # Partition names: sdb1, sdb2 for sdb; nvme0n1p1 for nvme0n1
+    candidates = []
+    for name in os.listdir(sys_block):
+        if name == disk_name:
+            continue
+        if not name.startswith(disk_name) or len(name) <= len(disk_name):
+            continue
+        suffix = name[len(disk_name):]
+        if suffix.isdigit() or (suffix.startswith("p") and suffix[1:].isdigit()):
+            candidates.append(name)
+    if not candidates:
+        return None
+    candidates.sort()
+    return f"/dev/{candidates[0]}"
 
 
 def _dm_source_to_mapper_name(source):

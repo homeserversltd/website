@@ -997,7 +997,7 @@ def unlock_device_with_manual_password():
             }), 400
         
         # Use the existing diskman unlock functionality
-        from backend.admin.diskman.utils import format_device_path, generate_mapper_name, get_disk_info, unlock_luks_device
+        from backend.admin.diskman.utils import format_device_path, generate_mapper_name, get_disk_info, unlock_luks_device, is_partition_of_disk
         
         # Format device path
         device_path, device_name = format_device_path(device)
@@ -1015,6 +1015,15 @@ def unlock_device_with_manual_password():
         disk_info = get_disk_info()
         encrypted_devices = disk_info.get("encryptionInfo", {}).get("encrypted_devices", [])
         encrypted_device = next((ed for ed in encrypted_devices if ed.get("device") == device_path), None)
+        if not encrypted_device:
+            # LUKS is on a partition (e.g. sdc1), not the whole disk (sdc); resolve disk -> partition
+            encrypted_device = next(
+                (ed for ed in encrypted_devices if ed.get("device") and is_partition_of_disk(ed.get("device"), device_path)),
+                None,
+            )
+            if encrypted_device:
+                device_path = encrypted_device["device"]
+                current_app.logger.info(f"[DISKMAN] Resolved disk to LUKS partition: {device_path}")
         
         if not encrypted_device:
             current_app.logger.error(f"[DISKMAN] Device {device_path} is not an encrypted LUKS device")

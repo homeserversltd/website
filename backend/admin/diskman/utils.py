@@ -5,6 +5,20 @@ from flask import current_app, jsonify
 from backend.utils.utils import execute_command, error_response, success_response, get_config, write_to_log, resolve_device_identifier, get_partlabel
 from backend.monitors.disk import DiskMonitor
 
+def is_partition_of_disk(partition_path: str, disk_path: str) -> bool:
+    """
+    Return True if partition_path is a partition on the disk disk_path
+    (e.g. /dev/sdc1 on /dev/sdc, /dev/nvme0n1p1 on /dev/nvme0n1).
+    """
+    if not partition_path or not disk_path:
+        return False
+    disk_base = os.path.basename(disk_path.rstrip("/"))
+    part_base = os.path.basename(partition_path.rstrip("/"))
+    if part_base == disk_base:
+        return False
+    return part_base.startswith(disk_base)
+
+
 def format_device_path(device):
     """
     Ensure device name is properly formatted by adding /dev/ prefix if needed.

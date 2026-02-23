@@ -18,6 +18,7 @@ from backend.broadcasts.events import trigger_immediate_broadcast
 # Get logger
 logger = logging.getLogger('homeserver')
 
+
 def _is_external_mount(path: str) -> bool:
     """Check if path is on an external mount (not root filesystem)."""
     try:
@@ -320,10 +321,18 @@ def unlock_encrypted_partition():
         current_app.logger.info("[DISKMAN] Checking disk encryption status")
         disk_info = utils.get_disk_info()
         
-        # Find the encrypted device in the encryption info
+        # Find the encrypted device in the encryption info (by exact path or by partition on this disk)
         encrypted_devices = disk_info.get("encryptionInfo", {}).get("encrypted_devices", [])
         encrypted_device = next((ed for ed in encrypted_devices if ed.get("device") == device_path), None)
-        
+        if not encrypted_device:
+            # LUKS is on a partition (e.g. sdc1), not the whole disk (sdc); resolve disk -> partition
+            encrypted_device = next(
+                (ed for ed in encrypted_devices if ed.get("device") and utils.is_partition_of_disk(ed.get("device"), device_path)),
+                None,
+            )
+            if encrypted_device:
+                device_path = encrypted_device["device"]
+                current_app.logger.info(f"[DISKMAN] Resolved disk to LUKS partition: {device_path}")
         if not encrypted_device:
             current_app.logger.error(f"[DISKMAN] Device {device_path} is not an encrypted LUKS device")
             return utils.error_response(f"Device {device_path} is not an encrypted LUKS device")

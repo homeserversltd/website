@@ -21,9 +21,9 @@ import { SystemStats } from './types';
 // Helper function to get friendly interface labels
 const getInterfaceLabel = (iface: string): string => {
   switch (iface) {
-    case 'enp1s0':
+    case 'wan0':
       return 'WAN';
-    case 'enp2s0':
+    case 'lan0':
       return 'LAN';
     case 'tailscale0':
       return 'Tailscale VPN';

@@ -223,7 +223,7 @@ def read_load_average() -> Dict[str, float]:
 
 def read_network_interfaces() -> Dict[str, Dict[str, int]]:
     """Read detailed network interface statistics from /proc/net/dev."""
-    interfaces_of_interest = {'tailscale0', 'enp1s0', 'enp2s0', 'veth0'}
+    interfaces_of_interest = {'tailscale0', 'wan0', 'lan0', 'veth0'}
     interface_stats = {}
     
     try:

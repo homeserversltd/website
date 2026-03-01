@@ -43,6 +43,8 @@ interface ModuleInfo {
   version?: string;
   description?: string;
   lastUpdated?: string;
+  branch?: string;
+  default_branch?: string;
 }
 
 interface UpdateCheckResponse {
@@ -174,6 +176,8 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
   const [isApplying, setIsApplying] = useState(false);
   const [isLoadingModules, setIsLoadingModules] = useState(false);
   const [isTogglingModule, setIsTogglingModule] = useState<string | null>(null);
+  const [branchInputs, setBranchInputs] = useState<Record<string, string>>({});
+  const [isSettingBranch, setIsSettingBranch] = useState<string | null>(null);
   
   // Update progress tracking
   const [updateOutput, setUpdateOutput] = useState<string[]>([]);
@@ -438,6 +442,77 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
       setIsTogglingModule(null);
     }
   }, [api, toast, loadModules, logApiActivity]);
+
+  // Handle branch input changes
+  const handleBranchInputChange = useCallback((moduleName: string, value: string) => {
+    setBranchInputs(prev => ({ ...prev, [moduleName]: value }));
+  }, []);
+
+  // Set module branch
+  const handleSetBranch = useCallback(async (moduleName: string) => {
+    const branch = branchInputs[moduleName]?.trim();
+    if (!branch) return;
+
+    const endpoint = API_ENDPOINTS.admin.updates.moduleBranch(moduleName);
+    const requestData = { branch };
+
+    setIsSettingBranch(moduleName);
+    try {
+      logApiActivity(`Set Module Branch ${moduleName} - Request`, endpoint, 'POST', requestData);
+
+      const response = await api.post<{ status: string; error?: string }>(endpoint, requestData);
+
+      logApiActivity(`Set Module Branch ${moduleName} - Response`, endpoint, 'POST', requestData, response);
+
+      if (response.status === 'success') {
+        toast.success(`Branch for module ${moduleName} set to '${branch}' successfully`);
+        // Clear input and reload modules
+        setBranchInputs(prev => ({ ...prev, [moduleName]: '' }));
+        await loadModules();
+      } else {
+        logger.error(`Failed to set branch for module ${moduleName}:`, response.error);
+        toast.error(response.error || `Failed to set branch`);
+      }
+    } catch (error) {
+      logApiActivity(`Set Module Branch ${moduleName} - Error`, endpoint, 'POST', requestData, undefined, error);
+      logger.error(`Error setting branch for module ${moduleName}:`, error);
+      toast.error(`Failed to set branch`);
+    } finally {
+      setIsSettingBranch(null);
+    }
+  }, [api, toast, loadModules, branchInputs, logApiActivity]);
+
+  // Reset module branch to default
+  const handleResetToDefault = useCallback(async (moduleName: string) => {
+    const module = modules.find(m => m.name === moduleName);
+    if (!module?.default_branch) return;
+
+    const endpoint = API_ENDPOINTS.admin.updates.moduleBranch(moduleName);
+    const requestData = { branch: module.default_branch };
+
+    setIsSettingBranch(moduleName);
+    try {
+      logApiActivity(`Reset Module Branch ${moduleName} - Request`, endpoint, 'POST', requestData);
+
+      const response = await api.post<{ status: string; error?: string }>(endpoint, requestData);
+
+      logApiActivity(`Reset Module Branch ${moduleName} - Response`, endpoint, 'POST', requestData, response);
+
+      if (response.status === 'success') {
+        toast.success(`Branch for module ${moduleName} reset to default '${module.default_branch}'`);
+        await loadModules();
+      } else {
+        logger.error(`Failed to reset branch for module ${moduleName}:`, response.error);
+        toast.error(response.error || `Failed to reset branch`);
+      }
+    } catch (error) {
+      logApiActivity(`Reset Module Branch ${moduleName} - Error`, endpoint, 'POST', requestData, undefined, error);
+      logger.error(`Error resetting branch for module ${moduleName}:`, error);
+      toast.error(`Failed to reset branch`);
+    } finally {
+      setIsSettingBranch(null);
+    }
+  }, [api, toast, loadModules, modules, logApiActivity]);
 
   // Apply updates with progress tracking
   const handleApplyUpdates = useCallback(async () => {
@@ -731,26 +806,63 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
 
       <div className="modules-list">
         {modules.map((module) => (
-          <div key={module.name} className="module-item">
-            <div className="module-info">
-              <h5>{module.name}</h5>
-              {module.description && <p>{module.description}</p>}
-              {module.version && <span className="module-version">v{module.version}</span>}
+          <div key={module.name} className="module-item-container">
+            <div className="module-item">
+              <div className="module-info">
+                <h5>{module.name}</h5>
+                {module.description && <p>{module.description}</p>}
+                {module.version && <span className="module-version">v{module.version}</span>}
+              </div>
+              <button
+                type="button"
+                className={`toggle-button ${module.enabled ? 'enabled' : 'disabled'}`}
+                onClick={() => handleToggleModule(module.name, !module.enabled)}
+                disabled={isTogglingModule === module.name || isLoadingModules}
+                style={{ pointerEvents: 'auto' }}
+              >
+                {isTogglingModule === module.name ? (
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                ) : (
+                  <FontAwesomeIcon icon={module.enabled ? faToggleOn : faToggleOff} />
+                )}
+                {module.enabled ? 'Enabled' : 'Disabled'}
+              </button>
             </div>
-            <button
-              type="button"
-              className={`toggle-button ${module.enabled ? 'enabled' : 'disabled'}`}
-              onClick={() => handleToggleModule(module.name, !module.enabled)}
-              disabled={isTogglingModule === module.name || isLoadingModules}
-              style={{ pointerEvents: 'auto' }}
-            >
-              {isTogglingModule === module.name ? (
-                <FontAwesomeIcon icon={faSpinner} spin />
-              ) : (
-                <FontAwesomeIcon icon={module.enabled ? faToggleOn : faToggleOff} />
-              )}
-              {module.enabled ? 'Enabled' : 'Disabled'}
-            </button>
+            {module.branch && (
+              <div className="module-branch-row">
+                <label>Branch:</label>
+                <span className="current-branch">{module.branch}</span>
+                <input
+                  type="text"
+                  placeholder="Enter branch name"
+                  value={branchInputs[module.name] || ''}
+                  onChange={(e) => handleBranchInputChange(module.name, e.target.value)}
+                  disabled={isSettingBranch === module.name}
+                />
+                <button
+                  type="button"
+                  className="branch-apply-button"
+                  onClick={() => handleSetBranch(module.name)}
+                  disabled={isSettingBranch === module.name || !branchInputs[module.name]?.trim()}
+                >
+                  {isSettingBranch === module.name ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    'Apply'
+                  )}
+                </button>
+                {module.default_branch && module.default_branch !== module.branch && (
+                  <button
+                    type="button"
+                    className="branch-reset-button"
+                    onClick={() => handleResetToDefault(module.name)}
+                    disabled={isSettingBranch === module.name}
+                  >
+                    Reset to default
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

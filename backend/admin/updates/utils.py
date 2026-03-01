@@ -13,16 +13,17 @@ logger = logging.getLogger(__name__)
 # Update manager script path
 UPDATE_MANAGER_PATH = "/usr/local/lib/updates/updateManager.sh"
 
-def execute_update_manager(mode: str, target: Optional[str] = None, component: Optional[str] = None, force: bool = False) -> Tuple[bool, str, Dict[str, Any]]:
+def execute_update_manager(mode: str, target: Optional[str] = None, component: Optional[str] = None, force: bool = False, branch: Optional[str] = None) -> Tuple[bool, str, Dict[str, Any]]:
     """
     Execute the update manager with specified parameters.
-    
+
     Args:
-        mode: Operation mode ('check', 'full', 'legacy', 'enable', 'disable', 'enable-component', 'disable-component', 'list', 'status')
+        mode: Operation mode ('check', 'full', 'legacy', 'enable', 'disable', 'enable-component', 'disable-component', 'list', 'status', 'set-branch')
         target: Target module name (for module operations)
         component: Component name (for component operations)
+        branch: Branch name (for set-branch operations)
         force: Force operation even if no updates detected
-        
+
     Returns:
         Tuple of (success, message, result_data)
     """
@@ -59,6 +60,10 @@ def execute_update_manager(mode: str, target: Optional[str] = None, component: O
                 cmd.extend(["--status", target])
             else:
                 cmd.append("--status")
+        elif mode == "set-branch":
+            if not target or not branch:
+                return False, "Both module name and branch required for set-branch operation", {}
+            cmd.extend(["--set-module-branch", target, branch])
         elif mode == "full":
             # Full mode uses no additional arguments (default behavior)
             pass
@@ -94,6 +99,8 @@ def execute_update_manager(mode: str, target: Optional[str] = None, component: O
                 result_data = _parse_module_list_output(stdout)
             elif mode == "status":
                 result_data = _parse_status_output(stdout, target)
+            elif mode == "set-branch":
+                result_data = _parse_set_branch_output(stdout, target, branch)
             elif mode in ["enable", "disable", "enable-component", "disable-component"]:
                 result_data = _parse_toggle_output(stdout, mode, target, component)
             else:
@@ -393,7 +400,7 @@ def _parse_module_list_output(output: str) -> Dict[str, Any]:
                 break
             elif in_module_list and line.strip() and not line.startswith('-'):
                 # Extract the actual content after the timestamp prefix
-                # Format: [timestamp] [INFO] module_name    STATUS    version    description
+                # Format: [timestamp] [INFO] module_name STATUS version [BRANCH branch default_branch] description
                 if "] [INFO]" in line:
                     content = line.split("] [INFO]", 1)[1].strip()
                     parts = content.split()
@@ -405,8 +412,14 @@ def _parse_module_list_output(output: str) -> Dict[str, Any]:
                                 "name": module_name,
                                 "enabled": parts[1] == "ENABLED",
                                 "version": parts[2].replace('v', ''),
-                                "description": ' '.join(parts[3:])
                             }
+                            # Branch row only when 4th token is literal "BRANCH" (orchestrator emits this only for repo modules)
+                            if len(parts) >= 6 and parts[3] == "BRANCH":
+                                module["branch"] = parts[4]
+                                module["default_branch"] = parts[5]
+                                module["description"] = ' '.join(parts[6:])
+                            else:
+                                module["description"] = ' '.join(parts[3:])
                             result["modules"].append(module)
         
         return result
@@ -468,6 +481,41 @@ def _parse_toggle_output(output: str, action: str, target: Optional[str] = None,
         return result
     except Exception as e:
         logger.error(f"[UPDATEMAN-UTILS] Error parsing toggle output: {str(e)}")
+        return {"raw_output": output, "parse_error": str(e)}
+
+def _parse_set_branch_output(output: str, target: Optional[str] = None, branch: Optional[str] = None) -> Dict[str, Any]:
+    """Parse the output from set-branch operation."""
+    try:
+        result = {
+            "action": "set-branch",
+            "target": target,
+            "branch": branch,
+            "success": False,
+            "raw_output": output
+        }
+
+        # Look for success indicators
+        success_patterns = [
+            f"Module '{target}' branch set to '{branch}'",
+            "✓ Module management operation completed successfully"
+        ]
+
+        for pattern in success_patterns:
+            if pattern in output:
+                result["success"] = True
+                break
+
+        # Look for error patterns
+        if "Branch '" in output and "not found" in output:
+            result["error"] = "Branch not found on remote repository"
+        elif "Invalid branch name" in output:
+            result["error"] = "Invalid branch name"
+        elif "Invalid module name" in output:
+            result["error"] = "Invalid module name"
+
+        return result
+    except Exception as e:
+        logger.error(f"[UPDATEMAN-UTILS] Error parsing set-branch output: {str(e)}")
         return {"raw_output": output, "parse_error": str(e)}
 
 def get_update_logs(limit: int = 50, level: str = "all") -> Tuple[bool, str, Dict[str, Any]]:

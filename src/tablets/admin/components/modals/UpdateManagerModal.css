@@ -249,6 +249,78 @@
   background-color: var(--primaryHover);
 }
 
+.module-item-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.module-branch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background-color: var(--secondaryBackground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.module-branch-row label {
+  font-weight: 500;
+  color: var(--text);
+  min-width: 50px;
+}
+
+.current-branch {
+  font-weight: 600;
+  color: var(--accent);
+  padding: 4px 8px;
+  background-color: var(--primary);
+  border-radius: 4px;
+  min-width: 80px;
+  text-align: center;
+}
+
+.module-branch-row input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--background);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.module-branch-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.branch-apply-button,
+.branch-reset-button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--primary);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.branch-apply-button:hover:not(:disabled),
+.branch-reset-button:hover:not(:disabled) {
+  background-color: var(--primaryHover);
+}
+
+.branch-apply-button:disabled,
+.branch-reset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .module-info {
   flex: 1;
 }

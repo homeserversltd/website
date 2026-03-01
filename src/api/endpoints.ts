@@ -41,6 +41,7 @@ export type AdminEndpoints = {
     modules: string;
     moduleStatus: (moduleName: string) => string;
     moduleToggle: (moduleName: string) => string;
+    moduleBranch: (moduleName: string) => string;
     componentToggle: (moduleName: string, componentName: string) => string;
     logs: string;
     logfile: string;
@@ -250,6 +251,7 @@ export const API_ENDPOINTS: APIEndpoints = {
         modules: '/admin/updates/modules',
         moduleStatus: (moduleName: string) => `/admin/updates/modules/${moduleName}/status`,
         moduleToggle: (moduleName: string) => `/admin/updates/modules/${moduleName}/toggle`,
+        moduleBranch: (moduleName: string) => `/admin/updates/modules/${moduleName}/branch`,
         componentToggle: (moduleName: string, componentName: string) => `/admin/updates/modules/${moduleName}/components/${componentName}/toggle`,
         logs: '/admin/updates/logs',
         logfile: '/admin/updates/logfile',

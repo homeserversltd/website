@@ -334,6 +334,69 @@ def toggle_component(module_name, component_name):
         logger.error(f"[UPDATEMAN] Error toggling component: {str(e)}")
         return error_response(f"Failed to toggle component: {str(e)}")
 
+@bp.route('/api/admin/updates/modules/<module_name>/branch', methods=['POST'])
+@admin_required
+def set_module_branch(module_name):
+    """
+    Set the branch for a specific module.
+
+    Args:
+        module_name: Name of the module to set branch for
+
+    Expected JSON payload:
+    {
+        "branch": str     # Branch name to set
+    }
+    """
+    try:
+        data = request.get_json()
+        logger.info(f"[UPDATEMAN] Set module branch {module_name} request: {json.dumps(data, indent=2)}")
+        start_time = time.time()
+
+        if not data or 'branch' not in data:
+            return error_response("Missing 'branch' field in request")
+
+        branch = data['branch']
+
+        # Validate module name using existing validation
+        if not utils.validate_module_name(module_name):
+            return error_response("Invalid module name")
+
+        # Validate branch name (no .., /, non-printable)
+        if ".." in branch or "/" in branch or not branch.isprintable():
+            return error_response("Invalid branch name")
+
+        logger.info(f"[UPDATEMAN] Setting branch '{branch}' for module: {module_name}")
+
+        # Execute the set-branch command
+        success, message, set_result = utils.execute_update_manager("set-branch", target=module_name, branch=branch)
+
+        operation_time = time.time() - start_time
+        logger.info(f"[UPDATEMAN] Module branch set completed in {operation_time:.2f} seconds")
+
+        if not success:
+            logger.error(f"[UPDATEMAN] Module branch set failed: {message}")
+            write_to_log('admin', f'Failed to set branch for module {module_name}: {message}', 'error')
+            return error_response(f"Failed to set branch: {message}")
+
+        logger.info(f"[UPDATEMAN] Module {module_name} branch set to '{branch}' successfully")
+        write_to_log('admin', f'Module {module_name} branch set to {branch} successfully', 'info')
+
+        return success_response(
+            message=f"Module {module_name} branch set to '{branch}' successfully",
+            details={
+                "moduleName": module_name,
+                "branch": branch,
+                "setResult": set_result,
+                "setTime": int(time.time()),
+                "operationTime": f"{operation_time:.2f} seconds"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"[UPDATEMAN] Error setting module branch: {str(e)}")
+        return error_response(f"Failed to set module branch: {str(e)}")
+
 @bp.route('/api/admin/updates/logs', methods=['GET'])
 @admin_required
 def get_update_logs():

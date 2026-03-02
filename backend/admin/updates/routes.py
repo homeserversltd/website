@@ -87,22 +87,22 @@ def apply_updates():
         force = data.get('force', False)
         logger.info(f"[UPDATEMAN] Applying updates - mode: {mode}, force: {force}")
         
-        # Execute the update manager
-        success, message, update_result = utils.execute_update_manager(mode, force=force)
+        # Launch update manager in background so the request returns before gunicorn worker timeout
+        success, message, update_result = utils.execute_update_manager_background()
         
         operation_time = time.time() - start_time
-        logger.info(f"[UPDATEMAN] Update application completed in {operation_time:.2f} seconds")
+        logger.info(f"[UPDATEMAN] Apply request completed in {operation_time:.2f} seconds (update running in background)")
         
         if not success:
-            logger.error(f"[UPDATEMAN] Update application failed: {message}")
-            write_to_log('admin', f'Update application failed: {message}', 'error')
-            return error_response(f"Failed to apply updates: {message}")
+            logger.error(f"[UPDATEMAN] Failed to start update: {message}")
+            write_to_log('admin', f'Failed to start update: {message}', 'error')
+            return error_response(f"Failed to start update: {message}")
         
-        logger.info("[UPDATEMAN] Updates applied successfully")
-        write_to_log('admin', f'Updates applied successfully using {mode} mode', 'info')
+        logger.info("[UPDATEMAN] Update started in background")
+        write_to_log('admin', 'Update started in background', 'info')
         
         return success_response(
-            message="Updates applied successfully",
+            message="Update started in background",
             details={
                 "mode": mode,
                 "force": force,

@@ -12,6 +12,32 @@ logger = logging.getLogger(__name__)
 
 # Update manager script path
 UPDATE_MANAGER_PATH = "/usr/local/lib/updates/updateManager.sh"
+UPDATE_LOG_PATH = "/var/log/homeserver/update.log"
+
+def execute_update_manager_background() -> Tuple[bool, str, Dict[str, Any]]:
+    """
+    Start the update manager in the background (full mode). Returns immediately.
+    Used for GUI apply so the HTTP request does not hit gunicorn worker timeout.
+    Caller should poll GET /api/admin/updates/log for progress.
+    """
+    try:
+        import subprocess
+        env = os.environ.copy()
+        env["PATH"] = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        cmd = ["/usr/bin/sudo", UPDATE_MANAGER_PATH]
+        logger.info(f"[UPDATEMAN-UTILS] Starting update manager in background: {' '.join(cmd)}")
+        subprocess.Popen(
+            cmd,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            env=env,
+        )
+        return True, "Update started. Poll the log for progress.", {"started": True}
+    except Exception as e:
+        logger.error(f"[UPDATEMAN-UTILS] Error starting update manager in background: {str(e)}")
+        return False, str(e), {}
 
 def execute_update_manager(mode: str, target: Optional[str] = None, component: Optional[str] = None, force: bool = False, branch: Optional[str] = None) -> Tuple[bool, str, Dict[str, Any]]:
     """

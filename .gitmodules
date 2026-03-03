@@ -30,3 +30,7 @@
 	path = premium/backblazeTab
 	url = git@github.com:homeserversltd/backblazeTab.git
 	branch = main
+[submodule "premium/chiaTab"]
+	path = premium/chiaTab
+	url = git@home.arpa:owner/chiatab.git
+	branch = master

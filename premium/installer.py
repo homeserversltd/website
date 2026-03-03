@@ -612,6 +612,20 @@ class PremiumInstaller:
             if tab_name == "backupTab":
                 logger.info("backupTab installed - venv setup available via UI install button")
                 logger.info("User can trigger venv installation via the backupTab UI or API endpoint")
+
+            # chiaTab: ensure chia-miner-keys (SSH key) is readable by www-data for deploy/update-miners
+            if tab_name == "chiaTab":
+                keys_dir = "/var/www/homeserver/premium/chia-miner-keys"
+                key_file = os.path.join(keys_dir, "key")
+                if os.path.isdir(keys_dir):
+                    try:
+                        subprocess.run(["/usr/bin/chown", "-R", "www-data:www-data", keys_dir], check=True)
+                        subprocess.run(["/bin/chmod", "700", keys_dir], check=True)
+                        if os.path.exists(key_file):
+                            subprocess.run(["/bin/chmod", "600", key_file], check=True)
+                        logger.info("chiaTab: set www-data ownership on premium/chia-miner-keys")
+                    except subprocess.CalledProcessError as e:
+                        logger.warning("chiaTab: could not set chia-miner-keys permissions: %s", e)
         except Exception as e:
             logger.warning(f"Post-install hook failed for {tab_name}: {e}")
     

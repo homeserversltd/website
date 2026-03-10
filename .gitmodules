@@ -34,3 +34,7 @@
 	path = premium/chiaTab
 	url = git@home.arpa:owner/chiatab.git
 	branch = master
+[submodule "premium/wakeonlan"]
+	path = premium/wakeonlan
+	url = git@github.com:homeserversltd/wakeonlan.git
+	branch = main

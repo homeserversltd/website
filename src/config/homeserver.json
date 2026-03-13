@@ -37,7 +37,8 @@
             "FileBrowser": true,
             "Calibre Web": true,
             "FreshRSS": true,
-            "TTYD": true
+            "TTYD": true,
+            "Woodpecker": true
           }
         },
         "data": {
@@ -88,9 +89,9 @@
               "remoteURL": "https://home.tail13aff.ts.net/vault/"
             },
             {
-              "name": "Gogs",
+              "name": "Forgejo",
               "description": "Git service",
-              "services": ["gogs"],
+              "services": ["forgejo"],
               "type": "systemd",
               "port": 3000,
               "localURL": "https://git.home.arpa",
@@ -131,6 +132,15 @@
               "port": 7070,
               "localURL": "https://rss.home.arpa",
               "remoteURL": "https://home.tail13aff.ts.net/rss/"
+            },
+            {
+              "name": "Woodpecker",
+              "description": "CI (Gogs webhook)",
+              "services": ["docker"],
+              "type": "systemd",
+              "port": 8000,
+              "localURL": "https://ci.home.arpa",
+              "remoteURL": "https://home.tail13aff.ts.net/ci/"
             }
           ]
         }

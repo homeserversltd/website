@@ -17,19 +17,19 @@
 [submodule "premium/dhcp"]
 	path = premium/dhcp
 	url = git@github.com:homeserversltd/dhcp.git
-	branch = main
+	branch = master
 [submodule "premium/youtube"]
 	path = premium/youtube
 	url = git@github.com:homeserversltd/youtube.git
-	branch = main
+	branch = master
 [submodule "premium/nasLinker"]
 	path = premium/nasLinker
 	url = git@github.com:homeserversltd/linkerTab.git
-	branch = main
+	branch = master
 [submodule "premium/backblazeTab"]
 	path = premium/backblazeTab
 	url = git@github.com:homeserversltd/backblazeTab.git
-	branch = main
+	branch = master
 [submodule "premium/chiaTab"]
 	path = premium/chiaTab
 	url = git@home.arpa:owner/chiatab.git
@@ -37,4 +37,4 @@
 [submodule "premium/wakeonlan"]
 	path = premium/wakeonlan
 	url = git@github.com:homeserversltd/wakeonlan.git
-	branch = main
+	branch = master

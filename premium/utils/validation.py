@@ -311,8 +311,8 @@ class ValidationManager:
                         all_files.append(os.path.join(tab_path, item.lstrip('/')))
         
         collect_files(root_manifest.get("files", {}))
-        
-        # Check file existence
+
+        # Check file existence: every declared file must be present
         for file_path in all_files:
             if not os.path.exists(file_path):
                 self.logger.error(f"Manifest file not found: {file_path}")
@@ -382,7 +382,8 @@ class ValidationManager:
             skip_installed_check: If True, skip checking if tab is already installed
         """
         self.logger.debug(f"Validating complete file manifest for {tab_path}")
-        
+        tab_path = os.path.normpath(os.path.abspath(tab_path))
+
         # Helper: determine if a path is git-related and should be ignored for manifest strictness
         def _is_git_related(path: str) -> bool:
             try:
@@ -434,59 +435,70 @@ class ValidationManager:
                 except OSError:
                     pass  # If we can't read it, continue with validation
         
-        # Get all actual files in the source directory
+        # Get all actual files in the source directory (design: every file must be declared)
+        # Include dotfiles; only repo-metadata dotfiles are excluded from the scan
         actual_files = []
-        
+        _ignore_dotfiles = {'.gitignore', '.gitattributes', '.gitmodules'}
+
+        def _add_file(full_path: str, filename: str, at_root: bool) -> None:
+            if filename.startswith('.') and filename in _ignore_dotfiles:
+                return
+            if at_root and filename == "index.json":
+                return
+            if "__pycache__" in full_path:
+                return
+            actual_files.append(full_path)
+
         try:
+            # Explicitly list root directory first so root-level dotfiles (e.g. .woodpecker.yml) are always included
+            try:
+                for name in os.listdir(tab_path):
+                    full = os.path.join(tab_path, name)
+                    if os.path.isfile(full):
+                        _add_file(full, name, at_root=True)
+            except OSError as e:
+                self.logger.error(f"Error listing tab root {tab_path}: {e}")
+                return False
+
             for root, dirs, files in os.walk(tab_path):
-                # Skip hidden directories (starting with .)
-                # Allow .git specifically to exist but do not traverse into it
-                dirs[:] = [d for d in dirs if not d.startswith('.') or d == '.git']
-                
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
                 for file in files:
-                    # Skip hidden files
-                    if file.startswith('.'):
-                        continue
-                    
-                    # Skip ONLY the root index.json, not all index.json files
                     file_path = os.path.join(root, file)
-                    if file == "index.json" and root == tab_path:
-                        continue  # Skip root index.json only
-                    
-                    # Skip __pycache__ files in source directory (they're not evidence of installation)
-                    if "__pycache__" in file_path:
-                        continue
-                    
-                    actual_files.append(file_path)
-        
+                    at_root = (os.path.normpath(root) == tab_path)
+                    if file_path not in actual_files:
+                        _add_file(file_path, file, at_root)
         except Exception as e:
             self.logger.error(f"Error scanning directory {tab_path}: {str(e)}")
             return False
         
-        # Normalize all paths to absolute paths for comparison
-        tab_path_abs = os.path.abspath(tab_path)
-        manifest_files_abs = set(os.path.abspath(f) for f in manifest_files)
-        actual_files_abs = set(os.path.abspath(f) for f in actual_files)
-        
+        # Normalize all paths to absolute, resolved paths for comparison (symlinks can cause manifest path != walk path)
+        def _norm(p: str) -> str:
+            try:
+                return os.path.normpath(os.path.realpath(os.path.abspath(p)))
+            except OSError:
+                return os.path.normpath(os.path.abspath(p))
+        tab_path_abs = _norm(tab_path)
+        manifest_files_abs = set(_norm(f) for f in manifest_files)
+        actual_files_abs = set(_norm(f) for f in actual_files)
+
         # Remove git-related entries from both sets to allow leniency for git metadata
         manifest_files_abs = {f for f in manifest_files_abs if not _is_git_related(f)}
         actual_files_abs = {f for f in actual_files_abs if not _is_git_related(f)}
-        
+
         # Find extra files not in manifest
         extra_files = actual_files_abs - manifest_files_abs
-        
+
         if extra_files:
             self.logger.error(f"SECURITY VIOLATION: Extra files found not declared in manifest:")
             for extra_file in sorted(extra_files):
                 relative_path = os.path.relpath(extra_file, tab_path_abs)
                 self.logger.error(f"  - {relative_path}")
-            
             self.logger.error("All files in premium tab must be explicitly declared in root index.json")
             return False
-        
-        # Find missing files declared in manifest but not present
+
+        # Find missing files declared in manifest but not present (every declared file must exist)
         missing_files = manifest_files_abs - actual_files_abs
-        
+
         if missing_files:
             self.logger.error(f"Missing files declared in manifest but not found:")
             for missing_file in sorted(missing_files):

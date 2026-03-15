@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 # Update manager script path
 UPDATE_MANAGER_PATH = "/usr/local/lib/updates/updateManager.sh"
 UPDATE_LOG_PATH = "/var/log/homeserver/update.log"
+UPDATES_ROOT = "/usr/local/lib/updates"
+UPDATES_INDEX_FILE = os.path.join(UPDATES_ROOT, "index.json")
 
 def execute_update_manager_background() -> Tuple[bool, str, Dict[str, Any]]:
     """
@@ -635,6 +637,118 @@ def get_system_update_info() -> Tuple[bool, str, Dict[str, Any]]:
     except Exception as e:
         logger.error(f"[UPDATEMAN-UTILS] Error getting system info: {str(e)}")
         return False, f"Error getting system info: {str(e)}", {}
+
+def _run_completion_check(entry: Dict[str, Any]) -> bool:
+    """
+    Run the optional completion_check for an interactive (A/B switch).
+    If the check passes, the interactive is considered already done.
+    Supported type: "systemd_switch" with "active" (service must be active) and
+    "inactive" (service must not be active). Both backend and frontend will show done.
+    """
+    check = entry.get("completion_check") or {}
+    if not isinstance(check, dict):
+        return False
+    kind = check.get("type")
+    if kind != "systemd_switch":
+        return False
+    active_svc = check.get("active")
+    inactive_svc = check.get("inactive")
+    if not active_svc:
+        return False
+    try:
+        success_active, _, _ = execute_command(
+            ["/usr/bin/systemctl", "is-active", active_svc], timeout=5
+        )
+        if not success_active:
+            return False
+        if inactive_svc:
+            success_inactive, _, _ = execute_command(
+                ["/usr/bin/systemctl", "is-active", inactive_svc], timeout=5
+            )
+            if success_inactive:
+                return False
+        return True
+    except Exception as e:
+        logger.debug(f"[UPDATEMAN-UTILS] Completion check failed for {entry.get('id', '?')}: {e}")
+        return False
+
+
+def get_interactives() -> Tuple[bool, str, Dict[str, Any]]:
+    """
+    Read interactives from updates index.json and return list with has_run state.
+    On load, for each interactive that has a completion_check and is not already
+    has_run, run the check (e.g. systemd_switch: A active, B inactive). If it passes,
+    mark as done so both backend response and frontend display "Already run".
+    Returns: (success, message, {"interactives": [...]})
+    """
+    try:
+        if not os.path.exists(UPDATES_INDEX_FILE):
+            logger.warning(f"[UPDATEMAN-UTILS] Updates index not found: {UPDATES_INDEX_FILE}")
+            return True, "No interactives configured", {"interactives": []}
+        with open(UPDATES_INDEX_FILE, "r") as f:
+            data = json.load(f)
+        interactives = data.get("interactives", [])
+        for entry in interactives:
+            if entry.get("has_run"):
+                continue
+            if not entry.get("completion_check"):
+                continue
+            if _run_completion_check(entry):
+                entry["has_run"] = True
+                logger.info(
+                    "[UPDATEMAN-UTILS] Completion check passed for interactive %s; marking as done",
+                    entry.get("id", "?"),
+                )
+        return True, "Interactives loaded", {"interactives": interactives}
+    except Exception as e:
+        logger.error(f"[UPDATEMAN-UTILS] Error reading interactives from index: {str(e)}")
+        return False, str(e), {"interactives": []}
+
+
+def run_interactive(interactive_id: str) -> Tuple[bool, str, Dict[str, Any]]:
+    """
+    Run a single interactive script by id, then mark has_run true in index.json.
+    Script path = UPDATES_ROOT / script_dir / script (from index.json interactives).
+    Returns: (success, message, result_data)
+    """
+    try:
+        if not os.path.exists(UPDATES_INDEX_FILE):
+            return False, "Updates index not found", {}
+        with open(UPDATES_INDEX_FILE, "r") as f:
+            data = json.load(f)
+        interactives = data.get("interactives", [])
+        entry = next((i for i in interactives if i.get("id") == interactive_id), None)
+        if not entry:
+            return False, f"Interactive '{interactive_id}' not found", {}
+        script_name = entry.get("script", "")
+        script_dir_rel = entry.get("script_dir", "")
+        if not script_name or not script_name.endswith(".sh"):
+            return False, "Invalid script name", {}
+        script_path = os.path.join(UPDATES_ROOT, script_dir_rel, script_name)
+        if not os.path.isfile(script_path):
+            return False, f"Script not found: {script_path}", {}
+        # Run script as root with timeout (e.g. 10 min)
+        env = os.environ.copy()
+        env["PATH"] = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        cmd = ["/usr/bin/sudo", "/bin/bash", script_path]
+        logger.info(f"[UPDATEMAN-UTILS] Running interactive {interactive_id}: {' '.join(cmd)}")
+        success, stdout, stderr = execute_command(cmd, timeout=600)
+        if not success:
+            logger.error(f"[UPDATEMAN-UTILS] Interactive {interactive_id} failed: {stderr}")
+            return False, stderr or "Script failed", {"stdout": stdout, "stderr": stderr}
+        # Mark has_run true and persist to index.json
+        for i in interactives:
+            if i.get("id") == interactive_id:
+                i["has_run"] = True
+                break
+        with open(UPDATES_INDEX_FILE, "w") as f:
+            json.dump(data, f, indent=4)
+        logger.info(f"[UPDATEMAN-UTILS] Interactive {interactive_id} completed and marked run")
+        return True, "Interactive completed successfully", {"stdout": stdout, "stderr": stderr}
+    except Exception as e:
+        logger.error(f"[UPDATEMAN-UTILS] Error running interactive: {str(e)}")
+        return False, str(e), {}
+
 
 def validate_module_name(module_name: str) -> bool:
     """

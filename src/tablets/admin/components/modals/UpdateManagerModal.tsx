@@ -152,7 +152,16 @@ interface ScheduleResponse {
   error?: string;
 }
 
-type ViewMode = 'overview' | 'modules' | 'schedule' | 'logs' | 'updating';
+type ViewMode = 'overview' | 'modules' | 'schedule' | 'interactives' | 'logs' | 'updating';
+
+interface InteractiveItem {
+  id: string;
+  name: string;
+  description?: string;
+  script: string;
+  script_dir: string;
+  has_run: boolean;
+}
 
 export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose }) => {
   // State management
@@ -170,6 +179,9 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     time: '03:00',
     dayOfWeek: 0
   });
+  const [interactives, setInteractives] = useState<InteractiveItem[]>([]);
+  const [isLoadingInteractives, setIsLoadingInteractives] = useState(false);
+  const [runningInteractiveId, setRunningInteractiveId] = useState<string | null>(null);
   
   // Loading states
   const [isChecking, setIsChecking] = useState(false);
@@ -377,6 +389,31 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
       toast.error('Failed to load modules');
     } finally {
       setIsLoadingModules(false);
+    }
+  }, [api, toast, logApiActivity]);
+
+  // Load interactives list (optional one-time runnables, e.g. Gogs to Forgejo migration)
+  const loadInteractives = useCallback(async () => {
+    const endpoint = API_ENDPOINTS.admin.updates.interactives;
+    setIsLoadingInteractives(true);
+    try {
+      logApiActivity('Load Interactives - Request', endpoint, 'GET');
+      const response = await api.get<{ status: string; message?: string; error?: string; details?: { interactives?: InteractiveItem[] }; data?: { interactives?: InteractiveItem[] } }>(endpoint);
+      logApiActivity('Load Interactives - Response', endpoint, 'GET', undefined, response);
+      const list = Array.isArray(response?.details?.interactives)
+        ? response.details.interactives
+        : Array.isArray((response as { data?: { interactives?: InteractiveItem[] } })?.data?.interactives)
+          ? (response as { data: { interactives: InteractiveItem[] } }).data.interactives
+          : [];
+      setInteractives(list);
+      if (response.status !== 'success' && response.error) toast.error(response.error);
+    } catch (error) {
+      logApiActivity('Load Interactives - Error', endpoint, 'GET', undefined, undefined, error);
+      logger.error('Error loading interactives:', error);
+      toast.error('Failed to load interactives');
+      setInteractives([]);
+    } finally {
+      setIsLoadingInteractives(false);
     }
   }, [api, toast, logApiActivity]);
 
@@ -675,8 +712,33 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
       await refreshOverviewData();
     } else if (newMode === 'logs') {
       await fetchLogfile();
+    } else if (newMode === 'interactives') {
+      await loadInteractives();
     }
-  }, [isApplying, refreshOverviewData]);
+  }, [isApplying, refreshOverviewData, fetchLogfile, loadInteractives]);
+
+  // Run a single interactive (e.g. migration 10000000)
+  const handleRunInteractive = useCallback(async (interactiveId: string) => {
+    const endpoint = API_ENDPOINTS.admin.updates.interactiveRun(interactiveId);
+    setRunningInteractiveId(interactiveId);
+    try {
+      logApiActivity(`Run Interactive ${interactiveId} - Request`, endpoint, 'POST');
+      const response = await api.post<{ status: string; message?: string; error?: string }>(endpoint, {});
+      logApiActivity(`Run Interactive ${interactiveId} - Response`, endpoint, 'POST', {}, response);
+      if (response.status === 'success') {
+        toast.success(response.message || 'Interactive completed successfully');
+        await loadInteractives();
+      } else {
+        toast.error(response.error || response.message || 'Interactive failed');
+      }
+    } catch (error) {
+      logApiActivity(`Run Interactive ${interactiveId} - Error`, endpoint, 'POST', {}, undefined, error);
+      logger.error(`Error running interactive ${interactiveId}:`, error);
+      toast.error('Failed to run interactive');
+    } finally {
+      setRunningInteractiveId(null);
+    }
+  }, [api, toast, loadInteractives, logApiActivity]);
 
   // Render overview section
   const renderOverview = () => (
@@ -863,6 +925,72 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
                 )}
               </div>
             )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render interactives section (optional one-time runnables, e.g. Gogs to Forgejo migration)
+  const renderInteractives = () => (
+    <div className="interactives-management">
+      <div className="interactives-header">
+        <h4>
+          <FontAwesomeIcon icon={faPlay} />
+          Interactives
+        </h4>
+        <button
+          type="button"
+          className="refresh-button"
+          onClick={loadInteractives}
+          disabled={isLoadingInteractives}
+        >
+          <FontAwesomeIcon icon={isLoadingInteractives ? faSpinner : faSync} spin={isLoadingInteractives} />
+          Refresh
+        </button>
+      </div>
+      <p className="interactives-description">
+        Optional one-time actions. Run when you are ready; they are not applied automatically.
+      </p>
+      <div className="interactives-list">
+        {interactives.length === 0 && !isLoadingInteractives && (
+          <p className="no-interactives">No interactives available.</p>
+        )}
+        {interactives.map((item) => (
+          <div key={item.id} className="interactive-item-container">
+            <div className="interactive-item">
+              <div className="interactive-info">
+                <h5>{item.name}</h5>
+                {item.description && <p>{item.description}</p>}
+              </div>
+              <div className="interactive-status">
+                {item.has_run ? (
+                  <span className="interactive-status-badge done">
+                    <FontAwesomeIcon icon={faCheckCircle} />
+                    Already run
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="interactive-run-button"
+                    onClick={() => handleRunInteractive(item.id)}
+                    disabled={runningInteractiveId !== null}
+                  >
+                    {runningInteractiveId === item.id ? (
+                      <>
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                        Running...
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faPlay} />
+                        Run
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -1152,6 +1280,14 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
           </button>
           <button
             type="button"
+            className={`tab-button ${viewMode === 'interactives' ? 'active' : ''}`}
+            onClick={() => handleViewModeChange('interactives')}
+            disabled={isApplying}
+          >
+            Interactives
+          </button>
+          <button
+            type="button"
             className={`tab-button ${viewMode === 'logs' ? 'active' : ''}`}
             onClick={() => handleViewModeChange('logs')}
             disabled={isApplying}
@@ -1165,6 +1301,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
         {viewMode === 'overview' && renderOverview()}
         {viewMode === 'modules' && renderModules()}
         {viewMode === 'schedule' && renderSchedule()}
+        {viewMode === 'interactives' && renderInteractives()}
         {viewMode === 'logs' && renderLogs()}
         {viewMode === 'updating' && renderUpdating()}
       </div>

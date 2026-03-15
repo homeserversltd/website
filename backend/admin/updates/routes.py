@@ -397,6 +397,62 @@ def set_module_branch(module_name):
         logger.error(f"[UPDATEMAN] Error setting module branch: {str(e)}")
         return error_response(f"Failed to set module branch: {str(e)}")
 
+@bp.route('/api/admin/updates/interactives', methods=['GET'])
+@admin_required
+def list_interactives():
+    """
+    List optional, user-triggered runnables (e.g. one-time migrations).
+    Not run automatically; shown in Update modal Interactives tab.
+    """
+    try:
+        logger.info("[UPDATEMAN] Listing interactives")
+        success, message, data = utils.get_interactives()
+        if not success:
+            return error_response(message)
+        interactives_list = data.get("interactives", [])
+        logger.info(f"[UPDATEMAN] Returning {len(interactives_list)} interactive(s)")
+        return success_response(
+            message="Interactives listed successfully",
+            details={
+                "interactives": interactives_list,
+                "listTime": int(time.time()),
+            }
+        )
+    except Exception as e:
+        logger.error(f"[UPDATEMAN] Error listing interactives: {str(e)}")
+        return error_response(f"Failed to list interactives: {str(e)}")
+
+
+@bp.route('/api/admin/updates/interactives/<interactive_id>/run', methods=['POST'])
+@admin_required
+def run_interactive(interactive_id):
+    """
+    Run a single interactive by id (e.g. migration 10000000 Gogs to Forgejo).
+    Script runs as root; on success has_run is set true in interactives.json.
+    """
+    try:
+        if not interactive_id or ".." in interactive_id or "/" in interactive_id:
+            return error_response("Invalid interactive id")
+        logger.info(f"[UPDATEMAN] Running interactive: {interactive_id}")
+        success, message, result = utils.run_interactive(interactive_id)
+        if not success:
+            logger.error(f"[UPDATEMAN] Interactive {interactive_id} failed: {message}")
+            write_to_log('admin', f'Interactive {interactive_id} failed: {message}', 'error')
+            return error_response(message)
+        write_to_log('admin', f'Interactive {interactive_id} completed successfully', 'info')
+        return success_response(
+            message="Interactive completed successfully",
+            details={
+                "interactiveId": interactive_id,
+                "runTime": int(time.time()),
+                **result,
+            }
+        )
+    except Exception as e:
+        logger.error(f"[UPDATEMAN] Error running interactive: {str(e)}")
+        return error_response(f"Failed to run interactive: {str(e)}")
+
+
 @bp.route('/api/admin/updates/logs', methods=['GET'])
 @admin_required
 def get_update_logs():

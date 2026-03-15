@@ -255,6 +255,119 @@
   gap: 8px;
 }
 
+/* Interactives section */
+.interactives-management {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.interactives-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.interactives-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.interactives-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--textMuted);
+}
+
+.interactives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.no-interactives {
+  margin: 0;
+  color: var(--textMuted);
+  font-style: italic;
+}
+
+.interactive-item-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.interactive-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 15px;
+  background-color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.interactive-info {
+  flex: 1;
+}
+
+.interactive-info h5 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.interactive-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--textMuted);
+}
+
+.interactive-status {
+  flex-shrink: 0;
+}
+
+.interactive-status-badge.done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  color: var(--success);
+  background-color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.interactive-run-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--accent);
+  color: var(--buttonText);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.interactive-run-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.interactive-run-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .module-branch-row {
   display: flex;
   align-items: center;

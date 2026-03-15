@@ -32,13 +32,12 @@
             "Piwigo": true,
             "MkDocs": true,
             "Vaultwarden": true,
-            "Gogs": true,
+            "Forgejo": true,
             "Navidrome": true,
             "FileBrowser": true,
             "Calibre Web": true,
             "FreshRSS": true,
-            "TTYD": true,
-            "Woodpecker": true
+            "TTYD": true
           }
         },
         "data": {
@@ -132,15 +131,6 @@
               "port": 7070,
               "localURL": "https://rss.home.arpa",
               "remoteURL": "https://home.tail13aff.ts.net/rss/"
-            },
-            {
-              "name": "Woodpecker",
-              "description": "CI (Gogs webhook)",
-              "services": ["docker"],
-              "type": "systemd",
-              "port": 8000,
-              "localURL": "https://ci.home.arpa",
-              "remoteURL": "https://home.tail13aff.ts.net/ci/"
             }
           ]
         }
@@ -195,11 +185,11 @@
     },
     "global": {
       "version": {
-        "version": "0.9.107",
-        "releaseDate": "02-23-2026",
+        "version": "0.9.108",
+        "releaseDate": "03-14-2026",
         "generation": 1,
-        "buildId": "02bc69ef",
-        "lastUpdated": "02-23-2026"
+        "buildId": "a6f406a6",
+        "lastUpdated": "03-14-2026"
       },
       "theme": {
         "name": "dark"

@@ -47,6 +47,8 @@ export type AdminEndpoints = {
     logfile: string;
     systemInfo: string;
     schedule: string;
+    interactives: string;
+    interactiveRun: (id: string) => string;
   };
 };
 
@@ -257,6 +259,8 @@ export const API_ENDPOINTS: APIEndpoints = {
         logfile: '/admin/updates/logfile',
         systemInfo: '/admin/updates/system-info',
         schedule: '/admin/updates/schedule',
+        interactives: '/admin/updates/interactives',
+        interactiveRun: (id: string) => `/admin/updates/interactives/${encodeURIComponent(id)}/run`,
       },
     },
   

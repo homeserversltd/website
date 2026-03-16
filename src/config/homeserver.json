@@ -185,11 +185,11 @@
     },
     "global": {
       "version": {
-        "version": "0.9.109",
-        "releaseDate": "03-15-2026",
+        "version": "0.9.110",
+        "releaseDate": "03-16-2026",
         "generation": 1,
-        "buildId": "e23338ba",
-        "lastUpdated": "03-15-2026"
+        "buildId": "0865dbc6",
+        "lastUpdated": "03-16-2026"
       },
       "theme": {
         "name": "dark"

@@ -15,6 +15,8 @@ UPDATE_MANAGER_PATH = "/usr/local/lib/updates/updateManager.sh"
 UPDATE_LOG_PATH = "/var/log/homeserver/update.log"
 UPDATES_ROOT = "/usr/local/lib/updates"
 UPDATES_INDEX_FILE = os.path.join(UPDATES_ROOT, "index.json")
+UPDATES_INTERACTABLES_INDEX_FILE = os.path.join(UPDATES_ROOT, "modules", "interactables", "index.json")
+INTERACTABLES_SCRIPT_DIR = os.path.join(UPDATES_ROOT, "modules", "interactables", "src")
 
 def execute_update_manager_background() -> Tuple[bool, str, Dict[str, Any]]:
     """
@@ -638,14 +640,23 @@ def get_system_update_info() -> Tuple[bool, str, Dict[str, Any]]:
         logger.error(f"[UPDATEMAN-UTILS] Error getting system info: {str(e)}")
         return False, f"Error getting system info: {str(e)}", {}
 
-def _check_show_only_if(entry: Dict[str, Any]) -> bool:
+def _check_show_only_if(entry: Dict[str, Any], all_interactives: Optional[List[Dict[str, Any]]] = None) -> bool:
     """
     If entry has show_only_if.debian_codename, only True when current system
-    codename (lsb_release -cs) matches. Otherwise True (no filter).
+    codename (lsb_release -cs) matches. If show_only_if.after_interactive is set,
+    only True when that other interactive has_run. Otherwise True (no filter).
     """
     show = entry.get("show_only_if") or {}
     if not isinstance(show, dict):
         return True
+    after_id = show.get("after_interactive")
+    if after_id and all_interactives is not None:
+        other = next((e for e in all_interactives if e.get("id") == after_id), None)
+        if other is None:
+            logger.debug("[UPDATEMAN-UTILS] show_only_if after_interactive: %s not found", after_id)
+            return False
+        if not other.get("has_run"):
+            return False
     codename = show.get("debian_codename")
     if not codename:
         return True
@@ -698,81 +709,93 @@ def _run_completion_check(entry: Dict[str, Any]) -> bool:
 
 def get_interactives() -> Tuple[bool, str, Dict[str, Any]]:
     """
-    Read interactives from updates index.json and return list with has_run state.
-    On load, for each interactive that has a completion_check and is not already
-    has_run, run the check (e.g. systemd_switch: A active, B inactive). If it passes,
-    mark as done so both backend response and frontend display "Already run".
-    Returns: (success, message, {"interactives": [...]})
+    Read interactives from modules/interactables/index.json (single source of truth)
+    and return list with has_run state. On load, for each interactive that has a
+    completion_check and is not already has_run, run the check (e.g. systemd_switch:
+    A active, B inactive). If it passes, mark as done so both backend and frontend
+    display "Already run". Returns: (success, message, {"interactives": [...]})
     """
     try:
-        if not os.path.exists(UPDATES_INDEX_FILE):
-            logger.warning(f"[UPDATEMAN-UTILS] Updates index not found: {UPDATES_INDEX_FILE}")
+        if not os.path.exists(UPDATES_INTERACTABLES_INDEX_FILE):
+            logger.warning(
+                "[UPDATEMAN-UTILS] Interactables module index not found: %s",
+                UPDATES_INTERACTABLES_INDEX_FILE,
+            )
             return True, "No interactives configured", {"interactives": []}
-        with open(UPDATES_INDEX_FILE, "r") as f:
+        with open(UPDATES_INTERACTABLES_INDEX_FILE, "r") as f:
             data = json.load(f)
-        interactives_raw = data.get("interactives", [])
-        interactives = [e for e in interactives_raw if _check_show_only_if(e)]
-        for entry in interactives:
+        interactives_raw = data.get("interactables", [])
+        interactives = [e for e in interactives_raw if _check_show_only_if(e, interactives_raw)]
+        updated = False
+        for entry in interactives_raw:
             if entry.get("has_run"):
                 continue
             if not entry.get("completion_check"):
                 continue
             if _run_completion_check(entry):
                 entry["has_run"] = True
+                updated = True
                 logger.info(
                     "[UPDATEMAN-UTILS] Completion check passed for interactive %s; marking as done",
                     entry.get("id", "?"),
                 )
+        if updated:
+            try:
+                with open(UPDATES_INTERACTABLES_INDEX_FILE, "w") as f:
+                    json.dump(data, f, indent=2)
+            except Exception as write_err:
+                logger.warning(
+                    "[UPDATEMAN-UTILS] Could not persist completion_check result: %s", write_err
+                )
         return True, "Interactives loaded", {"interactives": interactives}
     except Exception as e:
-        logger.error(f"[UPDATEMAN-UTILS] Error reading interactives from index: {str(e)}")
+        logger.error(
+            "[UPDATEMAN-UTILS] Error reading interactives from module index: %s", str(e)
+        )
         return False, str(e), {"interactives": []}
 
 
 def run_interactive(interactive_id: str) -> Tuple[bool, str, Dict[str, Any]]:
     """
-    Run a single interactive script by id, then mark has_run true in root index.json.
-    Script path = UPDATES_ROOT / script_dir / script (script_dir is typically
-    "modules/interactables/src"). Returns: (success, message, result_data)
+    Run a single interactive script by id, then mark has_run true in
+    modules/interactables/index.json. Script path = UPDATES_ROOT/modules/interactables/src/<script>.
+    Returns: (success, message, result_data)
     """
     try:
-        if not os.path.exists(UPDATES_INDEX_FILE):
-            return False, "Updates index not found", {}
-        with open(UPDATES_INDEX_FILE, "r") as f:
+        if not os.path.exists(UPDATES_INTERACTABLES_INDEX_FILE):
+            return False, "Interactables module index not found", {}
+        with open(UPDATES_INTERACTABLES_INDEX_FILE, "r") as f:
             data = json.load(f)
-        interactives = data.get("interactives", [])
+        interactives = data.get("interactables", [])
         entry = next((i for i in interactives if i.get("id") == interactive_id), None)
         if not entry:
             return False, f"Interactive '{interactive_id}' not found", {}
-        if not _check_show_only_if(entry):
+        if not _check_show_only_if(entry, interactives):
             return False, "Interactive not available on this system (visibility condition not met)", {}
         script_name = entry.get("script", "")
-        script_dir_rel = entry.get("script_dir", "")
         if not script_name or not script_name.endswith(".sh"):
             return False, "Invalid script name", {}
-        script_path = os.path.join(UPDATES_ROOT, script_dir_rel, script_name)
+        script_path = os.path.join(INTERACTABLES_SCRIPT_DIR, script_name)
         if not os.path.isfile(script_path):
             return False, f"Script not found: {script_path}", {}
-        # Run script as root with timeout (e.g. 10 min)
         env = os.environ.copy()
         env["PATH"] = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         cmd = ["/usr/bin/sudo", "/bin/bash", script_path]
-        logger.info(f"[UPDATEMAN-UTILS] Running interactive {interactive_id}: {' '.join(cmd)}")
+        logger.info("[UPDATEMAN-UTILS] Running interactive %s: %s", interactive_id, " ".join(cmd))
         success, stdout, stderr = execute_command(cmd, timeout=600)
         if not success:
-            logger.error(f"[UPDATEMAN-UTILS] Interactive {interactive_id} failed: {stderr}")
+            logger.error("[UPDATEMAN-UTILS] Interactive %s failed: %s", interactive_id, stderr)
             return False, stderr or "Script failed", {"stdout": stdout, "stderr": stderr}
-        # Mark has_run true and persist to index.json
         for i in interactives:
             if i.get("id") == interactive_id:
                 i["has_run"] = True
                 break
-        with open(UPDATES_INDEX_FILE, "w") as f:
-            json.dump(data, f, indent=4)
-        logger.info(f"[UPDATEMAN-UTILS] Interactive {interactive_id} completed and marked run")
+        with open(UPDATES_INTERACTABLES_INDEX_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+        logger.info("[UPDATEMAN-UTILS] Interactive %s completed and marked run", interactive_id)
         return True, "Interactive completed successfully", {"stdout": stdout, "stderr": stderr}
     except Exception as e:
-        logger.error(f"[UPDATEMAN-UTILS] Error running interactive: {str(e)}")
+        logger.error("[UPDATEMAN-UTILS] Error running interactive: %s", str(e))
         return False, str(e), {}
 
 

@@ -402,9 +402,9 @@ def set_module_branch(module_name):
 def list_interactives():
     """
     List optional, user-triggered runnables (interactables).
-    Source: root updates index.json "interactives" array; scripts live in
-    modules/interactables/src (script_dir). Not run automatically; shown in
-    Update modal Interactives tab.
+    Source: modules/interactables/index.json (single source of truth); scripts
+    live in modules/interactables/src. Not run automatically; shown in Update
+    modal Interactives tab.
     """
     try:
         logger.info("[UPDATEMAN] Listing interactives")
@@ -430,7 +430,7 @@ def list_interactives():
 def run_interactive(interactive_id):
     """
     Run a single interactive by id (script in modules/interactables/src).
-    Script runs as root; on success has_run is set true in root updates index.json.
+    Script runs as root; on success has_run is set true in modules/interactables/index.json.
     """
     try:
         if not interactive_id or ".." in interactive_id or "/" in interactive_id:

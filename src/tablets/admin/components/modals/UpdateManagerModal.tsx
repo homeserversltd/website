@@ -154,7 +154,7 @@ interface ScheduleResponse {
 
 type ViewMode = 'overview' | 'modules' | 'schedule' | 'interactives' | 'logs' | 'updating';
 
-/** One interactive item; matches root updates index.json interactives[] (script_dir is modules/interactables/src). */
+/** One interactive item; matches interactables module index (modules/interactables/index.json interactables[]). */
 interface InteractiveItem {
   id: string;
   name: string;
@@ -404,7 +404,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     }
   }, [api, toast, logApiActivity]);
 
-  // Load interactives list (optional one-time runnables from modules/interactables; backend reads root index.json)
+  // Load interactives list (optional one-time runnables; backend reads modules/interactables/index.json)
   const loadInteractives = useCallback(async () => {
     const endpoint = API_ENDPOINTS.admin.updates.interactives;
     setIsLoadingInteractives(true);
@@ -725,7 +725,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     }
   }, [isApplying, refreshOverviewData, fetchLogfile, loadInteractives]);
 
-  // Run a single interactive (e.g. migration 10000000)
+  // Run a single interactive (e.g. gogs_to_forgejo, debian12_to_13)
   const handleRunInteractive = useCallback(async (interactiveId: string) => {
     const endpoint = API_ENDPOINTS.admin.updates.interactiveRun(interactiveId);
     setRunningInteractiveId(interactiveId);

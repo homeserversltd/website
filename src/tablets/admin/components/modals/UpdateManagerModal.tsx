@@ -154,6 +154,7 @@ interface ScheduleResponse {
 
 type ViewMode = 'overview' | 'modules' | 'schedule' | 'interactives' | 'logs' | 'updating';
 
+/** One interactive item; matches root updates index.json interactives[] (script_dir is modules/interactables/src). */
 interface InteractiveItem {
   id: string;
   name: string;
@@ -161,6 +162,17 @@ interface InteractiveItem {
   script: string;
   script_dir: string;
   has_run: boolean;
+}
+
+/** GET /admin/updates/interactives response; backend returns details.interactives. */
+interface InteractivesListResponse {
+  status: string;
+  message?: string;
+  details?: {
+    interactives: InteractiveItem[];
+    listTime: number;
+  };
+  error?: string;
 }
 
 export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose }) => {
@@ -278,13 +290,13 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     };
   }, [updateStartTime, isApplying, calculateDuration]);
 
-  // Load initial data
+  // Load initial data (including interactives so Interactives tab is ready)
   useEffect(() => {
     loadSystemInfo();
     loadModules();
     handleCheckUpdates();
     loadSchedule();
-    // Preload logs lightly
+    loadInteractives();
     fetchLogfile();
   }, []);
   // Fetch raw update logfile
@@ -392,19 +404,15 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     }
   }, [api, toast, logApiActivity]);
 
-  // Load interactives list (optional one-time runnables, e.g. Gogs to Forgejo migration)
+  // Load interactives list (optional one-time runnables from modules/interactables; backend reads root index.json)
   const loadInteractives = useCallback(async () => {
     const endpoint = API_ENDPOINTS.admin.updates.interactives;
     setIsLoadingInteractives(true);
     try {
       logApiActivity('Load Interactives - Request', endpoint, 'GET');
-      const response = await api.get<{ status: string; message?: string; error?: string; details?: { interactives?: InteractiveItem[] }; data?: { interactives?: InteractiveItem[] } }>(endpoint);
+      const response = await api.get<InteractivesListResponse>(endpoint);
       logApiActivity('Load Interactives - Response', endpoint, 'GET', undefined, response);
-      const list = Array.isArray(response?.details?.interactives)
-        ? response.details.interactives
-        : Array.isArray((response as { data?: { interactives?: InteractiveItem[] } })?.data?.interactives)
-          ? (response as { data: { interactives: InteractiveItem[] } }).data.interactives
-          : [];
+      const list = Array.isArray(response?.details?.interactives) ? response.details.interactives : [];
       setInteractives(list);
       if (response.status !== 'success' && response.error) toast.error(response.error);
     } catch (error) {

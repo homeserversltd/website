@@ -638,6 +638,29 @@ def get_system_update_info() -> Tuple[bool, str, Dict[str, Any]]:
         logger.error(f"[UPDATEMAN-UTILS] Error getting system info: {str(e)}")
         return False, f"Error getting system info: {str(e)}", {}
 
+def _check_show_only_if(entry: Dict[str, Any]) -> bool:
+    """
+    If entry has show_only_if.debian_codename, only True when current system
+    codename (lsb_release -cs) matches. Otherwise True (no filter).
+    """
+    show = entry.get("show_only_if") or {}
+    if not isinstance(show, dict):
+        return True
+    codename = show.get("debian_codename")
+    if not codename:
+        return True
+    try:
+        success, stdout, _ = execute_command(["/usr/bin/lsb_release", "-cs"], timeout=5)
+        if not success or not stdout:
+            logger.debug("[UPDATEMAN-UTILS] show_only_if: lsb_release -cs failed or empty")
+            return False
+        current = stdout.strip().lower()
+        return current == codename.lower()
+    except Exception as e:
+        logger.debug(f"[UPDATEMAN-UTILS] show_only_if check failed: {e}")
+        return False
+
+
 def _run_completion_check(entry: Dict[str, Any]) -> bool:
     """
     Run the optional completion_check for an interactive (A/B switch).
@@ -687,7 +710,8 @@ def get_interactives() -> Tuple[bool, str, Dict[str, Any]]:
             return True, "No interactives configured", {"interactives": []}
         with open(UPDATES_INDEX_FILE, "r") as f:
             data = json.load(f)
-        interactives = data.get("interactives", [])
+        interactives_raw = data.get("interactives", [])
+        interactives = [e for e in interactives_raw if _check_show_only_if(e)]
         for entry in interactives:
             if entry.get("has_run"):
                 continue
@@ -707,9 +731,9 @@ def get_interactives() -> Tuple[bool, str, Dict[str, Any]]:
 
 def run_interactive(interactive_id: str) -> Tuple[bool, str, Dict[str, Any]]:
     """
-    Run a single interactive script by id, then mark has_run true in index.json.
-    Script path = UPDATES_ROOT / script_dir / script (from index.json interactives).
-    Returns: (success, message, result_data)
+    Run a single interactive script by id, then mark has_run true in root index.json.
+    Script path = UPDATES_ROOT / script_dir / script (script_dir is typically
+    "modules/interactables/src"). Returns: (success, message, result_data)
     """
     try:
         if not os.path.exists(UPDATES_INDEX_FILE):
@@ -720,6 +744,8 @@ def run_interactive(interactive_id: str) -> Tuple[bool, str, Dict[str, Any]]:
         entry = next((i for i in interactives if i.get("id") == interactive_id), None)
         if not entry:
             return False, f"Interactive '{interactive_id}' not found", {}
+        if not _check_show_only_if(entry):
+            return False, "Interactive not available on this system (visibility condition not met)", {}
         script_name = entry.get("script", "")
         script_dir_rel = entry.get("script_dir", "")
         if not script_name or not script_name.endswith(".sh"):

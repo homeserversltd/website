@@ -401,8 +401,10 @@ def set_module_branch(module_name):
 @admin_required
 def list_interactives():
     """
-    List optional, user-triggered runnables (e.g. one-time migrations).
-    Not run automatically; shown in Update modal Interactives tab.
+    List optional, user-triggered runnables (interactables).
+    Source: root updates index.json "interactives" array; scripts live in
+    modules/interactables/src (script_dir). Not run automatically; shown in
+    Update modal Interactives tab.
     """
     try:
         logger.info("[UPDATEMAN] Listing interactives")
@@ -427,8 +429,8 @@ def list_interactives():
 @admin_required
 def run_interactive(interactive_id):
     """
-    Run a single interactive by id (e.g. migration 10000000 Gogs to Forgejo).
-    Script runs as root; on success has_run is set true in interactives.json.
+    Run a single interactive by id (script in modules/interactables/src).
+    Script runs as root; on success has_run is set true in root updates index.json.
     """
     try:
         if not interactive_id or ".." in interactive_id or "/" in interactive_id:

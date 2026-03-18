@@ -772,6 +772,8 @@ def run_interactive(interactive_id: str) -> Tuple[bool, str, Dict[str, Any]]:
             return False, f"Interactive '{interactive_id}' not found", {}
         if not _check_show_only_if(entry, interactives):
             return False, "Interactive not available on this system (visibility condition not met)", {}
+        if entry.get("ready") is False:
+            return False, "This interactive is not ready yet; it is listed but should not be run.", {}
         script_name = entry.get("script", "")
         if not script_name or not (script_name.endswith(".sh") or script_name.endswith(".py")):
             return False, "Invalid script name", {}

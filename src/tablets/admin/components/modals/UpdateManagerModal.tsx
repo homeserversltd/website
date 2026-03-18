@@ -162,6 +162,8 @@ interface InteractiveItem {
   script: string;
   script_dir: string;
   has_run: boolean;
+  /** When false, show "Not ready" and do not allow Run. */
+  ready?: boolean;
 }
 
 /** GET /admin/updates/interactives response; backend returns details.interactives. */
@@ -976,6 +978,10 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
                   <span className="interactive-status-badge done">
                     <FontAwesomeIcon icon={faCheckCircle} />
                     Already run
+                  </span>
+                ) : item.ready === false ? (
+                  <span className="interactive-status-badge not-ready" title="Listed but not ready to run yet">
+                    Not ready yet
                   </span>
                 ) : (
                   <button

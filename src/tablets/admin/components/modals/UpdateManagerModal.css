@@ -344,6 +344,18 @@
   border-radius: 6px;
 }
 
+.interactive-status-badge.not-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  color: var(--textMuted);
+  background-color: var(--secondaryBackground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
 .interactive-run-button {
   display: inline-flex;
   align-items: center;

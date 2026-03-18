@@ -773,14 +773,17 @@ def run_interactive(interactive_id: str) -> Tuple[bool, str, Dict[str, Any]]:
         if not _check_show_only_if(entry, interactives):
             return False, "Interactive not available on this system (visibility condition not met)", {}
         script_name = entry.get("script", "")
-        if not script_name or not script_name.endswith(".sh"):
+        if not script_name or not (script_name.endswith(".sh") or script_name.endswith(".py")):
             return False, "Invalid script name", {}
         script_path = os.path.join(INTERACTABLES_SCRIPT_DIR, script_name)
         if not os.path.isfile(script_path):
             return False, f"Script not found: {script_path}", {}
         env = os.environ.copy()
         env["PATH"] = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-        cmd = ["/usr/bin/sudo", "/bin/bash", script_path]
+        if script_name.endswith(".py"):
+            cmd = ["/usr/bin/sudo", "/usr/bin/python3", script_path]
+        else:
+            cmd = ["/usr/bin/sudo", "/bin/bash", script_path]
         logger.info("[UPDATEMAN-UTILS] Running interactive %s: %s", interactive_id, " ".join(cmd))
         success, stdout, stderr = execute_command(cmd, timeout=600)
         if not success:

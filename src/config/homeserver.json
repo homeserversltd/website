@@ -63,7 +63,7 @@
             {
               "name": "Piwigo",
               "description": "Photo gallery",
-              "services": ["php8.2-fpm", "php8.3-fpm", "php8.4-fpm"],
+              "services": ["php-fpm"],
               "type": "systemd",
               "port": 8080,
               "localURL": "https://photos.home.arpa",
@@ -185,11 +185,11 @@
     },
     "global": {
       "version": {
-        "version": "0.9.112",
-        "releaseDate": "03-18-2026",
+        "version": "0.9.113",
+        "releaseDate": "03-19-2026",
         "generation": 1,
         "buildId": "92a9259a",
-        "lastUpdated": "03-18-2026"
+        "lastUpdated": "03-19-2026"
       },
       "theme": {
         "name": "dark"

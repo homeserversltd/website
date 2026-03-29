@@ -28,7 +28,7 @@
 	branch = master
 [submodule "premium/backblazeTab"]
 	path = premium/backblazeTab
-	url = git@github.com:homeserversltd/backblazeTab.git
+	url = git@git.home.arpa:owner/backblazeTab.git
 	branch = master
 [submodule "premium/chiaTab"]
 	path = premium/chiaTab

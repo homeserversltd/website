@@ -93,7 +93,15 @@ export const responseInterceptor = async (response: Response): Promise<Response>
           disconnect();
         }
       } else {
-        errorMessage = await response.text();
+        const raw = await response.text();
+        const looksHtml =
+          (contentType?.includes('text/html') ?? false) || raw.trimStart().startsWith('<');
+        if (looksHtml || response.status === 405) {
+          errorMessage = `HTTP ${response.status}: response was not JSON (proxy/nginx, offline devtools, or wrong HTTP method).`;
+          errorDetails = raw.length > 600 ? `${raw.slice(0, 600)}…` : raw;
+        } else {
+          errorMessage = raw || `HTTP ${response.status}`;
+        }
       }
     } catch (e) {
       errorMessage = 'Failed to parse error response';

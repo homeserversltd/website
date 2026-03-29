@@ -661,7 +661,7 @@ def _check_show_only_if(entry: Dict[str, Any], all_interactives: Optional[List[D
     if not codename:
         return True
     try:
-        success, stdout, _ = execute_command(["/usr/bin/lsb_release", "-cs"], timeout=5)
+        success, stdout, _ = execute_command(["/usr/bin/lsb_release", "-cs"])
         if not success or not stdout:
             logger.debug("[UPDATEMAN-UTILS] show_only_if: lsb_release -cs failed or empty")
             return False
@@ -691,13 +691,13 @@ def _run_completion_check(entry: Dict[str, Any]) -> bool:
         return False
     try:
         success_active, _, _ = execute_command(
-            ["/usr/bin/systemctl", "is-active", active_svc], timeout=5
+            ["/usr/bin/systemctl", "is-active", active_svc]
         )
         if not success_active:
             return False
         if inactive_svc:
             success_inactive, _, _ = execute_command(
-                ["/usr/bin/systemctl", "is-active", inactive_svc], timeout=5
+                ["/usr/bin/systemctl", "is-active", inactive_svc]
             )
             if success_inactive:
                 return False
@@ -787,7 +787,7 @@ def run_interactive(interactive_id: str) -> Tuple[bool, str, Dict[str, Any]]:
         else:
             cmd = ["/usr/bin/sudo", "/bin/bash", script_path]
         logger.info("[UPDATEMAN-UTILS] Running interactive %s: %s", interactive_id, " ".join(cmd))
-        success, stdout, stderr = execute_command(cmd, timeout=600)
+        success, stdout, stderr = execute_command(cmd)
         if not success:
             logger.error("[UPDATEMAN-UTILS] Interactive %s failed: %s", interactive_id, stderr)
             return False, stderr or "Script failed", {"stdout": stdout, "stderr": stderr}

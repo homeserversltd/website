@@ -39,6 +39,7 @@ import {
 } from '../utils/diskUtils';
 import { API_ENDPOINTS } from '../../../api/endpoints';
 import { api } from '../../../api/client';
+import { ApiError } from '../../../api/interceptors';
 import { socketClient } from '../../../components/WebSocket';
 import ServiceResultsModal from '../components/modals/ServiceResultsModal';
 import SyncResultsModal from '../components/modals/SyncResultsModal';
@@ -684,20 +685,51 @@ Note: During sync, your session will not time out due to inactivity.`
         const response = await api.post(API_ENDPOINTS.diskman.assignNas, {
           device: diskSelection.selectedDevice,
           role: role
-        }) as { status?: string; message?: string };
+        }) as {
+          status?: string;
+          message?: string;
+          details?: {
+            partial_success?: boolean;
+            stages?: {
+              auto_mount?: {
+                status?: string;
+                message?: string | null;
+                output_tail?: string[];
+              };
+            };
+          };
+        };
 
         console.log('[DiskMan] Assign NAS response', { role, status: response?.status });
 
-        if (response.status === 'success') {
-          toast.success(`Device successfully assigned as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
-          // Do not set pending confirmation: backend sends admin_disk_info immediately, and if that
-          // broadcast arrives before this HTTP response, the clear-pending effect never runs again → UI locks.
+        const partial =
+          response.status === 'partial_success' || response.details?.partial_success === true;
+
+        if (response.status === 'success' || response.status === 'partial_success') {
+          if (partial) {
+            const am = response.details?.stages?.auto_mount;
+            if (am?.output_tail?.length) {
+              console.warn('[DiskMan] assign-nas auto_mount output_tail', am.output_tail);
+            }
+            toast.warning(
+              response.message || 'PARTLABEL set; auto-mount did not complete.',
+              { duration: TOAST_DURATION.LONG }
+            );
+          } else {
+            toast.success(`Device successfully assigned as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
+          }
         } else {
           toast.error(response.message || `Failed to assign device as ${role} NAS.`, { duration: TOAST_DURATION.NORMAL });
         }
       } catch (error) {
         console.warn('[DiskMan] Assign NAS error', { role, error });
-        toast.error(`Failed to assign device as ${role} NAS: ${error}`, { duration: TOAST_DURATION.NORMAL });
+        const msg =
+          error instanceof ApiError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : String(error);
+        toast.error(`Failed to assign device as ${role} NAS: ${msg}`, { duration: TOAST_DURATION.NORMAL });
       }
     }
   };

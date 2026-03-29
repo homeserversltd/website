@@ -398,7 +398,8 @@ def execute_mount_script(mount_device, mountpoint, mapper=None, operation="mount
         operation (str): "mount" or "unmount"
         
     Returns:
-        tuple: (success, output, error_message)
+        tuple: (success, output, error_message, return_code)
+        return_code is subprocess exit status, or -1 on exception
     """
     cmd = ["/usr/bin/sudo", "/usr/bin/bash", "/vault/scripts/mountDrive.sh", operation, mount_device, mountpoint]
     if mapper:
@@ -433,7 +434,7 @@ def execute_mount_script(mount_device, mountpoint, mapper=None, operation="mount
                 
         if result.returncode == 0:
             write_to_log('admin', f'mountDrive {operation} success for {mount_device} -> {mountpoint}', 'info')
-            return True, all_output, ""
+            return True, all_output, "", result.returncode
         else:
             # Join all output lines for the error message
             error_msg = "\n".join(all_output) if all_output else "Unknown error occurred"
@@ -443,12 +444,12 @@ def execute_mount_script(mount_device, mountpoint, mapper=None, operation="mount
             write_to_log('admin', f'mountDrive {operation} failed for {mount_device} -> {mountpoint}: {error_msg}', 'error')
             if summary_lines:
                 write_to_log('admin', f'mountDrive {operation} output tail ({len(summary_lines)} lines): {" | ".join(summary_lines)}', 'error')
-            return False, all_output, error_msg
-            
+            return False, all_output, error_msg, result.returncode
+
     except Exception as script_error:
         current_app.logger.error(f"[DISKMAN] Error executing mountDrive.sh: {str(script_error)}")
         write_to_log('admin', f'mountDrive {operation} raised exception for {mount_device} -> {mountpoint}: {script_error}', 'error')
-        return False, [], str(script_error)
+        return False, [], str(script_error), -1
 
 def find_target_device_in_block_devices(device_name, block_devices):
     """

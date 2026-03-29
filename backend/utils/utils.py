@@ -1128,25 +1128,27 @@ def error_response(message, status_code=400, details=None):
         
     return jsonify(response), status_code
 
-def success_response(message, details=None):
+def success_response(message, details=None, status="success"):
     """
     Create a success JSON response.
-    
+
     Args:
         message (str): Success message
         details (dict, optional): Additional details
-        
+        status (str): Top-level status; default \"success\". Use \"partial_success\" when the operation
+            completed with recoverable failures described in details (e.g. PARTLABEL set but auto-mount failed).
+
     Returns:
         tuple: (jsonify response, status_code)
     """
     response = {
-        "status": "success",
+        "status": status,
         "message": message
     }
-    
+
     if details:
         response["details"] = details
-        
+
     return jsonify(response), 200
 
 # --- AES Encryption/Decryption Utilities ---

@@ -121,6 +121,18 @@ def create_app(config_object=None):
     # === PREMIUM TAB BLUEPRINTS START ===
     # Premium tab blueprints are dynamically injected here during installation
     # Do not manually edit this section - it is managed by the premium installer
+    # PREMIUM_TAB_IDENTIFIER: backblazeTab
+    try:
+        from .backblazeTab.routes import bp as backblazeTab_bp
+        app.register_blueprint(backblazeTab_bp)
+        app.logger.info("Registered blueprint: backblazeTab -> /api/backblazeTab")
+    except ImportError as exc:
+        app.logger.warning(
+            "backblazeTab blueprint not loaded (%s). "
+            "Ensure backend/backblazeTab exists (symlink to premium/backblazeTab/backend) or run the premium tab installer.",
+            exc,
+        )
+    # END_PREMIUM_TAB_IDENTIFIER: backblazeTab
     # === PREMIUM TAB BLUEPRINTS END ===
 
     # Register error handlers
@@ -129,6 +141,10 @@ def create_app(config_object=None):
         # If requesting a static file that doesn't exist, return 404
         if request.path.startswith('/static/'):
             return {'error': 'Not found'}, 404
+        # API clients expect JSON, not the SPA shell
+        if request.path.startswith('/api/'):
+            app.logger.warning("404 for API path (no route): %s", request.path)
+            return {'error': 'Not found', 'path': request.path}, 404
         # Otherwise serve index.html for client-side routing
         return send_from_directory(app.static_folder, 'index.html')
         
@@ -136,10 +152,16 @@ def create_app(config_object=None):
     def internal_error(error):
         return {'error': 'Internal server error'}, 500
 
-    # Serve React App
+    # Serve React App (must not swallow unknown /api/* — those return HTML and break fetch().json())
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_react_app(path):
+        if path.startswith('api/'):
+            app.logger.warning(
+                "SPA catch-all received API path (no blueprint/route matched): /%s",
+                path,
+            )
+            return {'error': 'API route not found', 'path': '/' + path}, 404
         if path and os.path.exists(os.path.join(app.static_folder, path)):
             return send_from_directory(app.static_folder, path)
         return send_from_directory(app.static_folder, 'index.html')

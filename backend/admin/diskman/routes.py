@@ -21,23 +21,46 @@ logger = logging.getLogger('homeserver')
 # Services that do not require NAS; excluded from "must stop" when unmounting /mnt/nas
 NAS_INDEPENDENT_SERVICES = frozenset({'mkdocs', 'gogs'})
 
+_ASSIGN_MOUNT_OUTPUT_TAIL_LINES = 20
+
+
+def _output_tail_lines(lines, max_lines=_ASSIGN_MOUNT_OUTPUT_TAIL_LINES):
+    if not lines:
+        return []
+    return lines[-max_lines:] if len(lines) > max_lines else list(lines)
+
 
 def _try_mount_after_assign(partition_path, target_disk, mountpoint, run_setup_nas=False):
     """
     After assign_nas set PARTLABEL, try to mount the device to the given slot and optionally run setup NAS.
     Used only when the slot is not already mounted (no primary/backup already in operation).
-    Returns (mount_ok, setup_ok, message). Non-fatal: assign already succeeded.
+    Returns (mount_ok, setup_ok, message, auto_mount_detail).
+
+    auto_mount_detail: dict for API details.stages.auto_mount (skipped / attempt / failure).
+    Non-fatal for assign: label already applied before this runs.
     """
     mount_ok = False
     setup_ok = False
+    auto_mount_detail = {
+        "mountpoint": mountpoint,
+        "mapper_used": None,
+        "status": "pending",
+        "message": None,
+        "output_tail": [],
+        "returncode": None,
+    }
     try:
         if utils.check_mount_point_usage(mountpoint):
             current_app.logger.info(f"[DISKMAN] Assign overload: {mountpoint} already in use, skipping auto-mount")
-            return False, False, "mount point already in use"
+            auto_mount_detail["status"] = "skipped"
+            auto_mount_detail["message"] = "mount point already in use"
+            return False, False, "mount point already in use", auto_mount_detail
         success, err = utils.ensure_mount_point_exists(mountpoint)
         if not success:
             current_app.logger.warning(f"[DISKMAN] Assign overload: could not ensure mount point {mountpoint}: {err}")
-            return False, False, err
+            auto_mount_detail["status"] = "failed"
+            auto_mount_detail["message"] = err
+            return False, False, err, auto_mount_detail
         disk_info = utils.get_disk_info()
         encrypted_devices = disk_info.get("encryptionInfo", {}).get("encrypted_devices", [])
         ed = next((e for e in encrypted_devices if e.get("device") == partition_path), None)
@@ -45,15 +68,26 @@ def _try_mount_after_assign(partition_path, target_disk, mountpoint, run_setup_n
         if mapper and not utils.verify_mapper_exists(mapper):
             mapper = None
         mount_device = f"/dev/mapper/{mapper}" if mapper else partition_path
+        auto_mount_detail["mapper_used"] = mapper
         current_app.logger.info(f"[DISKMAN] Assign overload: mounting {mount_device} to {mountpoint} (mapper={mapper})")
-        success, _out, err_msg = utils.execute_mount_script(mount_device, mountpoint, mapper, "mount")
+        success, out_lines, err_msg, retcode = utils.execute_mount_script(mount_device, mountpoint, mapper, "mount")
+        auto_mount_detail["returncode"] = retcode
         if not success:
             current_app.logger.warning(f"[DISKMAN] Assign overload: mount failed: {err_msg}")
-            return False, False, err_msg
+            auto_mount_detail["status"] = "failed"
+            auto_mount_detail["message"] = err_msg or "mountDrive.sh failed"
+            auto_mount_detail["output_tail"] = _output_tail_lines(out_lines or [])
+            return False, False, err_msg, auto_mount_detail
         if not utils.verify_mount(mountpoint):
             current_app.logger.warning("[DISKMAN] Assign overload: mount verification failed")
-            return False, False, "mount verification failed"
+            auto_mount_detail["status"] = "failed"
+            auto_mount_detail["message"] = "mount verification failed (findmnt)"
+            auto_mount_detail["output_tail"] = _output_tail_lines(out_lines or [])
+            return False, False, "mount verification failed", auto_mount_detail
         mount_ok = True
+        auto_mount_detail["status"] = "ok"
+        auto_mount_detail["message"] = None
+        auto_mount_detail["output_tail"] = _output_tail_lines(out_lines or [])
         if run_setup_nas:
             current_app.logger.info("[DISKMAN] Assign overload: running setupNAS.sh")
             result = subprocess.run(
@@ -65,10 +99,12 @@ def _try_mount_after_assign(partition_path, target_disk, mountpoint, run_setup_n
                 current_app.logger.warning(f"[DISKMAN] Assign overload: setupNAS.sh failed with code {result.returncode}")
             else:
                 write_to_log('admin', 'Permissions applied (setupNAS.sh) after assign primary NAS', 'info')
-        return mount_ok, setup_ok, ""
+        return mount_ok, setup_ok, "", auto_mount_detail
     except Exception as e:
         current_app.logger.warning(f"[DISKMAN] Assign overload exception: {e}")
-        return mount_ok, setup_ok, str(e)
+        auto_mount_detail["status"] = "failed"
+        auto_mount_detail["message"] = str(e)
+        return mount_ok, setup_ok, str(e), auto_mount_detail
 
 
 def _is_external_mount(path: str) -> bool:
@@ -781,7 +817,7 @@ def mount_device():
                 current_app.logger.warning(f"[DISKMAN] Cannot confirm that {mount_device} is encrypted with mapper {mapper}. Proceeding anyway.")
         
         # Execute the mountDrive.sh script
-        success, all_output, error_message = utils.execute_mount_script(mount_device, mountpoint, mapper, "mount")
+        success, all_output, error_message, _mount_rc = utils.execute_mount_script(mount_device, mountpoint, mapper, "mount")
             
         if success:
             # Verify the mount
@@ -1494,7 +1530,7 @@ def assign_nas():
 
         if not data:
             current_app.logger.error("[DISKMAN] No JSON data provided")
-            return utils.error_response("No JSON data provided")
+            return utils.error_response("No JSON data provided", details={"stage": "validation"})
 
         device = data.get('device')
         role = data.get('role')
@@ -1503,11 +1539,17 @@ def assign_nas():
 
         if not device or not role:
             current_app.logger.error("[DISKMAN] Missing required parameters: device and role")
-            return utils.error_response("Missing required parameters: device and role")
+            return utils.error_response(
+                "Missing required parameters: device and role",
+                details={"stage": "validation"},
+            )
 
         if role not in ['primary', 'backup']:
             current_app.logger.error(f"[DISKMAN] Invalid role: {role}")
-            return utils.error_response("Role must be 'primary' or 'backup'")
+            return utils.error_response(
+                "Role must be 'primary' or 'backup'",
+                details={"stage": "validation"},
+            )
 
         # Resolve device identifier
         device_path = resolve_device_identifier(device)
@@ -1516,7 +1558,11 @@ def assign_nas():
         # Check if this is a system partition
         if is_system_partition(device_path):
             current_app.logger.error(f"[DISKMAN] Cannot assign system partition: {device_path}")
-            return error_response("System partition cannot be assigned", 403)
+            return error_response(
+                "System partition cannot be assigned",
+                403,
+                details={"stage": "validation", "device_path": device_path},
+            )
 
         # Get disk information and resolve disk + partition number (supports selecting disk or partition)
         disk_info = utils.get_disk_info()
@@ -1527,7 +1573,11 @@ def assign_nas():
 
         if not target_disk:
             current_app.logger.error(f"[DISKMAN] Device not found in block devices: {device_path}")
-            return utils.error_response(f"Device not found: {device_path}", 404)
+            return utils.error_response(
+                f"Device not found: {device_path}",
+                404,
+                details={"stage": "device_resolution", "device_path": device_path},
+            )
 
         # Require at least one partition (unformatted / no-partition-table drives cannot be assigned)
         if is_partition and partition_device:
@@ -1538,14 +1588,16 @@ def assign_nas():
             current_app.logger.error(f"[DISKMAN] Device has no partition: {device_path}")
             return utils.error_response(
                 "Device has no partition. Create a partition first (e.g. use Format, or create a GPT partition with one partition), then assign.",
-                400
+                400,
+                details={"stage": "validation", "device_path": device_path},
             )
 
         if not part_num or not part_num.isdigit():
             current_app.logger.error(f"[DISKMAN] No partition number for device: {device_path}")
             return utils.error_response(
                 "This device has no partition (e.g. whole-disk encryption). Use Format to create a partition table and one partition, then assign.",
-                400
+                400,
+                details={"stage": "validation", "device_path": device_path},
             )
 
         label = "homeserver-primary-nas" if role == "primary" else "homeserver-backup-nas"
@@ -1559,48 +1611,109 @@ def assign_nas():
         if not success:
             error_msg = stderr if stderr else "Unknown error"
             current_app.logger.error(f"[DISKMAN] Failed to set PARTLABEL: {error_msg}")
-            return utils.error_response(f"Failed to assign NAS role: {error_msg}", 500)
+            return utils.error_response(
+                f"Failed to assign NAS role: {error_msg}",
+                500,
+                details={"stage": "sgdisk", "stderr": (stderr or "")[:4000]},
+            )
 
-        utils.execute_command(["/usr/bin/sudo", "/usr/bin/udevadm", "trigger", "--subsystem-match=block", "--action=change"])
+        udev_ok, _udev_out, udev_stderr = utils.execute_command(
+            ["/usr/bin/sudo", "/usr/bin/udevadm", "trigger", "--subsystem-match=block", "--action=change"]
+        )
+        if not udev_ok:
+            current_app.logger.warning(f"[DISKMAN] udevadm trigger after assign reported failure: {udev_stderr}")
 
         current_app.logger.info(f"[DISKMAN] Successfully assigned {device_path} as {role} NAS with label {label}")
         write_to_log('admin', f'Device {device_path} assigned as {role} NAS', 'info')
 
-        # Overload: if slot is not already in use, auto-mount (and for primary, run setup NAS) so one click = fully ready
         partition_path = f"/dev/{target_disk['name']}{part_num}"
+        stages = {
+            "sgdisk": {"ok": True},
+            "udev": {"ok": udev_ok, "message": None if udev_ok else ((udev_stderr or "").strip() or "udevadm trigger failed")},
+            "auto_mount": {
+                "status": "skipped",
+                "mountpoint": None,
+                "mapper_used": None,
+                "message": None,
+                "output_tail": [],
+                "returncode": None,
+            },
+        }
+        partial_success = False
+        summary_message = f"Device {device_path} successfully assigned as {role} NAS"
+
         if role == "primary":
             if not os.path.exists("/mnt/nas") or not os.path.ismount("/mnt/nas"):
-                mount_ok, setup_ok, _ = _try_mount_after_assign(partition_path, target_disk, "/mnt/nas", run_setup_nas=True)
+                mount_ok, setup_ok, _overload_msg, am_detail = _try_mount_after_assign(
+                    partition_path, target_disk, "/mnt/nas", run_setup_nas=True
+                )
+                stages["auto_mount"] = am_detail
                 if mount_ok:
                     current_app.logger.info("[DISKMAN] Assign primary: auto-mounted and ran setup NAS")
-                elif setup_ok is False and mount_ok:
-                    current_app.logger.warning("[DISKMAN] Assign primary: auto-mounted but setup NAS failed")
+                    if setup_ok is False and mount_ok:
+                        current_app.logger.warning("[DISKMAN] Assign primary: auto-mounted but setup NAS failed")
+                else:
+                    partial_success = True
+                    summary_message = (
+                        f"PARTLABEL set to {label}, but auto-mount to /mnt/nas did not complete. "
+                        f"{(am_detail.get('message') or _overload_msg or 'See details.stages.auto_mount')}"
+                    )
             else:
                 current_app.logger.info("[DISKMAN] Assign primary: /mnt/nas already mounted, skipping auto-mount")
+                stages["auto_mount"] = {
+                    "status": "skipped",
+                    "mountpoint": "/mnt/nas",
+                    "mapper_used": None,
+                    "message": "already mounted; auto-mount not run",
+                    "output_tail": [],
+                    "returncode": None,
+                }
         elif role == "backup":
             if not os.path.exists("/mnt/nas_backup") or not os.path.ismount("/mnt/nas_backup"):
-                mount_ok, _, _ = _try_mount_after_assign(partition_path, target_disk, "/mnt/nas_backup", run_setup_nas=False)
+                mount_ok, _setup_ok, _overload_msg, am_detail = _try_mount_after_assign(
+                    partition_path, target_disk, "/mnt/nas_backup", run_setup_nas=False
+                )
+                stages["auto_mount"] = am_detail
                 if mount_ok:
                     current_app.logger.info("[DISKMAN] Assign backup: auto-mounted to /mnt/nas_backup")
+                else:
+                    partial_success = True
+                    summary_message = (
+                        f"PARTLABEL set to {label}, but auto-mount to /mnt/nas_backup did not complete. "
+                        f"{(am_detail.get('message') or _overload_msg or 'See details.stages.auto_mount')}"
+                    )
             else:
                 current_app.logger.info("[DISKMAN] Assign backup: /mnt/nas_backup already mounted, skipping auto-mount")
+                stages["auto_mount"] = {
+                    "status": "skipped",
+                    "mountpoint": "/mnt/nas_backup",
+                    "mapper_used": None,
+                    "message": "already mounted; auto-mount not run",
+                    "output_tail": [],
+                    "returncode": None,
+                }
 
         trigger_immediate_broadcast('admin_disk_info')
 
+        response_details = {
+            "device": device_path,
+            "partition": partition_path,
+            "label": label,
+            "role": role,
+            "stages": stages,
+            "partial_success": partial_success,
+        }
         return utils.success_response(
-            f"Device {device_path} successfully assigned as {role} NAS",
-            {
-                "device": device_path,
-                "label": label,
-                "role": role
-            }
+            summary_message,
+            response_details,
+            status="partial_success" if partial_success else "success",
         )
 
     except Exception as e:
         current_app.logger.error(f"[DISKMAN] Error assigning NAS: {str(e)}")
         import traceback
         current_app.logger.error(f"[DISKMAN] Traceback: {traceback.format_exc()}")
-        return utils.error_response(str(e), 500)
+        return utils.error_response(str(e), 500, details={"stage": "exception"})
 
 
 @bp.route('/api/admin/diskman/unassign-nas', methods=['POST'])

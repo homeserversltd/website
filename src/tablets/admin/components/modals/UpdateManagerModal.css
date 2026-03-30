@@ -1111,6 +1111,15 @@
   background-color: var(--success);
 }
 
+.modal-button-primary.force-button {
+  background-color: var(--warning);
+  color: var(--text);
+}
+
+.modal-button-primary.force-button:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
 .modal-button-primary:disabled {
   background-color: var(--secondary);
   cursor: not-allowed;

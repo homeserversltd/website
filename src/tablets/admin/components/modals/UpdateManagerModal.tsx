@@ -669,6 +669,88 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
     }
   }, [api, toast, updateStatus, handleCheckUpdates, loadModules, loadSystemInfo, logApiActivity]);
 
+  // Force-run updates even when check reports no updates available
+  const handleForceUpdates = useCallback(async () => {
+    const confirmed = window.confirm(
+      'Force Update Warning\n\n' +
+      'This runs the update manager even if the system reports "up to date".\n\n' +
+      'Use this only when you intentionally want to re-run the update pipeline.\n\n' +
+      'Continue with forced update?'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const endpoint = API_ENDPOINTS.admin.updates.force;
+    const requestData = { mode: 'full', force: true };
+
+    const startTime = Date.now();
+    setViewMode('updating');
+    setIsApplying(true);
+    setUpdateStartTime(startTime);
+    updateStartTimeRef.current = startTime;
+    setUpdateDuration('0:00');
+    setUpdateOutput(['Starting forced system update...']);
+
+    try {
+      logApiActivity('Force Updates - Request', endpoint, 'POST', requestData);
+
+      const response = await api.post<UpdateApplyResponse>(endpoint, requestData);
+
+      logApiActivity('Force Updates - Response', endpoint, 'POST', requestData, response);
+
+      if (response.status === 'success') {
+        const startTimeToUse = updateStartTimeRef.current || updateStartTime;
+        const finalDuration = startTimeToUse ? calculateDuration(startTimeToUse) : updateDuration || '0:00';
+        setLastUpdateResult(response);
+        setUpdateOutput(prev => [
+          ...prev,
+          '',
+          '='.repeat(50),
+          `✅ Forced update started successfully!\nDuration: ${finalDuration}`,
+          '='.repeat(50),
+        ]);
+        toast.success('Forced update started successfully!');
+
+        await Promise.all([
+          handleCheckUpdates(),
+          loadModules(),
+          loadSystemInfo(),
+        ]);
+      } else {
+        logger.error('Forced update failed:', response.error);
+        const startTimeToUse = updateStartTimeRef.current || updateStartTime;
+        const finalDuration = startTimeToUse ? calculateDuration(startTimeToUse) : updateDuration || '0:00';
+        setUpdateOutput(prev => [
+          ...prev,
+          '',
+          '='.repeat(50),
+          `❌ Forced update failed!\nError: ${response.error || 'Force update failed'}\nDuration: ${finalDuration}`,
+          '='.repeat(50),
+        ]);
+        toast.error(response.error || 'Failed to start forced update');
+      }
+    } catch (error) {
+      logApiActivity('Force Updates - Error', endpoint, 'POST', requestData, undefined, error);
+      logger.error('Error forcing updates:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const startTimeToUse = updateStartTimeRef.current || updateStartTime;
+      const finalDuration = startTimeToUse ? calculateDuration(startTimeToUse) : updateDuration || '0:00';
+      setUpdateOutput(prev => [
+        ...prev,
+        '',
+        '='.repeat(50),
+        `❌ Forced update failed!\nError: ${errorMessage}\nDuration: ${finalDuration}`,
+        '='.repeat(50),
+      ]);
+      toast.error('Failed to start forced update');
+    } finally {
+      setIsApplying(false);
+      updateStartTimeRef.current = null;
+    }
+  }, [api, toast, updateStartTime, calculateDuration, updateDuration, logApiActivity, handleCheckUpdates, loadModules, loadSystemInfo]);
+
   // Save update schedule
   const handleSaveSchedule = useCallback(async () => {
     const endpoint = API_ENDPOINTS.admin.updates.schedule;
@@ -1366,6 +1448,27 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ onClose 
                 <>
                   <FontAwesomeIcon icon={faDownload} />
                   Apply Updates
+                </>
+              )}
+            </button>
+          )}
+
+          {!updateStatus?.details?.updateAvailable && (
+            <button
+              type="button"
+              className="modal-button modal-button-primary force-button"
+              onClick={handleForceUpdates}
+              disabled={isChecking || isApplying}
+            >
+              {isApplying ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                  Forcing Update...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faDownload} />
+                  Force Update
                 </>
               )}
             </button>

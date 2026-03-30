@@ -38,6 +38,7 @@ export type AdminEndpoints = {
   updates: {
     check: string;
     apply: string;
+    force: string;
     modules: string;
     moduleStatus: (moduleName: string) => string;
     moduleToggle: (moduleName: string) => string;
@@ -250,6 +251,7 @@ export const API_ENDPOINTS: APIEndpoints = {
       updates: {
         check: '/admin/updates/check',
         apply: '/admin/updates/apply',
+        force: '/admin/updates/force',
         modules: '/admin/updates/modules',
         moduleStatus: (moduleName: string) => `/admin/updates/modules/${moduleName}/status`,
         moduleToggle: (moduleName: string) => `/admin/updates/modules/${moduleName}/toggle`,

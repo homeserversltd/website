@@ -116,6 +116,53 @@ def apply_updates():
         logger.error(f"[UPDATEMAN] Error applying updates: {str(e)}")
         return error_response(f"Failed to apply updates: {str(e)}")
 
+
+@bp.route('/api/admin/updates/force', methods=['POST'])
+@admin_required
+def force_updates():
+    """
+    Force-run the update manager even when check reports no updates.
+    This still uses the normal update manager path, but bypasses UI gating.
+    """
+    try:
+        data = request.get_json() or {}
+        logger.info(f"[UPDATEMAN] Force updates request: {json.dumps(data, indent=2)}")
+        start_time = time.time()
+
+        mode = data.get('mode', 'full')
+        if mode not in ['full', 'legacy']:
+            return error_response(f"Invalid update mode: {mode}")
+
+        logger.info(f"[UPDATEMAN] Force-running updates - mode: {mode}")
+
+        success, message, update_result = utils.execute_update_manager_background()
+
+        operation_time = time.time() - start_time
+        logger.info(f"[UPDATEMAN] Force update request completed in {operation_time:.2f} seconds (update running in background)")
+
+        if not success:
+            logger.error(f"[UPDATEMAN] Failed to start forced update: {message}")
+            write_to_log('admin', f'Failed to start forced update: {message}', 'error')
+            return error_response(f"Failed to start forced update: {message}")
+
+        logger.info("[UPDATEMAN] Forced update started in background")
+        write_to_log('admin', 'Forced update started in background', 'info')
+
+        return success_response(
+            message="Forced update started in background",
+            details={
+                "mode": mode,
+                "force": True,
+                "updateResult": update_result,
+                "appliedAt": int(time.time()),
+                "operationTime": f"{operation_time:.2f} seconds"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"[UPDATEMAN] Error force-running updates: {str(e)}")
+        return error_response(f"Failed to force-run updates: {str(e)}")
+
 @bp.route('/api/admin/updates/modules', methods=['GET'])
 @admin_required
 def list_modules():

@@ -20,7 +20,8 @@ __all__ = [
     'VPNMonitor',
     'DiskMonitor',
     'HardDriveTestMonitor',
-    'SyncMonitor'
+    'SyncMonitor',
+    'sync_monitor',
 ]
 
 # Add imports after blueprint creation to avoid circular dependencies
@@ -32,4 +33,4 @@ from .tailscale import TailscaleMonitor  # noqa: E402
 from .vpn import VPNMonitor  # noqa: E402
 from .disk import DiskMonitor  # noqa: E402
 from .harddrivetest import HardDriveTestMonitor  # noqa: E402
-from .sync import SyncMonitor  # noqa: E402
+from .sync import SyncMonitor, sync_monitor  # noqa: E402

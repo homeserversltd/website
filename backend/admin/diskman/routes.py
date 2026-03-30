@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import logging
-from backend.monitors.sync import SyncMonitor
+from backend.monitors.sync import sync_monitor
 from backend.broadcasts.events import trigger_immediate_broadcast
 
 # Get logger
@@ -1289,7 +1289,7 @@ def manage_services():
 @admin_required
 def sync_nas_to_backup():
     """
-    Start a background NAS-to-backup sync job using SyncMonitor.
+    Start a background NAS-to-backup sync job (sudo safe-nas-sync.sh, same as cron).
     """
     try:
         current_app.logger.info("[SYNC] Starting sync_nas_to_backup operation")
@@ -1324,9 +1324,7 @@ def sync_nas_to_backup():
                 "status": "error",
                 "message": "CRITICAL SAFETY VIOLATION: /mnt/nas_backup must be on an external drive, not the root filesystem. Refusing to start sync job."
             }), 400
-        # Start the sync job using SyncMonitor
-        monitor = SyncMonitor()
-        result = monitor.start_sync(source, destination)
+        result = sync_monitor.start_sync(source, destination)
         return jsonify(result)
     except Exception as e:
         import traceback

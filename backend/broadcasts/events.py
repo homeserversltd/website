@@ -15,7 +15,7 @@ from backend.monitors.tailscale import TailscaleMonitor
 from backend.monitors.vpn import VPNMonitor
 from backend.monitors.disk import DiskMonitor
 from backend.monitors.harddrivetest import HardDriveTestMonitor
-from backend.monitors.sync import SyncMonitor
+from backend.monitors.sync import sync_monitor
 from .comparisons import should_broadcast
 
 # Import this only when needed, avoid global import to prevent circular dependency
@@ -464,7 +464,7 @@ def init_broadcasters(app):
         # Register sync status broadcaster
         broadcast_manager.register_broadcaster(
             'sync_status',
-            SyncMonitor().broadcast_status,
+            sync_monitor.broadcast_status,
             interval=2
         )
         

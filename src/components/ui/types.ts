@@ -20,6 +20,7 @@ export interface ButtonProps extends BaseComponentProps {
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
   children: React.ReactNode;
+  title?: string;
 }
 
 export interface ToggleProps extends BaseComponentProps {

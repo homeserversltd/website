@@ -14,6 +14,7 @@ export const Button: React.FC<ButtonProps> = ({
   iconPosition = 'left',
   className = '',
   children,
+  title,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
 }) => {
@@ -42,6 +43,7 @@ export const Button: React.FC<ButtonProps> = ({
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-busy={loading}
+      title={title}
     >
       {loading ? (
         <LoadingSpinner size="small" />

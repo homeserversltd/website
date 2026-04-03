@@ -267,7 +267,9 @@ class PackageManager:
             self.logger.info("Updating package lists...")
             platform_id = self._detect_system_platform()
             if platform_id in ["debian", "ubuntu"]:
-                self._run_command(["apt-get", "update"])
+                self._run_command(
+                    ["apt-get", "update", "--allow-releaseinfo-change"]
+                )
             elif platform_id in ["rhel", "centos", "fedora"]:
                 self._run_command(["dnf", "check-update"], check=False)  # check-update returns 100 if updates available
             

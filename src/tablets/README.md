@@ -35,6 +35,7 @@ The tablets system is the core UI architecture of HOMESERVER, providing a modula
   - Service status monitoring
   - Custom portal addition
   - Remote access support (Tailscale)
+- **Portal icons**: Put custom portal card PNGs in `tablets/portals/images/` (next to this tablet in the site `src` tree). Treat that directory as **your** icon pool on that unit: website updates are intended **not** to delete it or remove files that exist only on the server (updates merge product files over the live tree; they do not erase that location by design). **If** the entire site tree under `/var/www/homeserver/` is deleted and the UI is rebuilt from source with no restore from backup, anything that lived only on the machine, including those images, is gone. Back up icons you care about.
 
 #### 3. **Stats Tablet** (`/tablets/stats/`)
 - **Purpose**: System monitoring and statistics

@@ -50,11 +50,34 @@ const LOG_LEVELS: LogLevel = {
   VERBOSE: 'verbose'
 };
 
+type WindowClientDebug = Window & {
+  CLIENT_DEBUG_MODE?: boolean;
+  CLIENT_VERBOSE_DEBUG?: boolean;
+};
+
+/**
+ * Read inject client debug switches from the browser window (operator sets before load or in DevTools).
+ * Premium tabs MUST NOT force debug on; they apply this together with a tab-local log prefix when mounted.
+ */
+export const readClientDebugFlagsFromWindow = (): Pick<DebugConfig, 'clientDebugMode' | 'verboseDebug'> => {
+  if (typeof window === 'undefined') {
+    return { clientDebugMode: false, verboseDebug: false };
+  }
+  const w = window as WindowClientDebug;
+  return {
+    clientDebugMode: Boolean(w.CLIENT_DEBUG_MODE),
+    verboseDebug: Boolean(w.CLIENT_VERBOSE_DEBUG),
+  };
+};
+
 /**
  * Initialize debug configuration
  * This should be called early in the application lifecycle
  */
-export const initializeDebug = (config: Partial<DebugConfig> = {}): void => {
+export const initializeDebug = (
+  config: Partial<DebugConfig> = {},
+  options?: { skipAnnounce?: boolean }
+): void => {
   // Check for CLIENT_DEBUG environment variable
   debugConfig = {
     clientDebugMode: config.clientDebugMode ?? false,
@@ -62,6 +85,9 @@ export const initializeDebug = (config: Partial<DebugConfig> = {}): void => {
     logPrefix: config.logPrefix ?? '[DEBUG]'
   };
 
+  if (options?.skipAnnounce) {
+    return;
+  }
   if (debugConfig.clientDebugMode) {
     console.log(`${debugConfig.logPrefix} Debug mode initialized`);
   }
@@ -92,7 +118,12 @@ const debugLog = (
 ): void => {
   // Always log errors regardless of debug mode
   if (level === 'ERROR') {
-    console.error(`${debugConfig.logPrefix} [ERROR] ${message}`, data);
+    const errLine = `${debugConfig.logPrefix} [ERROR] ${message}`;
+    if (data !== undefined) {
+      console.error(errLine, data);
+    } else {
+      console.error(errLine);
+    }
     return;
   }
 
@@ -126,22 +157,30 @@ const debugLog = (
     logMessage += ` | Context: ${JSON.stringify(options.context)}`;
   }
 
-  // Log based on level
+  // Omit second console argument when no payload: passing `undefined` prints a stray "undefined" in DevTools.
+  const emit = (fn: (m: string, ...rest: unknown[]) => void): void => {
+    if (data !== undefined) {
+      fn(logMessage, data);
+    } else {
+      fn(logMessage);
+    }
+  };
+
   switch (level) {
     case 'DEBUG':
-      console.debug(logMessage, data);
+      emit(console.debug.bind(console));
       break;
     case 'INFO':
-      console.info(logMessage, data);
+      emit(console.info.bind(console));
       break;
     case 'WARN':
-      console.warn(logMessage, data);
+      emit(console.warn.bind(console));
       break;
     case 'VERBOSE':
-      console.debug(logMessage, data);
+      emit(console.debug.bind(console));
       break;
     default:
-      console.log(logMessage, data);
+      emit(console.log.bind(console));
   }
 };
 
@@ -387,10 +426,9 @@ export const debugGroupCollapsed = (label: string, fn: () => void): void => {
 
 // Auto-initialize with environment check
 if (typeof window !== 'undefined') {
-  // Browser environment - check for global debug mode
-  const globalDebug = (window as any).CLIENT_DEBUG_MODE;
-  if (globalDebug !== undefined) {
-    initializeDebug({ clientDebugMode: globalDebug });
+  const w = window as WindowClientDebug;
+  if (w.CLIENT_DEBUG_MODE !== undefined) {
+    initializeDebug({ ...readClientDebugFlagsFromWindow() });
   }
 }
 

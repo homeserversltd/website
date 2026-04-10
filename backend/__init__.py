@@ -121,18 +121,7 @@ def create_app(config_object=None):
     # === PREMIUM TAB BLUEPRINTS START ===
     # Premium tab blueprints are dynamically injected here during installation
     # Do not manually edit this section - it is managed by the premium installer
-    # PREMIUM_TAB_IDENTIFIER: backblazeTab
-    try:
-        from .backblazeTab.routes import bp as backblazeTab_bp
-        app.register_blueprint(backblazeTab_bp)
-        app.logger.info("Registered blueprint: backblazeTab -> /api/backblazeTab")
-    except ImportError as exc:
-        app.logger.warning(
-            "backblazeTab blueprint not loaded (%s). "
-            "Ensure backend/backblazeTab exists (symlink to premium/backblazeTab/backend) or run the premium tab installer.",
-            exc,
-        )
-    # END_PREMIUM_TAB_IDENTIFIER: backblazeTab
+    
     # === PREMIUM TAB BLUEPRINTS END ===
 
     # Register error handlers

@@ -142,8 +142,10 @@ def create_app(config_object=None):
         return {'error': 'Internal server error'}, 500
 
     # Serve React App (must not swallow unknown /api/* — those return HTML and break fetch().json())
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
+    # Restrict to GET/HEAD/OPTIONS only. POST/PUT/DELETE to /api/* must match a blueprint; otherwise they
+    # would match this rule and Flask would return 405 Method Not Allowed (misleading vs missing route).
+    @app.route('/', defaults={'path': ''}, methods=["GET", "HEAD", "OPTIONS"])
+    @app.route('/<path:path>', methods=["GET", "HEAD", "OPTIONS"])
     def serve_react_app(path):
         if path.startswith('api/'):
             app.logger.warning(

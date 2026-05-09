@@ -12,7 +12,7 @@
 	branch = master
 [submodule "premium/miner"]
 	path = premium/miner
-	url = git@home.arpa:owner/miner.git
+	url = git@home.arpa:HOMESERVERSLTD/miner.git
 	branch = master
 [submodule "premium/dhcp"]
 	path = premium/dhcp
@@ -28,7 +28,7 @@
 	branch = master
 [submodule "premium/backblazeTab"]
 	path = premium/backblazeTab
-	url = git@git.home.arpa:owner/backblazeTab.git
+	url = git@home.arpa:HOMESERVERSLTD/backblazeTab.git
 	branch = master
 [submodule "premium/wakeonlan"]
 	path = premium/wakeonlan

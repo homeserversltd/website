@@ -1,36 +1,36 @@
 [submodule "premium/testTab"]
 	path = premium/testTab
-	url = git@github.com:homeserversltd/testTab.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/testTab.git
+	branch = main
 [submodule "premium/conflictTab"]
 	path = premium/conflictTab
-	url = git@github.com:homeserversltd/conflictTab.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/conflictTab.git
+	branch = main
 [submodule "premium/backupTab"]
 	path = premium/backupTab
-	url = git@github.com:homeserversltd/backupTab.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/backupTab.git
+	branch = main
 [submodule "premium/miner"]
 	path = premium/miner
-	url = git@home.arpa:HOMESERVERSLTD/miner.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/miner.git
+	branch = main
 [submodule "premium/dhcp"]
 	path = premium/dhcp
-	url = git@github.com:homeserversltd/dhcp.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/dhcp.git
+	branch = main
 [submodule "premium/youtube"]
 	path = premium/youtube
-	url = git@github.com:homeserversltd/youtube.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/youtube.git
+	branch = main
 [submodule "premium/nasLinker"]
 	path = premium/nasLinker
-	url = git@github.com:homeserversltd/linkerTab.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/nasLinker.git
+	branch = main
 [submodule "premium/backblazeTab"]
 	path = premium/backblazeTab
-	url = git@home.arpa:HOMESERVERSLTD/backblazeTab.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/backblazeTab.git
+	branch = main
 [submodule "premium/wakeonlan"]
 	path = premium/wakeonlan
-	url = git@github.com:homeserversltd/wakeonlan.git
-	branch = master
+	url = git@git.home.arpa:HOMESERVERSLTD/wakeonlan.git
+	branch = main
